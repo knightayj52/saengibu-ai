@@ -1,0 +1,2147 @@
+<!DOCTYPE html>
+<!--
+  생활기록부 AI 도우미 (웹앱) — 1단계: 로그인 · 시트 연결/생성 · 설정
+  © 2026 영쌤클래스 · 교육용으로 제작 · 무단 복제·재배포 금지
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>생활기록부 AI 도우미</title>
+<meta name="description" content="체크만 하면 생활기록부 문장 초안을 만들어 주는 교사용 도구. 데이터는 선생님 본인의 Google Drive에만 저장됩니다.">
+<meta name="author" content="영쌤클래스">
+<meta name="copyright" content="© 2026 영쌤클래스 · 교육용으로 제작 · 무단 복제·재배포 금지">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9D%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --ink:#1c2340; --sub:#5d6480; --line:#e1e4ef; --bg:#f3f4fa; --card:#fff;
+  --navy:#1f2a6b; --navy2:#2f3d99; --accent:#f0a030; --ok:#1e8e5a; --bad:#c0392b; --warnbg:#fff6e0;
+  --r:14px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{font-family:"Pretendard","Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+  background:var(--bg);color:var(--ink);line-height:1.6;font-size:16px;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--navy2)}
+.top{background:var(--navy);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand .logo{font-size:26px}
+.brand b{display:block;font-size:17px;line-height:1.25}
+.brand small{opacity:.75;font-size:12px}
+#userBox{display:flex;align-items:center;gap:10px;font-size:13px}
+#userName{max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.9}
+nav{background:#fff;border-bottom:1px solid var(--line);display:flex;gap:4px;padding:0 14px;overflow-x:auto}
+nav button{border:0;background:none;padding:13px 14px;font:inherit;font-size:14.5px;font-weight:600;color:var(--sub);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav button.on{color:var(--navy);border-bottom-color:var(--accent)}
+nav button:disabled{opacity:.4;cursor:not-allowed}
+#banner{background:var(--warnbg);border-bottom:1px solid #f1d9a0;padding:10px 20px;font-size:14px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
+main{flex:1;width:100%;max-width:880px;margin:0 auto;padding:24px 16px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px 22px;margin-bottom:16px}
+.card h2{margin:0 0 6px;font-size:19px}
+.card h3{margin:0 0 4px;font-size:16px}
+.muted{color:var(--sub);font-size:14px}
+.hero{text-align:center;padding:38px 22px}
+.hero h1{font-size:25px;margin:8px 0 8px}
+.hero .big{font-size:46px}
+.btn{font:inherit;font-weight:700;font-size:15px;border-radius:10px;border:1.5px solid var(--navy);background:var(--navy);color:#fff;padding:11px 18px;cursor:pointer;min-height:44px}
+.btn:hover{background:var(--navy2);border-color:var(--navy2)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.line{background:#fff;color:var(--navy)}
+.btn.line:hover{background:#eef0fb}
+.btn.ghost{background:transparent;border-color:rgba(255,255,255,.5);color:#fff}
+.btn.sm{padding:6px 12px;min-height:34px;font-size:13px}
+.btn.danger{background:#fff;color:var(--bad);border-color:#e2b4ae}
+.btn.google{background:#fff;color:#1f1f1f;border-color:#c9cbd6;font-size:16px;padding:12px 22px;display:inline-flex;align-items:center;gap:10px}
+.btn.google:hover{background:#f6f7fb}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:680px){.grid2{grid-template-columns:1fr}.top{padding:10px 14px}}
+.points{list-style:none;padding:0;margin:18px auto 0;max-width:520px;text-align:left;font-size:14.5px}
+.points li{padding:7px 0 7px 30px;position:relative;border-top:1px dashed var(--line)}
+.points li::before{content:"✓";position:absolute;left:6px;color:var(--ok);font-weight:800}
+.msg{border-radius:10px;padding:11px 14px;font-size:14.5px;margin:12px 0}
+.msg.err{background:#fdecea;color:#8c241a;border:1px solid #f3c2bc}
+.msg.info{background:#eaf1ff;color:#1c3a7a;border:1px solid #c7d7f7}
+.msg.ok{background:#e7f6ee;color:#14603d;border:1px solid #b9e2cb}
+label.f{display:block;font-weight:700;font-size:14.5px;margin:18px 0 6px}
+label.f small{font-weight:400;color:var(--sub)}
+input[type=text],input[type=password],select{font:inherit;width:100%;padding:11px 12px;border:1.5px solid #cdd1e0;border-radius:10px;background:#fff;color:var(--ink);min-height:46px}
+input:focus,select:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row>input{flex:1;min-width:180px}
+.opts{display:grid;gap:8px}
+.opts.c3{grid-template-columns:repeat(3,1fr)}
+.opts.c2{grid-template-columns:repeat(2,1fr)}
+@media(max-width:680px){.opts.c3{grid-template-columns:1fr}}
+.opt{display:block;border:1.5px solid #cdd1e0;border-radius:10px;padding:10px 12px;cursor:pointer;background:#fff}
+.opt input{margin-right:6px}
+.opt b{font-size:15px}
+.opt span{display:block;font-size:12.5px;color:var(--sub);margin-top:2px}
+.opt:has(input:checked){border-color:var(--navy);background:#eef0fb}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;font-size:14.5px;margin:10px 0 0}
+.kv dt{color:var(--sub)}
+.kv dd{margin:0;font-weight:600;word-break:break-all}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{font-size:12.5px;padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:#f7f8fc;color:var(--sub)}
+.chip.on{background:#e7f6ee;border-color:#b9e2cb;color:#14603d}
+.steps{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+@media(max-width:680px){.steps{grid-template-columns:1fr}}
+.step{border:1px dashed #c9cde0;border-radius:12px;padding:12px 14px;font-size:14px;color:var(--sub)}
+.step b{color:var(--ink);display:block}
+.step.done{border-style:solid;border-color:#b9e2cb;background:#f2fbf6}
+footer{text-align:center;font-size:12.5px;color:var(--sub);padding:18px 16px 26px}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#1c2340;color:#fff;padding:11px 18px;border-radius:10px;font-size:14.5px;max-width:92vw;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+#toast.show{opacity:1}
+#busy{position:fixed;inset:0;background:rgba(243,244,250,.86);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:40;font-weight:600}
+.spinner{width:38px;height:38px;border-radius:50%;border:4px solid #cfd4ee;border-top-color:var(--navy);animation:sp 0.8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.spinner{animation-duration:2.4s}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">📝</span>
+    <div><b>생활기록부 AI 도우미</b><small id="verLabel">웹앱</small></div>
+  </div>
+  <div id="userBox" hidden>
+    <span id="userName"></span>
+    <button id="btnLogout" class="btn ghost sm" type="button">로그아웃</button>
+  </div>
+</header>
+
+<nav id="nav" hidden aria-label="화면 이동">
+  <button type="button" data-view="home">홈</button>
+  <button type="button" data-view="settings">⚙️ 설정</button>
+  <button type="button" disabled title="2단계에서 열립니다">👥 학생·체크</button>
+  <button type="button" disabled title="3단계에서 열립니다">✨ 생성</button>
+  <button type="button" disabled title="4단계에서 열립니다">📈 결과</button>
+  <button type="button" disabled title="5단계에서 열립니다">📑 NEIS 입력</button>
+</nav>
+
+<div id="banner" hidden role="status"><span id="bannerMsg"></span><button id="bannerBtn" class="btn sm" type="button"></button></div>
+
+<main>
+  <!-- 로딩 -->
+  <section id="v-loading" class="card hero"><div class="spinner" style="margin:0 auto"></div><p class="muted">불러오는 중…</p></section>
+
+  <!-- 로그인 -->
+  <section id="v-login" hidden>
+    <div class="card hero">
+      <div class="big" aria-hidden="true">📝</div>
+      <h1>생활기록부 AI 도우미</h1>
+      <p class="muted">체크만 하면 교과·창체·행동특성 문장 초안을 만들어 주는 교사용 도구입니다.</p>
+      <div id="loginMsg" class="msg err" hidden></div>
+      <p style="margin:22px 0 6px">
+        <button id="btnLogin" class="btn google" type="button">
+          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.2C12.4 13.7 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.200 6.900-10.300 6.900-17.700z"/><path fill="#FBBC05" d="M10.500 28.600c-.5-1.400-.8-3-.8-4.600s.3-3.200.8-4.600l-7.900-6.200C1 16.500 0 20.100 0 24s1 7.500 2.600 10.800l7.900-6.200z"/><path fill="#34A853" d="M24 48c6.500 0 11.900-2.100 15.900-5.800l-7.700-6c-2.200 1.500-5 2.300-8.200 2.300-6.300 0-11.600-4.200-13.500-9.900l-7.900 6.200C6.500 42.600 14.600 48 24 48z"/></svg>
+          Google 계정으로 로그인
+        </button>
+      </p>
+      <ul class="points">
+        <li>이 앱은 <b>앱이 만든 시트</b>와 <b>선생님이 직접 고른 시트</b>에만 접근합니다. 드라이브의 다른 파일은 볼 수 없습니다.</li>
+        <li>학생 데이터는 선생님 본인의 Google Drive 스프레드시트에만 저장됩니다. 별도 서버가 없습니다.</li>
+        <li>기존 구글시트 버전(v9)과 같은 시트를 그대로 씁니다. 시트에서 체크한 내용이 여기서도 보입니다.</li>
+      </ul>
+      <p class="muted" style="margin-top:16px"><a href="privacy.html">개인정보 처리방침</a></p>
+    </div>
+  </section>
+
+  <!-- 시트 연결 -->
+  <section id="v-connect" hidden>
+    <div class="card">
+      <h2>데이터를 저장할 시트를 연결하세요</h2>
+      <p class="muted">한 번만 연결하면 이 브라우저에서는 계속 기억합니다.</p>
+      <div id="connectMsg" class="msg err" hidden></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>📂 쓰던 v9 시트가 있어요</h3>
+        <p class="muted">구글시트 버전(v9)으로 쓰던 스프레드시트를 고르면 학생명단·체크·결과가 그대로 이어집니다.</p>
+        <p><button id="btnPick" class="btn" type="button">내 드라이브에서 시트 고르기</button></p>
+      </div>
+      <div class="card">
+        <h3>🆕 처음이에요</h3>
+        <p class="muted">v9와 같은 구조의 새 스프레드시트를 내 드라이브에 만듭니다.</p>
+        <label class="f" for="newTitle">시트 이름</label>
+        <input type="text" id="newTitle" maxlength="80">
+        <label class="f" for="newLevel">학교급 <small>(행동특성 예시문구 세트가 달라집니다)</small></label>
+        <select id="newLevel"><option>초등학교</option><option>중학교</option><option>고등학교</option></select>
+        <p style="margin-top:16px"><button id="btnCreate" class="btn line" type="button">새 시트 만들기</button></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 홈 -->
+  <section id="v-home" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2 style="margin:0">📄 <span id="homeSheetName"></span></h2>
+        <div class="row">
+          <a id="homeSheetLink" class="btn line sm" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center">시트 열기 ↗</a>
+          <button id="btnReload" class="btn line sm" type="button">새로고침</button>
+        </div>
+      </div>
+      <dl class="kv" id="homeSummary"></dl>
+      <div id="homeWarn" class="msg info" hidden></div>
+      <div class="chips" id="homeChips" aria-label="시트 구성"></div>
+    </div>
+    <div class="card">
+      <h2>진행 단계</h2>
+      <p class="muted">지금은 1단계(로그인·시트 연결·설정)까지 열려 있습니다.</p>
+      <div class="steps">
+        <div class="step done"><b>① 로그인 · 시트 연결 · 설정</b>지금 쓸 수 있어요</div>
+        <div class="step"><b>② 학생명단 · 체크 입력</b>준비 중</div>
+        <div class="step"><b>③ AI 생성</b>준비 중</div>
+        <div class="step"><b>④ 결과 검토 · 수정 · 재생성</b>준비 중</div>
+        <div class="step"><b>⑤ NEIS 입력 스테이션 · 새 학기 · 백업</b>준비 중</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 설정 -->
+  <section id="v-settings" hidden>
+    <div class="card">
+      <h2>🔑 Gemini API 키</h2>
+      <p class="muted">키는 <b>이 브라우저에만</b> 저장되고 시트나 다른 곳으로 보내지 않습니다. 발급: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> (무료)</p>
+      <div id="keyImport" class="msg info" hidden>
+        연결한 시트(⚙️설정 C14)에 API 키가 들어 있습니다.
+        <button id="btnKeyImport" class="btn sm" type="button" style="margin-left:6px">이 브라우저로 가져오기</button>
+      </div>
+      <label class="f" for="fKey">API 키</label>
+      <div class="row">
+        <input type="password" id="fKey" autocomplete="off" spellcheck="false" placeholder="AIza… 로 시작하는 키 붙여넣기">
+        <button id="btnKeyShow" class="btn line sm" type="button" aria-pressed="false">보기</button>
+        <button id="btnKeyTest" class="btn line sm" type="button">연결 테스트</button>
+      </div>
+      <div id="keyResult" class="msg" hidden></div>
+    </div>
+
+    <div class="card">
+      <h2>🤖 AI 모델 · 요금제</h2>
+      <label class="f" for="fModel">AI 모델</label>
+      <select id="fModel"></select>
+      <input type="text" id="fModelCustom" hidden style="margin-top:8px" placeholder="모델 ID 직접 입력 (예: gemini-4.0-flash)" spellcheck="false">
+      <p class="muted" style="margin:6px 0 0">종료된 모델이 설정돼 있으면 권장 모델로 자동 교체됩니다.</p>
+      <label class="f">API 요금제 <small>(호출 간격이 달라집니다)</small></label>
+      <div class="opts c2">
+        <label class="opt"><input type="radio" name="tier" value="무료"><b>무료</b><span>카드 등록 없이 발급한 키 · 간격을 넉넉히</span></label>
+        <label class="opt"><input type="radio" name="tier" value="유료"><b>유료</b><span>결제 계정을 연결한 키 · 빠르게 생성</span></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🏫 학급 · 분량</h2>
+      <div class="grid2">
+        <div>
+          <label class="f" for="fLevel">학교급</label>
+          <select id="fLevel"><option>초등학교</option><option>중학교</option><option>고등학교</option></select>
+        </div>
+        <div>
+          <label class="f" for="fClass">학년 · 반 <small>(선택)</small></label>
+          <input type="text" id="fClass" maxlength="30" placeholder="예) 4학년 2반">
+        </div>
+      </div>
+      <label class="f">생성 분량</label>
+      <div class="opts c3">
+        <label class="opt"><input type="radio" name="len" value="간략"><b>간략</b><span>교과 150~180자 · 창체/행특 300~350자</span></label>
+        <label class="opt"><input type="radio" name="len" value="보통"><b>보통</b><span>교과 220~250자 · 창체/행특 430~480자</span></label>
+        <label class="opt"><input type="radio" name="len" value="상세"><b>상세</b><span>교과 280~320자 · 창체/행특 550~600자</span></label>
+      </div>
+      <p style="margin:22px 0 0" class="row">
+        <button id="btnSave" class="btn" type="button">설정 저장</button>
+        <span class="muted">모델·요금제·학교급·학년반·분량은 시트(⚙️설정)에 저장되어 v9와 공유됩니다.</span>
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>📄 연결된 시트</h2>
+      <p><b id="setSheetName"></b></p>
+      <p class="row"><button id="btnDisconnect" class="btn danger sm" type="button">다른 시트로 바꾸기</button>
+      <span class="muted">연결만 끊습니다. 시트 파일은 드라이브에 그대로 남습니다.</span></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  © 2026 영쌤클래스 · 교육용으로 제작 · 무단 복제·재배포 금지 · <a href="privacy.html">개인정보 처리방침</a>
+</footer>
+
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="busy" hidden><div class="spinner"></div><div id="busyMsg"></div></div>
+
+<script>
+/* ============================================================
+   생활기록부 AI 도우미 (웹앱)
+   © 2026 영쌤클래스 · 교육용으로 제작 · 무단 복제·재배포 금지
+   ============================================================ */
+'use strict';
+
+/* ───────── 1. 앱 설정 ───────── */
+const CONFIG = {
+  VERSION: 'web 0.1 · 1단계',
+  CLIENT_ID: '522445423766-m3cop5vh489598e0hkefumd0r202tncp.apps.googleusercontent.com',
+  PICKER_KEY: 'AIzaSyDuMaSWfi7yfybCUJnUvghOcirBA5JzXoE',
+  APP_ID: '522445423766',                                   // Cloud 프로젝트 번호 (Picker가 고른 파일에 drive.file 권한을 붙이는 데 필요)
+  SCOPE: 'https://www.googleapis.com/auth/drive.file'
+};
+const SHEETS_API = 'https://sheets.googleapis.com/v4/spreadsheets';
+// 리디렉션 URI — index.html을 붙여 열어도 등록된 주소(…/saengibu-ai/)와 같아지도록 정리
+const REDIRECT_URI = (typeof location !== 'undefined')
+  ? location.origin + location.pathname.replace(/index\.html$/i, '') : '';
+
+/* ───────── 2. 영쌤클래스 Gemini 모델 표준 (2026-09-17) — 공통 블록 원문 그대로 ───────── */
+const MODELS = {
+  list: [
+    { id: 'gemini-3.8-flash',       label: 'gemini-3.8-flash  (추천 · 최신 안정판)' },
+    { id: 'gemini-flash-latest',    label: 'gemini-flash-latest  (자동 최신 · 한도 낮을 수 있음)' },
+    { id: 'gemini-3.5-flash-lite',  label: 'gemini-3.5-flash-lite  (가장 저렴·빠름)' },
+    { id: 'gemini-3.1-flash-lite',  label: 'gemini-3.1-flash-lite  (저비용 고성능)' },
+    { id: 'gemini-3.7-flash',       label: 'gemini-3.7-flash' },
+    { id: 'gemini-3.6-flash',       label: 'gemini-3.6-flash' },
+    { id: 'gemini-3.1-pro-preview', label: 'gemini-3.1-pro-preview  (최고 품질 · 느림)' }
+  ],
+  default: 'gemini-3.8-flash',
+  retired: {
+    'gemini-1.5-flash': 'gemini-3.8-flash', 'gemini-1.5-pro': 'gemini-3.8-flash',
+    'gemini-2.0-flash': 'gemini-3.8-flash', 'gemini-2.0-flash-lite': 'gemini-3.5-flash-lite',
+    'gemini-2.5-flash': 'gemini-3.8-flash', 'gemini-2.5-flash-lite': 'gemini-3.5-flash-lite',
+    'gemini-2.5-pro': 'gemini-3.1-pro-preview',
+    'gemini-3-pro-preview': 'gemini-3.1-pro-preview',
+    'gemini-3.1-flash-lite-preview': 'gemini-3.1-flash-lite'
+  }
+};
+
+// 종료 모델 자동 대체
+function resolveModel(id) {
+  id = (id || '').trim().split(/\s+/)[0] || MODELS.default;
+  return MODELS.retired[id] || id;
+}
+
+// 모델별 thinking 설정
+function getThinkingConfig(model) {
+  if (model.indexOf('gemini-3') === 0 || model.indexOf('-latest') !== -1) {
+    const minimalOk = /gemini-3\.(5-flash|6-flash|1-flash-lite)|gemini-3-flash|flash-lite-latest/.test(model);
+    return { thinkingLevel: minimalOk ? 'minimal' : 'low' };
+  }
+  if (model.indexOf('2.5') !== -1 && model.indexOf('pro') === -1) return { thinkingBudget: 0 };
+  return null;
+}
+
+// 파라미터 거부 시 축소 재시도 — 0:전체 → 1:thinking 제외 → 2:temperature/topP도 제외
+function buildGenerationConfig(model, level, temperature, maxTokens) {
+  const g = { maxOutputTokens: maxTokens || 8192 };
+  if (level < 2) { g.temperature = temperature; g.topP = 0.95; }
+  if (level < 1) { const th = getThinkingConfig(model); if (th) g.thinkingConfig = th; }
+  return g;
+}
+function isParamError(status, message) {
+  return status === 400 && /thinking|temperature|top_?p|unknown name|invalid argument|not supported/i.test(message || '');
+}
+
+// 브라우저 호출 — 표준 예시와 동일한 흐름(400 파라미터 축소 재시도, 404 안내) + 오류에 status 부착
+async function callGemini(apiKey, model, prompt, temperature = 0.8, maxTokens) {
+  model = resolveModel(model);
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  for (let level = 0; level <= 2; level++) {
+    const res = await fetch(url, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: buildGenerationConfig(model, level, temperature, maxTokens)
+      })
+    });
+    const body = await res.json().catch(() => ({}));
+    const msg = (body && body.error && body.error.message) || '';
+    if (isParamError(res.status, msg) && level < 2) continue;
+    if (res.status === 404) throw withStatus(new Error(`모델 "${model}"을 찾을 수 없음 — 종료된 모델이거나 오타. 설정에서 다른 모델을 선택하세요.`), 404);
+    if (!res.ok) throw withStatus(new Error(msg || `HTTP ${res.status}`), res.status);
+    const cand = body.candidates && body.candidates[0];
+    const text = cand && cand.content && cand.content.parts && cand.content.parts[0] && cand.content.parts[0].text;
+    if (!text) throw new Error(`빈 응답 (사유: ${(cand && cand.finishReason) || (body.promptFeedback && body.promptFeedback.blockReason) || '알 수 없음'})`);
+    return text.trim();
+  }
+}
+function withStatus(err, status) { err.status = status; return err; }
+
+// v9 _translateError 이식 — 영문 오류를 한글 안내로
+function geminiErrorKo(err) {
+  const msg = (err && err.message) || '알 수 없는 오류', m = msg.toLowerCase(), code = err && err.status;
+  if (code === 404) return msg;
+  if (m.includes('quota') || m.includes('rate limit') || code === 429) return '하루 또는 분당 사용 한도 초과 — 잠시 후 다시 시도하세요.';
+  if (m.includes('high demand') || code === 503) return 'AI 서버가 일시적으로 혼잡함 — 잠시 후 다시 시도하세요.';
+  if (m.includes('api key') || m.includes('api_key') || m.includes('unauthenticated') || code === 401 || code === 403) return 'API 키 오류 — 키를 다시 확인해 주세요.';
+  if (m.includes('safety') || m.includes('blocked')) return '안전 필터에 의해 차단됨.';
+  if (m.includes('failed to fetch') || m.includes('networkerror')) return '네트워크 오류 — 인터넷 연결을 확인해 주세요.';
+  return '오류 — ' + msg.substring(0, 200);
+}
+
+/* ───────── 3. v9 원본에서 그대로 옮긴 데이터 (시트 이름·분량 옵션·AI 지침·기본 활동·예시문구) ───────── */
+const V9_DATA = {
+ "sheetNames": {
+  "STUDENTS": "👥학생명단",
+  "SETTINGS": "⚙️설정",
+  "SUBJECT_CONFIG": "📚교과평가설정",
+  "SUBJECT_CHECK": "📊교과평가체크",
+  "SUBJECT_RESULT": "📈교과평가결과",
+  "ACTIVITY_CONFIG": "🎯창체활동설정",
+  "ACTIVITY_CHECK": "📋창체활동체크",
+  "ACTIVITY_RESULT": "🌟창체활동결과",
+  "BEHAVIOR": "💬행동특성",
+  "BEHAVIOR_CHECK": "💬행동특성체크",
+  "BEHAVIOR_RESULT": "✨행동특성결과",
+  "OUTPUT": "📋출력"
+ },
+ "lengthOptions": [
+  "보통  (교과 220~250자 · 창체/행특 430~480자)",
+  "간략  (교과 150~180자 · 창체/행특 300~350자)  ← NEIS 입력이 길게 느껴지면",
+  "상세  (교과 280~320자 · 창체/행특 550~600자)"
+ ],
+ "basePrompt": "당신은 대한민국의 유능한 교사입니다. 수행평가자료 및 교사의견을 참고하여 생활기록부 작성 지침에 맞게 한글로 관찰자 시점에서 작성합니다. 실제 사람이 쓴 것처럼 짧은 문장과 긴 문장을 섞어 자연스러운 흐름으로 씁니다.\n\n[필수 규칙]\n- 관찰자 시점, 명사형 종결(~함, ~음, ~됨, ~임, ~보임), 관찰 시점 현재형 사용\n- 과거의 활동이라도 \"~하였음/~했음/~보였음\"이 아니라 \"~함/~보임\"으로 서술\n- \"~한다/~있다/~합니다/~해요\"처럼 다·요로 끝나는 문장 절대 금지\n- 한 문단으로 작성, 영역/문단 나누지 말 것\n- 학생, 이름, 번호 등 개인정보·주어 일체 생략\n- 잘못한 점 언급 금지, 긍정·발전 가능성만 서술\n- 같은 문장·표현 반복 금지\n- LaTeX·수식 기호는 평문으로(예: x²+y²=r²)\n\n[출력 형식 — 반드시 준수]\n- 첫 글자부터 바로 본문 시작 (인사말·설명·따옴표·\"다음은\" 같은 군더더기 절대 금지)\n- 마크다운 기호(*, #, -, > 등) 절대 사용 금지\n- 줄바꿈 없이 하나의 연속된 문단으로만 출력\n\n[한글 맞춤법 — 엄격 준수]\n- 한글 맞춤법과 표준 띄어쓰기를 엄격히 준수 (공식 문서 기준)\n- 보조용언·의존명사·복합명사의 띄어쓰기에 특히 주의 (예: 해 나감, 할 수 있음, 문제 해결 능력)\n- 조사·어미의 정확한 사용, 오탈자 절대 금지\n\n[사실 기반 — 환각 방지]\n- 제공된 활동 내용에 근거해서만 작성\n- 입력에 없는 구체적 수치·대회명·결과를 임의로 지어내지 말 것\n- 추상적 미사여구로 부풀리지 말고 실제 활동 과정에 충실하게\n\n[NEIS 입력 규정]\n- 특수기호(★♥◆※→ 등)와 이모지 사용 금지\n- 등수·석차·점수 직접 표기 금지\n\n[분량]\n- 요청된 글자 수를 반드시 지킴\n- 부족하면 활동 과정·태도·성장을 더 구체적으로 서술하여 채움\n\n[관찰자 시점 — 정확한 예시]\n✗ 경로 계획을 설계함. → ✓ 경로 계획에 대해 탐구함.\n✗ 곡률이 일정하여 안전함. → ✓ 곡률이 일정하여 안전하다고 설명함.\n✗ 한글을 창제함. → ✓ 창제 과정을 인상 깊게 발표함.\n\n[다양한 서술어 — 반복 회피]\n탁월함, 뛰어남, 확장함, 성장함, 분석함, 추론함, 토론함, 발휘함, 인상적임, 돋보임, 우수함, 제시함, 기여함, 이끌어냄, 설명함, 공유함, 발표함, 깨달음, 조사함, 탐구함, 서술함\n\n[종결어미 다양화]\n~함, ~음 외에 ~보임, ~드러남, ~돋보임, ~기대됨 등을 섞어 리듬감 형성\n\n[어휘 다양화]\n적극적 → 능동적 / 주도적 / 진취적\n협력 → 조율 / 협업 / 공동 수행\n우수 → 탁월 / 두각 / 뛰어남\n발표력 → 표현력 / 의사 전달 능력\n문제 해결 → 과제 해결 / 문제 분석 및 대응\n\n[자연스러운 연결어]\n순서: 먼저, 이후, 동시에, 결국\n원인/결과: 따라서, 그 결과, 이로 인해\n강조: 특히, 무엇보다, 더욱이\n추가: 또한, 게다가, 나아가, 아울러\n\n[금기어]\n'정성평가', '생활기록부', '수행평가' 단어 사용 금지\n\"학생은\", \"이 학생은\" 같은 주어 사용 금지\n'성취 수준', '성취수준', '도달도', '수준 상/중/하', '상 수준', '중 정도', '하에 해당' 등 평가 등급을 직접 언급하는 표현 절대 금지 — 수준은 서술의 깊이로만 표현\n\n[문장 작성 팁]\n- 문장 길이를 일부러 다양하게 하기 (짧음/중간/김 섞기)\n- 결과보다 과정 중심, 활동 내용과 그 과정의 특징을 함께 서술\n\n[학교급별 어휘 수준 — 반드시 준수]\n요청에 명시된 학교급에 맞춰 어휘와 표현 수준을 조절할 것:\n- 초등학교 저학년(1~2학년, 통합교과 포함): 쉽고 구체적이며 따뜻한 표현 사용. 추상적 개념어·학술 용어 지양. 놀이·관찰·표현 활동 중심의 생생한 서술\n- 초등학교 중·고학년: 학습 활동 중심의 명확하고 이해하기 쉬운 표현\n- 중학교: 교과 역량과 성장 과정이 드러나는 표현, 자기주도성 강조\n- 고등학교: 교과 전문성·탐구 역량·진로 연계가 드러나는 심화된 표현",
+ "activities": [
+  [
+   "자율활동",
+   "학급자치활동",
+   "학급 회의를 통해 학급 규칙을 정하고 학급 행사를 기획·운영하는 활동에 참여함. 학급 자치 회의에서 역할을 분담하고 협의하며 민주적 의사결정을 경험함.",
+   ""
+  ],
+  [
+   "자율활동",
+   "학교 행사 참여",
+   "입학식·졸업식·운동회·학예회 등 학교 주요 행사에 적극 참여하여 학교 공동체의 일원으로서 소속감을 기름.",
+   ""
+  ],
+  [
+   "자율활동",
+   "적응활동",
+   "새 학년·새 학기 적응 활동에 참여하여 학교 생활에 빠르게 적응하고 친구들과 친밀한 관계를 형성함.",
+   ""
+  ],
+  [
+   "자율활동",
+   "안전교육(생활안전)",
+   "일상 생활에서 발생할 수 있는 사고를 예방하기 위한 생활안전 교육에 참여하여 안전한 생활 습관을 기름.",
+   ""
+  ],
+  [
+   "자율활동",
+   "안전교육(교통안전)",
+   "보행자·자전거·대중교통 이용 시 지켜야 할 교통안전 수칙을 익히고 실천하는 활동에 참여함.",
+   ""
+  ],
+  [
+   "자율활동",
+   "안전교육(폭력예방)",
+   "학교폭력의 유형과 예방 방법을 학습하고 또래 관계에서 갈등을 평화롭게 해결하는 방법을 익힘.",
+   ""
+  ],
+  [
+   "자율활동",
+   "안전교육(약물·사이버 중독 예방)",
+   "약물 오남용 및 인터넷·스마트폰 중독의 위험성을 인식하고 건강한 생활 습관을 형성하는 교육에 참여함.",
+   ""
+  ],
+  [
+   "자율활동",
+   "안전교육(재난안전)",
+   "지진·화재·태풍 등 재난 발생 시 대처 방법을 학습하고 대피 훈련에 참여하여 위기 상황 대응 능력을 기름.",
+   ""
+  ],
+  [
+   "자율활동",
+   "안전교육(응급처치)",
+   "심폐소생술·응급처치 방법을 익히고 실습을 통해 위급 상황에 대처할 수 있는 기본 능력을 갖춤.",
+   ""
+  ],
+  [
+   "자율활동",
+   "학교폭력예방교육",
+   "학교폭력의 심각성을 이해하고 또래 갈등을 예방·해결하는 방법을 익히는 교육에 참여함.",
+   ""
+  ],
+  [
+   "자율활동",
+   "정보통신윤리교육",
+   "인터넷·SNS 이용 시 지켜야 할 예절과 사이버 윤리 의식을 기르는 교육에 참여함.",
+   ""
+  ],
+  [
+   "자율활동",
+   "인성·다문화 교육",
+   "서로 다른 문화와 가치를 존중하는 태도를 기르고 더불어 사는 공동체 의식을 함양하는 활동에 참여함.",
+   ""
+  ],
+  [
+   "진로활동",
+   "진로탐색활동",
+   "직업 체험 활동 및 진로 검사를 통해 자신의 흥미와 적성을 파악하고 미래 진로를 탐색하는 활동에 참여함.",
+   ""
+  ],
+  [
+   "진로활동",
+   "진로상담",
+   "담임교사 및 진로 상담 교사와의 면담을 통해 자신의 진로 방향을 구체화하고 미래 계획을 수립함.",
+   ""
+  ],
+  [
+   "진로활동",
+   "직업체험활동",
+   "다양한 직업 세계를 직간접적으로 체험하며 직업의 가치와 의미를 이해하는 활동에 참여함.",
+   ""
+  ],
+  [
+   "진로활동",
+   "진로독서활동",
+   "진로 관련 도서를 읽고 다양한 직업과 삶의 모습을 이해하며 자신의 미래를 설계하는 활동에 참여함.",
+   ""
+  ],
+  [
+   "진로활동",
+   "진로포트폴리오 작성",
+   "자신의 흥미·적성·활동 내용을 체계적으로 기록하고 정리하여 진로 포트폴리오를 구성함.",
+   ""
+  ],
+  [
+   "동아리활동",
+   "예술 동아리",
+   "음악·미술·공연 등 예술 분야 활동을 통해 창의적 표현 능력과 심미안을 기르는 동아리 활동에 참여함.",
+   ""
+  ],
+  [
+   "동아리활동",
+   "체육 동아리",
+   "다양한 스포츠 활동을 통해 신체 능력을 기르고 협동심과 스포츠맨십을 함양하는 동아리 활동에 참여함.",
+   ""
+  ],
+  [
+   "동아리활동",
+   "과학·탐구 동아리",
+   "과학적 원리를 탐구하고 실험·관찰을 통해 자연 현상을 이해하는 동아리 활동에 참여함.",
+   ""
+  ],
+  [
+   "동아리활동",
+   "문예·독서 동아리",
+   "독서와 글쓰기 활동을 통해 사고력과 표현력을 기르는 동아리 활동에 참여함.",
+   ""
+  ],
+  [
+   "동아리활동",
+   "미디어소통부",
+   "영화 감상 및 영상 제작 활동에 참여함. 촬영 기법과 편집 기술을 익히며 창의적 미디어 콘텐츠를 제작함.",
+   ""
+  ],
+  [
+   "동아리활동",
+   "외국어 동아리",
+   "외국어 학습과 문화 체험을 통해 의사소통 능력을 기르고 글로벌 감각을 키우는 동아리 활동에 참여함.",
+   ""
+  ],
+  [
+   "동아리활동",
+   "봉사 동아리",
+   "교내외 봉사 활동을 기획하고 실천하며 나눔과 배려의 가치를 실천하는 동아리 활동에 참여함.",
+   ""
+  ],
+  [
+   "동아리활동",
+   "자율 동아리",
+   "관심 분야가 같은 친구들과 자발적으로 동아리를 구성하여 자기주도적으로 활동을 기획하고 운영함.",
+   ""
+  ],
+  [
+   "봉사활동",
+   "교내봉사활동",
+   "학교 환경 정화 활동 및 급식 도우미 활동에 참여하여 공동체 의식을 함양하고 봉사의 가치를 실천함.",
+   ""
+  ],
+  [
+   "봉사활동",
+   "학교환경정화",
+   "교실·복도·운동장 등 학교 환경을 깨끗이 정돈하는 활동에 참여하여 쾌적한 학교 생활에 기여함.",
+   ""
+  ],
+  [
+   "봉사활동",
+   "또래도우미 활동",
+   "학습이나 학교 적응에 어려움을 겪는 친구들을 도와주는 또래도우미 활동에 참여하여 배려와 나눔을 실천함.",
+   ""
+  ],
+  [
+   "봉사활동",
+   "캠페인 참여",
+   "환경 보호·인권·평화 등 다양한 주제의 캠페인에 참여하여 사회적 가치를 알리고 실천함.",
+   ""
+  ],
+  [
+   "봉사활동",
+   "지역사회 봉사활동",
+   "지역사회의 다양한 봉사 기관과 연계한 봉사 활동에 참여하여 더불어 사는 공동체 의식을 함양함.",
+   ""
+  ]
+ ],
+ "behaviorElementary": [
+  [
+   "수업태도",
+   "수업의 배움의 중심이 자기 자신임을 잘 알고, 매 시간 바른 자세로 집중하며 적극적으로 참여함.",
+   ""
+  ],
+  [
+   "수업태도",
+   "교사의 설명에 귀 기울이고 주어진 과제를 성실히 해결하며 끝까지 배우려는 태도가 돋보임.",
+   ""
+  ],
+  [
+   "수업태도",
+   "발표와 질문에 자신감 있게 참여하고, 친구의 의견도 존중하며 경청하는 자세가 바름.",
+   ""
+  ],
+  [
+   "수업태도",
+   "수업 규칙을 잘 지키며 자기 학습에 대한 책임감을 가지고 진지하게 임함.",
+   ""
+  ],
+  [
+   "수업태도",
+   "수업 중 집중이 흐트러지거나 다른 행동을 하는 경우가 있어, 배움의 중심이 자신임을 인지하고 좀 더 적극적으로 참여한다면 발전할 것으로 기대됨.",
+   ""
+  ],
+  [
+   "수업태도",
+   "주어진 과제를 제대로 해결해 오지 않는 경우가 있어, 학습 습관과 태도를 개선하며 부족한 부분을 꾸준히 보완할 필요가 있음.",
+   ""
+  ],
+  [
+   "수업태도",
+   "수업 중 주변 자극에 관심이 분산되는 경우가 자주 있어, 자기 학습에 책임감을 갖고 참여하는 태도를 기를 필요가 있음.",
+   ""
+  ],
+  [
+   "학업흥미및성취",
+   "배우는 내용에 흥미를 갖고 여러 교과에서 고른 학업 성취를 보이며 꾸준히 발전함.",
+   ""
+  ],
+  [
+   "학업흥미및성취",
+   "관심 분야 학습에 깊이 몰입하여 또래보다 높은 수준의 이해와 성취를 이루어 냄.",
+   ""
+  ],
+  [
+   "학업흥미및성취",
+   "새로운 내용을 배울 때 스스로 개념을 정리하고 문제에 적용하며 이해를 넓혀 감.",
+   ""
+  ],
+  [
+   "학업흥미및성취",
+   "수업 시간에 공부하는 내용을 이해하는 데 종종 어려움이 있고, 여러 교과 학업성취도가 대체로 낮은 편임.",
+   ""
+  ],
+  [
+   "학업흥미및성취",
+   "특정 교과를 매우 어려워하므로, 방학을 이용하여 부족한 부분에 대한 보충 학습을 꾸준히 한다면 발전할 수 있을 것으로 생각함.",
+   ""
+  ],
+  [
+   "학업흥미및성취",
+   "전반적으로 학습에 대한 흥미가 낮은 편이므로, 자신이 좋아하는 분야부터 성취 경험을 쌓아 간다면 학습 의욕이 높아질 것으로 기대됨.",
+   ""
+  ],
+  [
+   "교과활동",
+   "배운 내용을 스스로 복습하고 정리하며 자신만의 방식으로 학습을 체계화함.",
+   ""
+  ],
+  [
+   "교과활동",
+   "모둠 학습과 발표 활동에 적극 참여하여 배움의 결과를 친구들과 나눔.",
+   ""
+  ],
+  [
+   "교과활동",
+   "여러 교과의 지식을 연결하여 폭넓게 사고하고 창의적인 아이디어를 제시함.",
+   ""
+  ],
+  [
+   "교과활동",
+   "그날 배운 내용을 되짚어 보는 습관이 아직 부족하여, 스스로 복습하고 정리하는 습관을 들일 필요가 있음.",
+   ""
+  ],
+  [
+   "교과활동",
+   "학습한 내용을 실제 문제에 적용하는 데 어려움이 있어, 반복 연습을 통해 이해를 다질 필요가 있음.",
+   ""
+  ],
+  [
+   "독서와논리",
+   "다양한 책을 즐겨 읽으며, 읽은 내용을 바탕으로 자신의 생각을 논리적으로 표현함.",
+   ""
+  ],
+  [
+   "독서와논리",
+   "글을 읽고 핵심을 파악하는 능력이 뛰어나며 근거를 들어 조리 있게 말함.",
+   ""
+  ],
+  [
+   "독서와논리",
+   "책 속 정보를 비판적으로 검토하고 자신의 관점을 세우는 힘이 있음.",
+   ""
+  ],
+  [
+   "독서와논리",
+   "수업 내용을 이해하는 데 종종 어려움을 느끼므로, 쉬운 책을 꾸준히 읽는 습관을 갖고 이해력을 높인다면 학습에서 더 많은 발전이 있을 것임.",
+   ""
+  ],
+  [
+   "독서와논리",
+   "자신의 생각을 논리적으로 정리해 표현하는 데 어려움이 있어, 근거를 들어 말하고 쓰는 연습이 필요함.",
+   ""
+  ],
+  [
+   "문제해결능력",
+   "예상치 못한 어려움에도 여러 방법을 탐색하며 끝까지 해결하려는 끈기가 있음.",
+   ""
+  ],
+  [
+   "문제해결능력",
+   "복잡한 문제를 단계적으로 쪼개어 차근차근 해결해 나가는 습관이 형성되어 있음.",
+   ""
+  ],
+  [
+   "문제해결능력",
+   "익숙한 방식에 머물지 않고 새로운 접근법을 시도하며 해결 방안을 찾음.",
+   ""
+  ],
+  [
+   "문제해결능력",
+   "어려운 과제를 만나면 스스로 해결하기보다 쉽게 포기하는 경향이 있어, 끝까지 시도해 보는 끈기를 기를 필요가 있음.",
+   ""
+  ],
+  [
+   "문제해결능력",
+   "문제를 해결할 때 한 가지 방법에만 의존하는 편이므로, 다양한 방법을 생각해 보는 연습이 필요함.",
+   ""
+  ],
+  [
+   "자기주도학습",
+   "학습 목표를 스스로 설정하고 꾸준히 점검하여 성과를 높임.",
+   ""
+  ],
+  [
+   "자기주도학습",
+   "교과 외에도 스스로 자료를 찾아 공부하고 부족한 부분을 꾸준히 보충해 나감.",
+   ""
+  ],
+  [
+   "자기주도학습",
+   "문제 발생 시 지시를 기다리지 않고 먼저 해결 방안을 시도하는 주도성이 있음.",
+   ""
+  ],
+  [
+   "자기주도학습",
+   "학습 목표를 스스로 세우기보다 교사의 안내를 필요로 하나, 점차 스스로 계획하려는 모습이 늘고 있음.",
+   ""
+  ],
+  [
+   "자기주도학습",
+   "스스로 자료를 찾아 학습하는 경험이 아직 적으므로, 다양한 자료를 활용하도록 격려한다면 탐구 능력이 성장할 것으로 기대됨.",
+   ""
+  ],
+  [
+   "목표관리",
+   "중·장기 계획을 세워 지속적으로 실행하고 성과를 점검하는 목표 지향적 태도가 있음.",
+   ""
+  ],
+  [
+   "목표관리",
+   "크고 작은 목표라도 설정하면 끝내 성취해 내는 근성이 있음.",
+   ""
+  ],
+  [
+   "목표관리",
+   "매일 또는 주별 체크리스트를 기반으로 성취 현황을 빠짐없이 점검함.",
+   ""
+  ],
+  [
+   "목표관리",
+   "목표를 세우기보다 즉흥적으로 학습하는 경향이 있어, 작은 목표부터 설정하고 점검하는 습관을 기를 필요가 있음.",
+   ""
+  ],
+  [
+   "목표관리",
+   "계획을 끝까지 실천하는 데 어려움이 있어, 목표를 작게 나누어 실행하는 연습이 필요함.",
+   ""
+  ],
+  [
+   "집중력",
+   "수업 시간에 주변 환경에 흔들리지 않고 몰입하는 태도가 돋보임.",
+   ""
+  ],
+  [
+   "집중력",
+   "한 가지 과제에 오랜 시간 집중하며 완성도 높은 결과를 만들어 냄.",
+   ""
+  ],
+  [
+   "집중력",
+   "수업 중 집중이 흐트러지거나 주변에 관심이 분산되는 경우가 있어, 몰입하는 시간을 늘려 갈 필요가 있음.",
+   ""
+  ],
+  [
+   "집중력",
+   "흥미 있는 활동에는 집중하나 그렇지 않은 경우 산만해지는 편이므로, 꾸준히 집중하는 습관을 기를 필요가 있음.",
+   ""
+  ],
+  [
+   "계획성",
+   "주간·월간 학습 목표를 미리 세워 시행착오를 줄이고 효율을 높임.",
+   ""
+  ],
+  [
+   "계획성",
+   "과제 시작 전 구체적 계획을 세워 진행 속도와 완성도를 높임.",
+   ""
+  ],
+  [
+   "계획성",
+   "미리 계획을 세우기보다 즉흥적으로 과제를 진행하는 경향이 있어, 계획을 세우는 연습을 통해 시행착오를 줄여 갈 필요가 있음.",
+   ""
+  ],
+  [
+   "계획성",
+   "장기 과제를 미루다 마감에 몰아서 하는 경우가 있어, 중간 점검 시간을 마련하는 습관이 필요함.",
+   ""
+  ],
+  [
+   "자기성찰",
+   "학습 활동 뒤 진행 과정을 돌아보고 다음 단계에 반영하는 성찰 습관이 있음.",
+   ""
+  ],
+  [
+   "자기성찰",
+   "매일 하루를 돌아보며 개선할 점을 스스로 찾아 실천함.",
+   ""
+  ],
+  [
+   "자기성찰",
+   "학습 후 스스로 되돌아보는 데 익숙하지 않으므로, 점검하는 습관을 기른다면 학습 효과가 더욱 높아질 것으로 기대됨.",
+   ""
+  ],
+  [
+   "자기성찰",
+   "자신의 부족한 점을 인식하고 개선하려는 노력이 더해진다면 한층 성장할 것으로 기대됨.",
+   ""
+  ],
+  [
+   "자기관리",
+   "해야 할 일을 미루지 않고 계획을 세워 실천하며 자신의 생활을 성실히 관리함.",
+   ""
+  ],
+  [
+   "자기관리",
+   "등교·과제·휴식 시간을 균형 있게 운영하며 꾸준히 성과를 냄.",
+   ""
+  ],
+  [
+   "자기관리",
+   "자신의 감정과 행동을 잘 조절하며 안정적으로 학교생활을 이어 감.",
+   ""
+  ],
+  [
+   "자기관리",
+   "해야 할 일을 미루고 하지 않으려는 경향이 아직 남아 있으므로, 이를 스스로 인지하고 이겨내려는 노력이 필요함.",
+   ""
+  ],
+  [
+   "자기관리",
+   "정해진 기한 안에 과제를 마무리하는 데 어려움이 있어, 계획을 세우고 실천하는 습관을 기른다면 개선될 것으로 보임.",
+   ""
+  ],
+  [
+   "정리정돈",
+   "사물함과 책상, 학습 자료를 늘 깔끔하게 정돈하며 자기 물건을 스스로 잘 관리함.",
+   ""
+  ],
+  [
+   "정리정돈",
+   "정리하는 습관이 몸에 배어 있어 학습 환경을 스스로 정돈하고 준비함.",
+   ""
+  ],
+  [
+   "정리정돈",
+   "사물함, 책상, 학습 자료를 정리하는 데 도움이 필요한 경우가 많아, 자기 물건을 스스로 정돈하는 습관을 기를 필요가 있음.",
+   ""
+  ],
+  [
+   "정리정돈",
+   "학습 자료와 물건을 정리하는 데 도움이 필요하여, 정돈하는 습관을 꾸준히 형성해 나갈 필요가 있음.",
+   ""
+  ],
+  [
+   "생활습관",
+   "등교 시간을 잘 지키고 준비물을 스스로 챙기며 규칙적인 생활 습관이 잘 잡혀 있음.",
+   ""
+  ],
+  [
+   "생활습관",
+   "지각 없이 정시 등교하며 성실하고 꾸준한 학교생활을 유지함.",
+   ""
+  ],
+  [
+   "생활습관",
+   "준비물을 챙겨 오지 않거나 등교 시간을 지키지 못하는 경우가 종종 있어, 규칙적인 생활 습관을 형성해 나갈 필요가 있음.",
+   ""
+  ],
+  [
+   "생활습관",
+   "학용품과 준비물을 스스로 챙기는 습관이 아직 부족하여, 자기 일을 스스로 준비하는 책임감을 기를 필요가 있음.",
+   ""
+  ],
+  [
+   "시간관리",
+   "기한 내 할 일을 미리 계획하고 실행해 과제 지연 없이 마무리함.",
+   ""
+  ],
+  [
+   "시간관리",
+   "정해진 시간을 잘 지키고 자투리 시간을 활용해 학습 효율을 높임.",
+   ""
+  ],
+  [
+   "시간관리",
+   "정해진 기한을 지키는 데 도움이 필요하여, 점검표를 활용하며 시간 관리 능력을 길러 갈 필요가 있음.",
+   ""
+  ],
+  [
+   "시간관리",
+   "시간 계획 없이 활동하는 편이므로, 스스로 시간을 배분하고 지키는 연습이 필요함.",
+   ""
+  ],
+  [
+   "건강관리",
+   "규칙적인 생활과 적절한 휴식으로 몸과 마음의 건강을 잘 관리함.",
+   ""
+  ],
+  [
+   "건강관리",
+   "체육 활동에 즐겁게 참여하며 건강한 체력을 기르기 위해 꾸준히 노력함.",
+   ""
+  ],
+  [
+   "건강관리",
+   "충분한 휴식과 규칙적인 생활 습관에 대한 지도가 필요하여, 스스로 건강을 챙기는 습관을 기를 필요가 있음.",
+   ""
+  ],
+  [
+   "규범과갈등해소",
+   "학급의 약속과 규칙을 잘 지키고, 친구와 갈등이 생겨도 대화로 원만하게 풀어 감.",
+   ""
+  ],
+  [
+   "규범과갈등해소",
+   "공동체의 규범을 존중하며 질서 있는 학교생활에 앞장섬.",
+   ""
+  ],
+  [
+   "규범과갈등해소",
+   "갈등 상황에서 상대의 입장을 헤아리며 평화롭게 문제를 해결함.",
+   ""
+  ],
+  [
+   "규범과갈등해소",
+   "학급 규칙과 약속을 지키는 데 반복적인 안내가 필요한 편이므로, 공동체의 약속을 스스로 지키려는 태도를 기를 필요가 있음.",
+   ""
+  ],
+  [
+   "규범과갈등해소",
+   "친구와 의견이 부딪힐 때 감정이 앞서 갈등을 겪는 경우가 있어, 대화로 문제를 풀어 가는 방법을 익힐 필요가 있음.",
+   ""
+  ],
+  [
+   "친화력",
+   "밝고 친근한 성격으로 여러 친구와 두루 잘 어울리며 원만한 교우관계를 맺음.",
+   ""
+  ],
+  [
+   "친화력",
+   "친구를 배려하고 먼저 다가가 도와주어 학급에서 신뢰를 받음.",
+   ""
+  ],
+  [
+   "친화력",
+   "새로운 친구와도 스스럼없이 어울리며 함께하는 분위기를 만들어 감.",
+   ""
+  ],
+  [
+   "친화력",
+   "특정 친구들과만 어울리며 관계의 폭이 좁은 편이므로, 여러 친구와 두루 어울리는 경험을 넓혀 갈 필요가 있음.",
+   ""
+  ],
+  [
+   "친화력",
+   "친구 관계에서 자기 뜻대로 되지 않을 때 감정을 조절하는 데 어려움을 보여, 상대의 입장을 이해하려는 태도를 기를 필요가 있음.",
+   ""
+  ],
+  [
+   "예의",
+   "웃어른과 교사를 공손하게 대하고 상황에 맞는 바른 언어를 사용하는 예의가 몸에 배어 있음.",
+   ""
+  ],
+  [
+   "예의",
+   "인사성이 밝고 예의 바르며 상대를 존중하는 태도가 돋보임.",
+   ""
+  ],
+  [
+   "예의",
+   "웃어른을 대하는 예절과 상황에 맞는 언어 사용에 대한 지도가 아직 필요하여, 바른 언어 습관과 예의를 익혀 갈 필요가 있음.",
+   ""
+  ],
+  [
+   "예의",
+   "때때로 상황에 맞지 않는 언어를 사용하는 경우가 있어, 바르고 고운 말 사용 습관을 기를 필요가 있음.",
+   ""
+  ],
+  [
+   "적극성",
+   "수업과 활동에 늘 적극적으로 참여하며 자신의 의견을 자신 있게 표현함.",
+   ""
+  ],
+  [
+   "적극성",
+   "학급 일에 솔선수범하며 맡은 역할에 열정적으로 임함.",
+   ""
+  ],
+  [
+   "적극성",
+   "이해가 가지 않는 부분은 바로 물어보거나 교사에게 찾아가 해결하려는 적극성이 있음.",
+   ""
+  ],
+  [
+   "적극성",
+   "활동에 소극적으로 참여하는 편이나, 자신 있는 주제에서는 적극성을 보이므로 참여 경험을 넓혀 갈 필요가 있음.",
+   ""
+  ],
+  [
+   "적극성",
+   "자신의 의견을 표현하는 데 소극적인 편이므로, 생각을 자신 있게 나누는 경험을 쌓아 갈 필요가 있음.",
+   ""
+  ],
+  [
+   "긍정성",
+   "어려운 상황에서도 밝고 긍정적인 태도를 잃지 않으며 새로운 도전을 즐김.",
+   ""
+  ],
+  [
+   "긍정성",
+   "실수를 두려워하지 않고 배움의 기회로 받아들이는 긍정적인 마음이 있음.",
+   ""
+  ],
+  [
+   "긍정성",
+   "실수나 실패를 지나치게 두려워해 위축되는 모습을 보여, 작은 성공 경험을 통해 자신감을 회복해 갈 필요가 있음.",
+   ""
+  ],
+  [
+   "긍정성",
+   "새로운 활동을 어려워하며 소극적인 태도를 보이는 편이므로, 도전하는 용기를 북돋아 줄 필요가 있음.",
+   ""
+  ],
+  [
+   "공동체활동",
+   "모둠 활동에서 맡은 역할을 끝까지 책임지며 학급 공동체에 긍정적으로 기여함.",
+   ""
+  ],
+  [
+   "공동체활동",
+   "학급 행사와 협동 활동에 성실히 참여하며 함께하는 즐거움을 나눔.",
+   ""
+  ],
+  [
+   "공동체활동",
+   "공동의 목표를 위해 친구들과 협력하고 서로의 의견을 조율하는 능력이 있음.",
+   ""
+  ],
+  [
+   "공동체활동",
+   "모둠 활동에서 자기 역할을 끝까지 책임지는 데 어려움이 있어, 맡은 일을 성실히 수행하는 태도를 기를 필요가 있음.",
+   ""
+  ],
+  [
+   "공동체활동",
+   "모둠 활동에서 자기 의견을 앞세우는 경우가 있어, 협력하며 배려하는 경험을 쌓아 갈 필요가 있음.",
+   ""
+  ],
+  [
+   "나눔과봉사",
+   "어려움을 겪는 친구를 먼저 돕고 배려하며 나눔을 실천하는 따뜻한 마음이 돋보임.",
+   ""
+  ],
+  [
+   "나눔과봉사",
+   "학급을 위한 봉사 활동에 기꺼이 참여하며 공동체를 위해 헌신함.",
+   ""
+  ],
+  [
+   "나눔과봉사",
+   "다른 사람을 돕거나 배려하는 행동이 아직 자연스럽지 않아, 함께하는 활동 속에서 배려심을 키워 갈 필요가 있음.",
+   ""
+  ]
+ ],
+ "behaviorSecondary": [
+  [
+   "자기주도성",
+   "학습 목표를 스스로 설정하고 꾸준히 점검하여 성과를 높임.",
+   ""
+  ],
+  [
+   "주도적학습",
+   "교과 외에도 스스로 자료를 찾아 공부하고 꾸준히 보충해 나감.",
+   ""
+  ],
+  [
+   "자기주도해결",
+   "문제 발생 시 윗사람 지시를 기다리지 않고 먼저 해결 방안을 시도함.",
+   ""
+  ],
+  [
+   "목표지향",
+   "중·장기 계획을 세워 지속적으로 실행하고 성과를 점검함.",
+   ""
+  ],
+  [
+   "목표달성",
+   "크고 작은 목표라도 설정하면 집요하게 매달려 끝내 성취해내는 근성이 있음.",
+   ""
+  ],
+  [
+   "목표관리",
+   "매일 또는 주별로 설정한 체크리스트를 기반으로 성취 현황을 빠짐없이 점검함.",
+   ""
+  ],
+  [
+   "목적의식",
+   "과제할 때 단순히 마감이 아닌 학습 효과에 초점을 맞춰 완성도를 높임.",
+   ""
+  ],
+  [
+   "계획성",
+   "주간·월간 학습 목표를 미리 세워 시행착오를 줄이고 효율을 높임.",
+   ""
+  ],
+  [
+   "계획점검",
+   "장기 과제는 중간 점검 시간을 마련해 예상 문제를 조기에 발견하고 보완함.",
+   ""
+  ],
+  [
+   "사전준비",
+   "프로젝트 시작 전 구체적 로드맵을 작성해 시행착오를 줄이고 진행 속도를 높임.",
+   ""
+  ],
+  [
+   "자기점검",
+   "학습 활동 뒤 진행 과정을 기록하고 다음 단계에 반영함.",
+   ""
+  ],
+  [
+   "자기성찰",
+   "매일 자투리 시간을 활용해 하루를 돌아보고 개선 방안을 구상함.",
+   ""
+  ],
+  [
+   "자기관리",
+   "등교·과제·휴식 시간을 균형 잡힌 방식으로 운영해 꾸준히 성과를 냄.",
+   ""
+  ],
+  [
+   "시간관리",
+   "기한 내 할 일을 미리 계획하고 실행해 과제 지연 없이 마무리함.",
+   ""
+  ],
+  [
+   "건강관리",
+   "장시간 학업 중에도 휴식 시간을 잘 활용해 학업 효율을 높임.",
+   ""
+  ],
+  [
+   "시스템구축",
+   "공부나 업무 방식을 자신만의 시스템으로 정립해 효율적으로 운영함.",
+   ""
+  ],
+  [
+   "집중력",
+   "수업 시간에 주변 환경에 흔들리지 않고 몰입하는 태도가 돋보임.",
+   ""
+  ],
+  [
+   "집중준비",
+   "발표 과제 시 예행연습을 철저히 해 불필요한 실수를 줄임.",
+   ""
+  ],
+  [
+   "적극질문",
+   "이해가 가지 않는 부분은 수업 중 바로 물어보거나 따로 교사에게 찾아감.",
+   ""
+  ],
+  [
+   "열정",
+   "관심 분야 학습에 깊이 몰입하여 높은 수준의 성취를 이루려 노력함.",
+   ""
+  ],
+  [
+   "면학분위기",
+   "수업에 적극 참여해 주위 학생들에게 긍정적 학습 습관을 전파함.",
+   ""
+  ],
+  [
+   "성실등교",
+   "지각 없이 정시 등교하며 결석도 최소화해 꾸준한 학교생활을 유지함.",
+   ""
+  ],
+  [
+   "체계학습",
+   "새로운 학습 내용을 접하면 개념·사례·문제풀이 순으로 정리해 체계화함.",
+   ""
+  ],
+  [
+   "겸손학습",
+   "작은 성과에도 만족하지 않고 스스로 부족한 점을 찾으며 발전을 추구함.",
+   ""
+  ],
+  [
+   "전문성추구",
+   "자신이 좋아하는 분야에는 교재 외 자료까지 참고해 지식을 확장함.",
+   ""
+  ],
+  [
+   "학습융합",
+   "교과서 지식뿐 아니라 IT, 예술 요소 등 다양한 분야를 결합해 아이디어를 냄.",
+   ""
+  ],
+  [
+   "학습동기향상",
+   "친구들에게 자신만의 공부 방법과 의욕을 전파해 학급 학습 분위기를 끌어올림.",
+   ""
+  ],
+  [
+   "창의력",
+   "문제 상황에 독창적 접근법을 도입해 새로운 해결 방안을 제시함.",
+   ""
+  ],
+  [
+   "문제해결력",
+   "예상치 못한 난관이 생겨도 여러 자료를 탐색해 합리적 방법을 찾음.",
+   ""
+  ],
+  [
+   "문제인식",
+   "사소한 오류나 불편 요소도 놓치지 않고 능동적으로 개선책을 찾음.",
+   ""
+  ],
+  [
+   "비판적사고",
+   "새로운 정보를 접할 때 맹신하지 않고 논리적으로 검증하는 습관이 있음.",
+   ""
+  ],
+  [
+   "체계적사고",
+   "복잡한 문제도 단계적으로 쪼개어 해결해나가는 습관이 형성됨.",
+   ""
+  ],
+  [
+   "분석적사고",
+   "논술이나 보고서 작성 시 자료를 체계적으로 분석해 근거 있는 결론을 도출함.",
+   ""
+  ],
+  [
+   "실행력",
+   "관심 주제에 대한 발표나 기획을 의견에만 그치지 않고 직접 실현함.",
+   ""
+  ],
+  [
+   "실패수용",
+   "예상치 못한 결과가 나와도 좌절하기보다 원인을 찾고 재시도함.",
+   ""
+  ],
+  [
+   "도전정신",
+   "실수나 실패 후에도 원인을 분석하여 발전 기회로 삼는 자세를 보임.",
+   ""
+  ],
+  [
+   "발전적태도",
+   "과제나 시험 후 늘 보완점을 찾아 다음 과업에 적용하려 노력함.",
+   ""
+  ],
+  [
+   "변화대응",
+   "불가피한 일정 변경에서도 신속히 대안을 마련해 혼선을 최소화함.",
+   ""
+  ],
+  [
+   "자세유연",
+   "예기치 못한 변화나 일정 충돌도 긍정적으로 받아들이고 즉각 대처함.",
+   ""
+  ],
+  [
+   "리스크관리",
+   "모둠 과제를 시작하기 전, 예상 문제점을 점검해 사전에 해결책을 마련함.",
+   ""
+  ],
+  [
+   "정보활용",
+   "인터넷이나 도서관에서 양질의 자료를 찾아 과제나 발표에 적극 반영함.",
+   ""
+  ],
+  [
+   "조사능력",
+   "시사·과학 분야 등 폭넓은 주제의 정보를 수집해 다양성 있는 아이디어를 낳음.",
+   ""
+  ],
+  [
+   "시각자료제작",
+   "발표나 보고서에 차트·인포그래픽 등을 적절히 활용해 정보를 명확하게 전달함.",
+   ""
+  ],
+  [
+   "리더십",
+   "학급 임원으로서 친구들을 독려해 공동 목표를 효과적으로 달성함.",
+   ""
+  ],
+  [
+   "리더십확장",
+   "학급 외에도 동아리, 스터디 그룹 등 다채로운 조직에서 리더 역할을 수행함.",
+   ""
+  ],
+  [
+   "동아리리더",
+   "동아리 내 활동을 기획하고 관리해 풍부한 성과물을 얻도록 이끔.",
+   ""
+  ],
+  [
+   "협업능력",
+   "모둠 과제에서 타인 의견을 수용하고 조율해 높은 완성도를 이끌어 냄.",
+   ""
+  ],
+  [
+   "협업리더십",
+   "팀 프로젝트 진행 상황을 체크하며 이견이 있으면 중재해 화합을 도모함.",
+   ""
+  ],
+  [
+   "협동심",
+   "공동 과제에서 모두가 성과를 낼 수 있도록 지원하고 격려함.",
+   ""
+  ],
+  [
+   "협력해결",
+   "모둠 과제에서 근거 자료를 나누어 찾고 결과물을 함께 분석함.",
+   ""
+  ],
+  [
+   "협력배려",
+   "모둠활동에서 뒤처지는 친구의 부분을 도와 전체 과제 완성도를 높임.",
+   ""
+  ],
+  [
+   "헌신적협업",
+   "공동 목표 달성을 위해 필요하다면 본인 역할 외의 업무도 기꺼이 수행함.",
+   ""
+  ],
+  [
+   "조직력",
+   "팀원들의 강점을 파악해 과제를 효율적으로 분배하고 체계적으로 수행함.",
+   ""
+  ],
+  [
+   "책임배분",
+   "역할 분담 시 각자의 능력을 고려해 모두가 성장할 수 있도록 지원함.",
+   ""
+  ],
+  [
+   "팀단합",
+   "집단 활동에서 소극적인 친구들도 참여할 수 있도록 다양한 의견을 모음.",
+   ""
+  ],
+  [
+   "인재연결",
+   "친구들의 재능·장점을 파악해 적재적소에 함께 협업하도록 권장함.",
+   ""
+  ],
+  [
+   "의견조율",
+   "구성원 간 이견이 생기면, 함께 타협점을 만들어 만족도를 높이는 능력을 보임.",
+   ""
+  ],
+  [
+   "갈등예방",
+   "사소한 의견 차이도 대화로 해결해 상황이 악화되지 않도록 관리함.",
+   ""
+  ],
+  [
+   "협상능력",
+   "갈등 상황을 서로 이익을 얻을 수 있는 방향으로 조정해 해결함.",
+   ""
+  ],
+  [
+   "소통역량",
+   "발표나 토론 시 명확한 의사 전달로 주변 친구들의 이해를 돕음.",
+   ""
+  ],
+  [
+   "명확소통",
+   "근거를 들어 차근차근 설명함으로써 상대가 쉽게 이해하도록 유도함.",
+   ""
+  ],
+  [
+   "발표능력",
+   "핵심 정보를 간결히 요약하고 시각 자료를 효과적으로 활용함.",
+   ""
+  ],
+  [
+   "설득력",
+   "반대 의견이 있어도 명확한 근거로 타인을 납득시켜 협력을 이끌어냄.",
+   ""
+  ],
+  [
+   "경청자세",
+   "상대가 말할 때 끼어들지 않고 끝까지 듣고 보완 답변을 제시함.",
+   ""
+  ],
+  [
+   "토론참여",
+   "찬반이 뚜렷이 갈리는 주제라 해도 끝까지 경청하고 이성적으로 논함.",
+   ""
+  ],
+  [
+   "관계형성",
+   "새 전학생이나 후배에게도 다정히 다가가 교우관계를 넓혀 나감.",
+   ""
+  ],
+  [
+   "감정조절",
+   "갈등 상황에서도 흥분하지 않고 침착히 중재하려는 태도를 보임.",
+   ""
+  ],
+  [
+   "다양성존중",
+   "서로 다른 배경·생각을 가진 친구들과도 편견 없이 어울려 시너지를 냄.",
+   ""
+  ],
+  [
+   "지식공유",
+   "교과 외에도 익힌 정보나 학습 팁을 친구들에게 나누며 공동 성장을 추구함.",
+   ""
+  ],
+  [
+   "환대정신",
+   "전학 온 학생이나 외부 교류 학생에게 먼저 다가가 학교 생활을 안내함.",
+   ""
+  ],
+  [
+   "국제감각",
+   "해외 사례나 자료도 참조하여 발표·토론 시 다각도 시각을 제공함.",
+   ""
+  ],
+  [
+   "국내외연계",
+   "대회나 공모전 출품 시 국내외 정보를 수집해 경쟁력을 높임.",
+   ""
+  ],
+  [
+   "해외사례연구",
+   "해당 분야 해외 성공 사례를 분석하고 학교 과제에 적용해 창의적 결과를 도출함.",
+   ""
+  ],
+  [
+   "책임감",
+   "맡은 역할을 끝까지 완수하고 결과에 대해 책임지는 태도가 우수함.",
+   ""
+  ],
+  [
+   "책임인식",
+   "결과가 예상보다 미흡하면 원인을 분석해 재도전하는 근성을 발휘함.",
+   ""
+  ],
+  [
+   "정직성",
+   "잘못을 발견하면 즉시 인정하고 수정하는 솔직함으로 주변 신뢰를 받음.",
+   ""
+  ],
+  [
+   "타인배려",
+   "친구들과 대화 시 경청을 우선하며, 반드시 필요한 도움을 먼저 제안함.",
+   ""
+  ],
+  [
+   "봉사정신",
+   "교내외 봉사활동에 꾸준히 참여하여 주변에 긍정적인 영향력을 미침.",
+   ""
+  ],
+  [
+   "자발봉사",
+   "간식이나 준비물을 친구들과 나눠 쓰며 협동의 가치를 실천함.",
+   ""
+  ],
+  [
+   "자원봉사",
+   "지역사회 프로그램에 꾸준히 참여해 공동체 의식과 리더십을 동시에 기름.",
+   ""
+  ],
+  [
+   "솔선수범",
+   "청소나 봉사활동 등 꺼려지는 일에도 앞장서 주위 참여를 유도함.",
+   ""
+  ],
+  [
+   "가이드역할",
+   "뒤처지는 친구를 위해 추가 설명이나 자료를 제공해 함께 성장함.",
+   ""
+  ],
+  [
+   "동기부여",
+   "친구들의 작은 노력도 칭찬해 앞으로 더 열심히 참여하도록 이끌어줌.",
+   ""
+  ],
+  [
+   "도전장려",
+   "친구가 주저할 때 동기부여하며 새로운 분야에 도전하도록 이끌어줌.",
+   ""
+  ],
+  [
+   "친구독려",
+   "주변 친구들이 힘들어하는 과제나 일정이 있을 때 스케줄 조정과 응원을 해줌.",
+   ""
+  ],
+  [
+   "건설적피드백",
+   "친구의 발표나 과제에 대해 장단점을 균형 있게 논해 서로 보완하게 함.",
+   ""
+  ],
+  [
+   "의미부여",
+   "일상적 과업에도 스스로 의미를 찾고 적극적으로 임하는 태도를 지님.",
+   ""
+  ],
+  [
+   "자발성",
+   "학습 프로젝트나 행사 참여에 스스로 손을 들어 적극적으로 임함.",
+   ""
+  ],
+  [
+   "열린태도",
+   "다른 사람의 아이디어를 경청하고 필요 시 적극적으로 채택함.",
+   ""
+  ],
+  [
+   "수용력",
+   "비판적인 피드백도 발전의 기회로 삼아 개인 역량을 성장시키는 자세를 지님.",
+   ""
+  ],
+  [
+   "안전의식",
+   "실험·실습 시 규칙을 철저히 준수하고 다른 친구들에게도 안내함.",
+   ""
+  ],
+  [
+   "주변정돈",
+   "교실과 학교시설 사용 후 주변을 깨끗이 정리해 다 함께 편리하도록 함.",
+   ""
+  ],
+  [
+   "정리정돈",
+   "개인 물품이나 자료를 체계적으로 보관해 필요할 때 즉시 활용 가능함.",
+   ""
+  ],
+  [
+   "환경의식",
+   "교실이나 운동장에서 쓰레기를 발견하면 먼저 치우고 모범을 보임.",
+   ""
+  ],
+  [
+   "반분위기조성",
+   "학급행사나 활동에서 적극적으로 도우며 화기애애한 분위기를 만듦.",
+   ""
+  ],
+  [
+   "분위기메이커",
+   "회의나 토론이 경직될 때 유쾌한 에너지를 발휘해 원활한 진행을 유도함.",
+   ""
+  ],
+  [
+   "다양한참여",
+   "운동회, 축제, 캠페인 등 학교행사에 적극 참여해 단합에 기여함.",
+   ""
+  ],
+  [
+   "진로탐색",
+   "다양한 활동에 적극 참여해 자신의 미래 가능성을 폭넓게 살펴봄.",
+   ""
+  ],
+  [
+   "미래설계",
+   "진로 상담을 통해 구체적 계획을 세우고 이를 실천하려 꾸준히 노력함.",
+   ""
+  ],
+  [
+   "동아리활동",
+   "관심 분야 동아리에 참여해 지식과 경험을 폭넓게 쌓으려 노력함.",
+   ""
+  ]
+ ]
+};
+const SHEET_NAMES = V9_DATA.sheetNames;
+const LENGTH_OPTIONS = V9_DATA.lengthOptions;
+const SHEET_ORDER = ['STUDENTS','SETTINGS','SUBJECT_CONFIG','SUBJECT_CHECK','SUBJECT_RESULT',
+  'ACTIVITY_CONFIG','ACTIVITY_CHECK','ACTIVITY_RESULT','BEHAVIOR','BEHAVIOR_CHECK','BEHAVIOR_RESULT','OUTPUT'];
+const SCHOOL_LEVELS = ['초등학교','중학교','고등학교'];
+
+/* ───────── 4. 작은 도구들 ───────── */
+const $ = id => document.getElementById(id);
+const LS = {
+  get(k) { try { return localStorage.getItem('sgb_' + k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem('sgb_' + k, v); } catch (e) {} },
+  del(k) { try { localStorage.removeItem('sgb_' + k); } catch (e) {} }
+};
+const SS = {
+  get(k) { try { return sessionStorage.getItem('sgb_' + k); } catch (e) { return null; } },
+  set(k, v) { try { sessionStorage.setItem('sgb_' + k, v); } catch (e) {} },
+  del(k) { try { sessionStorage.removeItem('sgb_' + k); } catch (e) {} }
+};
+let toastTimer = null;
+function toast(msg, ms) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), ms || 3200);
+}
+function busy(msg) { $('busyMsg').textContent = msg || ''; $('busy').hidden = !msg; }
+function showMsg(id, text, cls) {
+  const el = $(id); if (!text) { el.hidden = true; return; }
+  el.textContent = text; if (cls) el.className = 'msg ' + cls; el.hidden = false;
+}
+function randomHex(n) {
+  const a = new Uint8Array(n); crypto.getRandomValues(a);
+  return Array.from(a, b => b.toString(16).padStart(2, '0')).join('');
+}
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+// 이모지 변형 선택자(U+FE0F) 유무와 상관없이 시트 이름 비교
+const normName = s => String(s || '').replace(/\uFE0F/g, '').trim();
+
+/* ───────── 5. 로그인 (Google OAuth 2.0 · 리다이렉트 방식 · drive.file) ─────────
+   서버가 없는 앱이라 액세스 토큰 유효 시간은 약 1시간.
+   '로그인 유지' = 만료되면 화면 전환 한 번(prompt=none)으로 조용히 새 토큰을 받아 옴. */
+const Auth = {
+  token: null, exp: 0,
+  load() {
+    const t = LS.get('token'), e = Number(LS.get('tokenExp') || 0);
+    if (t && e - Date.now() > 60000) { this.token = t; this.exp = e; return true; }
+    return false;
+  },
+  begin(silent) {
+    const state = randomHex(16);
+    SS.set('state', state); SS.set('silent', silent ? '1' : '');
+    const p = new URLSearchParams({
+      client_id: CONFIG.CLIENT_ID, redirect_uri: REDIRECT_URI, response_type: 'token',
+      scope: CONFIG.SCOPE, state: state, include_granted_scopes: 'true'
+    });
+    const hint = LS.get('email'); if (hint) p.set('login_hint', hint);
+    if (silent) p.set('prompt', 'none');
+    location.assign('https://accounts.google.com/o/oauth2/v2/auth?' + p.toString());
+  },
+  // 구글에서 돌아온 직후 주소창의 #access_token=… 처리. 해당 없으면 null
+  handleRedirect() {
+    if (!location.hash || !/(^#|&)(access_token|error)=/.test(location.hash)) return null;
+    const h = new URLSearchParams(location.hash.slice(1));
+    history.replaceState(null, '', location.pathname + location.search);   // 토큰을 주소창·기록에서 즉시 제거
+    const wasSilent = SS.get('silent') === '1', expected = SS.get('state');
+    SS.del('silent'); SS.del('state');
+    if (h.get('error')) return { ok: false, silent: wasSilent, error: h.get('error') };
+    if (!expected || h.get('state') !== expected) return { ok: false, silent: wasSilent, error: 'state_mismatch' };
+    if ((h.get('scope') || '').indexOf('drive.file') === -1) return { ok: false, silent: wasSilent, error: 'scope_missing' };
+    this.token = h.get('access_token');
+    this.exp = Date.now() + (Number(h.get('expires_in')) || 3600) * 1000;
+    LS.set('token', this.token); LS.set('tokenExp', String(this.exp)); LS.set('wasIn', '1');
+    return { ok: true };
+  },
+  clear() { this.token = null; this.exp = 0; LS.del('token'); LS.del('tokenExp'); },
+  errorKo(code) {
+    if (code === 'access_denied') return '로그인을 취소했거나 권한을 허용하지 않았습니다.';
+    if (code === 'scope_missing') return 'Google Drive 파일 접근 권한이 체크되지 않았습니다. 다시 로그인하면서 권한 항목을 체크해 주세요.';
+    if (code === 'state_mismatch') return '로그인 확인값이 맞지 않습니다. 다시 로그인해 주세요.';
+    return '로그인 시간이 만료되었습니다. 다시 로그인해 주세요.';
+  }
+};
+
+// Google API 공통 호출 (401이면 조용히 재로그인)
+async function gfetch(url, opt) {
+  opt = opt || {};
+  const headers = Object.assign({ Authorization: 'Bearer ' + Auth.token }, opt.body ? { 'Content-Type': 'application/json' } : {}, opt.headers || {});
+  let res;
+  try { res = await fetch(url, Object.assign({}, opt, { headers })); }
+  catch (e) { throw new Error('네트워크 오류 — 인터넷 연결을 확인해 주세요.'); }
+  if (res.status === 401) { Auth.clear(); Auth.begin(true); throw withStatus(new Error('로그인이 만료되어 다시 연결합니다…'), 401); }
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw withStatus(new Error((body && body.error && body.error.message) || ('HTTP ' + res.status)), res.status);
+  return body;
+}
+
+/* ───────── 6. 시트 읽기·쓰기 ───────── */
+const State = {
+  user: null,
+  sheet: null,          // { id, title, url, map: { KEY: {title, sheetId} } }
+  settings: { classInfo: '', level: '초등학교', model: MODELS.default, tier: '무료', length: '보통' },
+  sheetKey: '',         // 시트 C14에 들어 있는 키(가져오기 안내용, 저장하지 않음)
+  studentCount: 0
+};
+
+async function inspectSheet(id) {
+  const meta = await gfetch(`${SHEETS_API}/${encodeURIComponent(id)}?fields=properties.title,spreadsheetUrl,sheets.properties(sheetId,title)`);
+  const map = {};
+  (meta.sheets || []).forEach(s => {
+    const t = s.properties.title;
+    SHEET_ORDER.forEach(k => { if (normName(t) === normName(SHEET_NAMES[k])) map[k] = { title: t, sheetId: s.properties.sheetId }; });
+  });
+  return { title: (meta.properties && meta.properties.title) || '(제목 없음)', url: meta.spreadsheetUrl, map };
+}
+const a1 = (key, range) => `'${State.sheet.map[key].title.replace(/'/g, "''")}'!${range}`;
+
+async function writeValues(data) {
+  return gfetch(`${SHEETS_API}/${encodeURIComponent(State.sheet.id)}/values:batchUpdate`, {
+    method: 'POST', body: JSON.stringify({ valueInputOption: 'RAW', data })
+  });
+}
+
+async function loadSheet(id) {
+  let info;
+  try { info = await inspectSheet(id); }
+  catch (e) { if (e.status === 404 || e.status === 403) { await sleep(1200); info = await inspectSheet(id); } else throw e; }   // Picker 직후 권한 반영 지연 대비 1회 재시도
+  if (!info.map.SETTINGS || !info.map.STUDENTS) {
+    const err = new Error(`"${info.title}"은(는) 생활기록부 AI 도우미(v9) 시트가 아닌 것 같습니다. (⚙️설정·👥학생명단 탭이 없음)`);
+    err.code = 'NOT_V9'; throw err;
+  }
+  State.sheet = Object.assign({ id }, info);
+  LS.set('sheetId', id);
+  await readSettings();
+}
+
+// ⚙️설정: C14 키 · C18 학년반 · C19 학교급 · C20 모델 · C23 요금제 · F23 분량 / 👥학생명단: B4:B53
+async function readSettings() {
+  const p = new URLSearchParams();
+  p.append('ranges', a1('SETTINGS', 'C14:C23'));
+  p.append('ranges', a1('SETTINGS', 'F23'));
+  p.append('ranges', a1('STUDENTS', 'B4:B53'));
+  p.set('valueRenderOption', 'UNFORMATTED_VALUE');
+  const res = await gfetch(`${SHEETS_API}/${encodeURIComponent(State.sheet.id)}/values:batchGet?${p.toString()}`);
+  const vr = res.valueRanges || [];
+  const col = ((vr[0] && vr[0].values) || []).map(r => (r && r[0] != null) ? r[0] : '');
+  const at = row => String(col[row - 14] != null ? col[row - 14] : '').trim();
+  const lenRaw = String((((vr[1] && vr[1].values) || [[]])[0] || [])[0] || '').trim().substring(0, 2);
+  const s = State.settings;
+  State.sheetKey = at(14);
+  s.classInfo = at(18);
+  s.level = SCHOOL_LEVELS.includes(at(19)) ? at(19) : '초등학교';
+  s.tier = at(23) === '유료' ? '유료' : '무료';
+  s.length = (lenRaw === '간략' || lenRaw === '상세') ? lenRaw : '보통';
+  const rawModel = at(20).split(/\s+/)[0];
+  s.model = resolveModel(rawModel);
+  State.studentCount = ((vr[2] && vr[2].values) || []).filter(r => r && String(r[0] || '').trim() !== '').length;
+  if (rawModel && s.model !== rawModel) {            // 종료 모델 → 권장 모델로 시트까지 교체 (v9와 같은 동작)
+    try { await writeValues([{ range: a1('SETTINGS', 'C20'), values: [[s.model]] }]);
+      toast(`설정된 모델(${rawModel})은 종료(예정)되어 ${s.model}(으)로 바꿨습니다.`, 6000); } catch (e) {}
+  }
+}
+
+async function saveSettingsToSheet(s) {
+  const lenOpt = LENGTH_OPTIONS.find(o => o.indexOf(s.length) === 0) || LENGTH_OPTIONS[0];
+  await writeValues([
+    { range: a1('SETTINGS', 'C18:C20'), values: [[s.classInfo], [s.level], [s.model]] },
+    { range: a1('SETTINGS', 'C23'), values: [[s.tier]] },
+    { range: a1('SETTINGS', 'F23'), values: [[lenOpt]] }
+  ]);
+}
+
+/* ───────── 7. 새 시트 만들기 (v9 initAllSheets와 같은 셀 배치) ───────── */
+function hexColor(h) {
+  h = h.replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const n = parseInt(h, 16);
+  return { red: ((n >> 16) & 255) / 255, green: ((n >> 8) & 255) / 255, blue: (n & 255) / 255 };
+}
+function colNum(letters) { let n = 0; for (const c of letters) n = n * 26 + (c.charCodeAt(0) - 64); return n; }
+function gridRange(sheetId, ref) {
+  const m = ref.match(/^([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?$/);
+  if (!m) throw new Error('범위 형식 오류: ' + ref);
+  const c1 = colNum(m[1]), r1 = +m[2], c2 = m[3] ? colNum(m[3]) : c1, r2 = m[4] ? +m[4] : r1;
+  return { sheetId, startRowIndex: r1 - 1, endRowIndex: r2, startColumnIndex: c1 - 1, endColumnIndex: c2 };
+}
+function fmtReq(sheetId, ref, o) {
+  const f = {}, fields = [], tf = {};
+  if (o.bg) { f.backgroundColor = hexColor(o.bg); fields.push('backgroundColor'); }
+  if (o.fg) tf.foregroundColor = hexColor(o.fg);
+  if (o.bold != null) tf.bold = o.bold;
+  if (o.italic) tf.italic = true;
+  if (o.size) tf.fontSize = o.size;
+  Object.keys(tf).forEach(k => fields.push('textFormat.' + k));
+  if (fields.some(x => x.indexOf('textFormat') === 0)) f.textFormat = tf;
+  if (o.align) { f.horizontalAlignment = o.align; fields.push('horizontalAlignment'); }
+  if (o.valign) { f.verticalAlignment = o.valign; fields.push('verticalAlignment'); }
+  if (o.wrap) { f.wrapStrategy = 'WRAP'; fields.push('wrapStrategy'); }
+  return { repeatCell: { range: gridRange(sheetId, ref), cell: { userEnteredFormat: f }, fields: fields.map(x => 'userEnteredFormat.' + x).join(',') } };
+}
+const mergeReq = (id, ref) => ({ mergeCells: { range: gridRange(id, ref), mergeType: 'MERGE_ALL' } });
+const colW = (id, col, px) => ({ updateDimensionProperties: { range: { sheetId: id, dimension: 'COLUMNS', startIndex: col - 1, endIndex: col }, properties: { pixelSize: px }, fields: 'pixelSize' } });
+const rowH = (id, r1, r2, px) => ({ updateDimensionProperties: { range: { sheetId: id, dimension: 'ROWS', startIndex: r1 - 1, endIndex: r2 }, properties: { pixelSize: px }, fields: 'pixelSize' } });
+const listRule = (id, ref, list, strict) => ({ setDataValidation: { range: gridRange(id, ref), rule: { condition: { type: 'ONE_OF_LIST', values: list.map(v => ({ userEnteredValue: v })) }, showCustomUi: true, strict: !!strict } } });
+function borderReq(id, ref, color) {
+  const b = { style: 'SOLID', color: hexColor(color || '#dddddd') };
+  return { updateBorders: { range: gridRange(id, ref), top: b, bottom: b, left: b, right: b, innerHorizontal: b, innerVertical: b } };
+}
+
+// level: 학교급 → 설정 C19 값과 행동특성 예시문구 세트(초등/중·고등)를 결정
+function buildV9Spec(level) {
+  const N = SHEET_NAMES, D = V9_DATA;
+  const sheets = [], values = [], req = [];
+  const q = t => `'${t.replace(/'/g, "''")}'`;
+  const put = (t, range, vals) => values.push({ range: q(t) + '!' + range, values: vals });
+  const titleBar = (id, ref, bg) => req.push(mergeReq(id, ref), fmtReq(id, ref, { bg, fg: '#ffffff', bold: true, size: 13, align: 'CENTER', valign: 'MIDDLE' }), rowH(id, 1, 1, 40));
+  const tipBar = (id, ref, bg, h) => req.push(mergeReq(id, ref), fmtReq(id, ref, { bg, fg: '#555555', italic: true, size: 10, wrap: true, valign: 'MIDDLE' }), rowH(id, 2, 2, h || 36));
+  const headRow = (id, ref, h) => req.push(fmtReq(id, ref, { bg: '#2c3e50', fg: '#ffffff', bold: true, size: 10, align: 'CENTER', valign: 'MIDDLE', wrap: true }), rowH(id, 3, 3, h || 40));
+  const widths = (id, arr) => arr.forEach((w, i) => req.push(colW(id, i + 1, w)));
+  let id;
+
+  // 👥 학생명단 — 3행 머리글, 4~53행 학생(번호·이름·영역별 개인 특성·비고)
+  id = 1001; sheets.push({ id, title: N.STUDENTS, tab: '#e74c3c', rows: 60, cols: 8 });
+  put(N.STUDENTS, 'A1', [['👥 학생명단 – 학생별 개인 특성을 입력하면 AI 결과가 차별화됩니다']]);
+  put(N.STUDENTS, 'A2', [['💡 번호·이름은 필수 / C·D·E열의 개인 특성은 선택사항 — 입력하면 같은 체크 항목이라도 학생마다 다른 결과가 생성됩니다']]);
+  put(N.STUDENTS, 'A3:F3', [['번호', '이름', '📚 교과 개인 특성\n(예: 토론 시 논리정연, 책 좋아함)', '🎯 창체 개인 특성\n(예: 학급 도우미, 발표 적극)', '💬 행동 개인 특성\n(예: 친구 잘 챙김, 차분함)', '비고']]);
+  titleBar(id, 'A1:F1', '#c0392b'); tipBar(id, 'A2:F2', '#fde8e8', 44); headRow(id, 'A3:F3', 50);
+  req.push(fmtReq(id, 'A4:A53', { bg: '#f5f5f5', align: 'CENTER' }), fmtReq(id, 'B4:B53', { bg: '#fffde7', bold: true }),
+    fmtReq(id, 'C4:C53', { bg: '#e3f2fd', wrap: true, size: 10, valign: 'TOP' }), fmtReq(id, 'D4:D53', { bg: '#f3e5f5', wrap: true, size: 10, valign: 'TOP' }),
+    fmtReq(id, 'E4:E53', { bg: '#fff3e0', wrap: true, size: 10, valign: 'TOP' }), borderReq(id, 'A4:F53'), rowH(id, 4, 53, 60));
+  widths(id, [50, 90, 180, 180, 180, 140]);
+
+  // ⚙️ 설정 — 셀 위치는 v9와 동일 (C14 키 · C18~C23 · F23 · A29 AI 지침)
+  id = 1002; sheets.push({ id, title: N.SETTINGS, tab: '#4a90d9', rows: 40, cols: 8 });
+  put(N.SETTINGS, 'A1', [['📝 생활기록부 AI 작성 도우미']]);
+  put(N.SETTINGS, 'A3', [['  STEP 1  |  Gemini API 키 발급 (무료)']]);
+  put(N.SETTINGS, 'B5', [['① 아래 주소를 복사해서 브라우저에 붙여넣으세요']]);
+  put(N.SETTINGS, 'B6', [['🌐  https://aistudio.google.com']]);
+  put(N.SETTINGS, 'B8', [['② 접속 후 왼쪽 메뉴에서 "Get API key" 클릭']]);
+  put(N.SETTINGS, 'B10', [['③ "Create API key" → 키 복사 (AIza... 로 시작)']]);
+  put(N.SETTINGS, 'A12', [['  STEP 2  |  API 키 입력']]);
+  put(N.SETTINGS, 'B14', [['API 키 (웹앱은 브라우저에 저장 → 비워 두세요)']]);
+  put(N.SETTINGS, 'A16', [['  STEP 3  |  학급 정보 입력']]);
+  put(N.SETTINGS, 'B18:C23', [['학년 · 반 입력', ''], ['학교급', level], ['AI 모델', MODELS.default], ['오늘 날짜', ''], ['오늘 사용량', 0], ['API 요금제', '무료']]);
+  put(N.SETTINGS, 'E23:F23', [['📏 생성 분량', LENGTH_OPTIONS[0]]]);
+  put(N.SETTINGS, 'A24', [['  STEP 4  |  사용 순서']]);
+  put(N.SETTINGS, 'B26', [['이 시트는 생활기록부 AI 도우미 웹앱의 저장소입니다.\n학생명단·체크·생성·결과 확인은 웹앱에서 진행하세요.\n\n· 탭 이름과 머리글(1~3행)은 바꾸지 마세요.\n· 아래 [AI 지침]을 고치면 AI 작성 방식이 바뀝니다.']]);
+  put(N.SETTINGS, 'A28', [['[AI 지침 — 아래 내용을 수정하면 AI 작성 방식이 바뀝니다]']]);
+  put(N.SETTINGS, 'A29', [[D.basePrompt]]);
+  ['A1:D1', 'A3:D3', 'B5:C5', 'B6:C6', 'B8:C8', 'B10:C10', 'A12:D12', 'A16:D16', 'A24:D24', 'B26:C26', 'A28:D28', 'A29:D29'].forEach(r => req.push(mergeReq(id, r)));
+  req.push(fmtReq(id, 'A1:D1', { bg: '#1a237e', fg: '#ffffff', bold: true, size: 15, align: 'CENTER', valign: 'MIDDLE' }), rowH(id, 1, 1, 50));
+  ['A3:D3', 'A12:D12', 'A16:D16', 'A24:D24'].forEach(r => req.push(fmtReq(id, r, { bg: '#1565c0', fg: '#ffffff', bold: true, size: 11, valign: 'MIDDLE' })));
+  ['B5:C5', 'B8:C8', 'B10:C10'].forEach(r => req.push(fmtReq(id, r, { bg: '#e3f2fd', bold: true, size: 10, valign: 'MIDDLE' })));
+  req.push(fmtReq(id, 'B6:C6', { fg: '#1565c0', bold: true, size: 11, align: 'CENTER', valign: 'MIDDLE' }),
+    fmtReq(id, 'B14', { bg: '#fff9c4', bold: true, size: 10, valign: 'MIDDLE', wrap: true }), fmtReq(id, 'C14', { bg: '#fffde7', size: 10 }),
+    fmtReq(id, 'B18:B20', { bg: '#e8f5e9', bold: true, size: 10, valign: 'MIDDLE' }), fmtReq(id, 'C18:C20', { bg: '#f1f8e9', size: 10, align: 'LEFT' }),
+    fmtReq(id, 'B21:B22', { bg: '#fef9e7', bold: true, size: 10, valign: 'MIDDLE' }), fmtReq(id, 'C21:C22', { bg: '#fffbe5', size: 10, align: 'LEFT' }),
+    fmtReq(id, 'B23', { bg: '#e8f5e9', bold: true, size: 10, valign: 'MIDDLE' }), fmtReq(id, 'C23', { bg: '#f1f8e9', size: 10 }),
+    fmtReq(id, 'E23', { bg: '#e3f2fd', bold: true, size: 10, valign: 'MIDDLE' }), fmtReq(id, 'F23', { bg: '#e3f2fd', size: 10 }),
+    fmtReq(id, 'B26:C26', { bg: '#f8f9fa', size: 10, wrap: true, valign: 'TOP' }), rowH(id, 26, 26, 120),
+    fmtReq(id, 'A28:D28', { bg: '#eceff1', fg: '#78909c', size: 9, italic: true }),
+    fmtReq(id, 'A29:D29', { bg: '#fafafa', size: 9, wrap: true, valign: 'TOP' }), rowH(id, 29, 29, 600),
+    rowH(id, 14, 14, 38), rowH(id, 18, 23, 34),
+    listRule(id, 'C19', SCHOOL_LEVELS, true), listRule(id, 'C20', MODELS.list.map(m => m.id), false),
+    listRule(id, 'C23', ['무료', '유료'], true), listRule(id, 'F23', LENGTH_OPTIONS, false));
+  widths(id, [28, 150, 340, 28, 95, 330]);
+
+  // 📚 교과평가설정 — 과목·영역·성취기준·상/중/하 (2단계 화면에서 입력)
+  id = 1003; sheets.push({ id, title: N.SUBJECT_CONFIG, tab: '#27ae60', rows: 60, cols: 8 });
+  put(N.SUBJECT_CONFIG, 'A1', [['📚 교과평가설정 – 학기 초 교사가 1회 입력']]);
+  put(N.SUBJECT_CONFIG, 'A2', [['💡 과목·영역·성취기준·상/중/하 설명을 입력합니다']]);
+  put(N.SUBJECT_CONFIG, 'A3:F3', [['과목명', '영역명', '성취기준 설명', '상(上) 수준 설명', '중(中) 수준 설명', '하(下) 수준 설명']]);
+  titleBar(id, 'A1:F1', '#27ae60'); tipBar(id, 'A2:F2', '#e8f5e9', 32); headRow(id, 'A3:F3', 40);
+  req.push(fmtReq(id, 'A4:A53', { bg: '#e8f5e9', bold: true }), fmtReq(id, 'B4:B53', { bg: '#f0fff4' }), fmtReq(id, 'C4:C53', { wrap: true }),
+    fmtReq(id, 'D4:D53', { bg: '#e3f7e8', wrap: true }), fmtReq(id, 'E4:E53', { bg: '#fff9e6', wrap: true }), fmtReq(id, 'F4:F53', { bg: '#fde8e8', wrap: true }),
+    borderReq(id, 'A4:F53'), rowH(id, 4, 53, 45));
+  widths(id, [80, 85, 220, 200, 200, 200]);
+
+  // 🎯 창체활동설정 — v9 기본 활동 30개
+  id = 1004; sheets.push({ id, title: N.ACTIVITY_CONFIG, tab: '#8e44ad', rows: 80, cols: 6 });
+  put(N.ACTIVITY_CONFIG, 'A1', [['🎯 창체활동설정 – 학기 초 교사가 1회 입력 (활동유형·활동명·활동내용)']]);
+  put(N.ACTIVITY_CONFIG, 'A2', [['💡 쓰지 않을 활동은 D열(비고)에 X를 입력하면 제외됩니다']]);
+  put(N.ACTIVITY_CONFIG, 'A3:D3', [['활동 유형', '활동명', '활동 공통 내용\n(반 전체 공통 내용을 입력)', '비고\n(제외하려면 X)']]);
+  put(N.ACTIVITY_CONFIG, 'A4', D.activities);
+  titleBar(id, 'A1:D1', '#8e44ad'); tipBar(id, 'A2:D2', '#f3e5f5', 36); headRow(id, 'A3:D3', 40);
+  req.push(fmtReq(id, 'A4:A53', { bg: '#f3e5f5', bold: true }), fmtReq(id, 'B4:B53', { bg: '#fdf5ff' }), fmtReq(id, 'C4:C53', { wrap: true }),
+    fmtReq(id, 'D4:D53', { bg: '#f5f5f5', fg: '#999999', size: 9 }), borderReq(id, 'A4:D53'), rowH(id, 4, 53, 55),
+    listRule(id, 'A4:A53', ['자율활동', '진로활동', '동아리활동', '봉사활동'], true));
+  widths(id, [90, 120, 380, 80]);
+
+  // 💬 행동특성 — 예시문구 (초등용 / 중·고등용)
+  const isElem = level === '초등학교';
+  const phrases = isElem ? D.behaviorElementary : D.behaviorSecondary;
+  const lastB = 3 + phrases.length;
+  id = 1005; sheets.push({ id, title: N.BEHAVIOR, tab: '#e67e22', rows: lastB + 30, cols: 5 });
+  put(N.BEHAVIOR, 'A1', [[`💬 행동특성 예시문구 목록 (${isElem ? '초등용' : '중·고등용'}) – 학기 초 교사가 1회 설정`]]);
+  put(N.BEHAVIOR, 'A2', [['💡 쓰지 않을 문구는 C열(비고)에 X를 입력하면 제외됩니다 / 직접 문구를 추가해도 됩니다']]);
+  put(N.BEHAVIOR, 'A3:C3', [['영역', '행동특성 예시 문구', '비고(사용 안 할 경우 X 입력)']]);
+  put(N.BEHAVIOR, 'A4', phrases);
+  titleBar(id, 'A1:C1', '#e67e22'); tipBar(id, 'A2:C2', '#fef3e2', 34); headRow(id, 'A3:C3', 32);
+  req.push(fmtReq(id, `A4:A${lastB}`, { bg: '#fff9e6', bold: true, size: 9 }), fmtReq(id, `B4:B${lastB}`, { wrap: true, size: 10 }),
+    fmtReq(id, `C4:C${lastB}`, { bg: '#f5f5f5', fg: '#999999', size: 9 }), borderReq(id, `A4:C${lastB}`));
+  widths(id, [85, 350, 160]);
+
+  // 📋 출력
+  id = 1006; sheets.push({ id, title: N.OUTPUT, tab: '#e74c3c', rows: 60, cols: 6 });
+  put(N.OUTPUT, 'A1', [['📋 출력 – 학생별 생활기록부 결과 모아보기 (NEIS 입력용)']]);
+  put(N.OUTPUT, 'A2', [['💡 한 학생의 모든 결과를 한 페이지에 모아줍니다']]);
+  put(N.OUTPUT, 'A3', [['📌 출력할 학생 →']]);
+  titleBar(id, 'A1:D1', '#c0392b'); tipBar(id, 'A2:D2', '#fde8e8', 35);
+  req.push(fmtReq(id, 'A3', { bold: true, valign: 'MIDDLE' }), fmtReq(id, 'B3', { bg: '#fff9c4', bold: true, size: 11 }), mergeReq(id, 'C3:D3'), rowH(id, 3, 3, 32));
+  widths(id, [120, 130, 460, 80]);
+
+  return { sheets, values, requests: req };
+}
+
+async function createV9Sheet(title, level) {
+  const spec = buildV9Spec(level);
+  const created = await gfetch(SHEETS_API, {
+    method: 'POST',
+    body: JSON.stringify({
+      properties: { title, locale: 'ko_KR', timeZone: 'Asia/Seoul' },
+      sheets: spec.sheets.map((s, i) => ({ properties: { sheetId: s.id, title: s.title, index: i,
+        tabColorStyle: { rgbColor: hexColor(s.tab) }, gridProperties: { rowCount: s.rows, columnCount: s.cols } } }))
+    })
+  });
+  const id = created.spreadsheetId;
+  await gfetch(`${SHEETS_API}/${id}/values:batchUpdate`, { method: 'POST', body: JSON.stringify({ valueInputOption: 'RAW', data: spec.values }) });
+  await gfetch(`${SHEETS_API}/${id}:batchUpdate`, { method: 'POST', body: JSON.stringify({ requests: spec.requests }) });
+  return id;
+}
+
+/* ───────── 8. Google Picker (기존 v9 시트 고르기) ───────── */
+let pickerReady = null;
+function loadPickerLib() {
+  if (pickerReady) return pickerReady;
+  pickerReady = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://apis.google.com/js/api.js';
+    s.onload = () => window.gapi.load('picker', { callback: resolve, onerror: () => reject(new Error('picker')) });
+    s.onerror = () => reject(new Error('api.js'));
+    document.head.appendChild(s);
+  }).catch(e => { pickerReady = null; throw e; });
+  return pickerReady;
+}
+async function pickSheet() {
+  try { await loadPickerLib(); }
+  catch (e) { throw new Error('Google 파일 선택 창을 불러오지 못했습니다. 인터넷 연결이나 광고 차단 확장 프로그램을 확인해 주세요.'); }
+  const gp = window.google.picker;
+  return new Promise(resolve => {
+    const view = new gp.DocsView(gp.ViewId.SPREADSHEETS).setIncludeFolders(true).setSelectFolderEnabled(false).setMode(gp.DocsViewMode.LIST);
+    new gp.PickerBuilder()
+      .setAppId(CONFIG.APP_ID).setDeveloperKey(CONFIG.PICKER_KEY).setOAuthToken(Auth.token)
+      .addView(view).setLocale('ko').setTitle('생활기록부 AI 도우미(v9) 시트를 선택하세요')
+      .setCallback(d => {
+        const action = d[gp.Response.ACTION];
+        if (action === gp.Action.PICKED) { const doc = d[gp.Response.DOCUMENTS][0]; resolve({ id: doc[gp.Document.ID], name: doc[gp.Document.NAME] }); }
+        else if (action === gp.Action.CANCEL) resolve(null);
+      })
+      .build().setVisible(true);
+  });
+}
+
+/* ───────── 9. 화면 ───────── */
+const VIEWS = ['loading', 'login', 'connect', 'home', 'settings'];
+function show(view) {
+  VIEWS.forEach(v => { $('v-' + v).hidden = v !== view; });
+  const inApp = view === 'home' || view === 'settings';
+  $('nav').hidden = !inApp;
+  document.querySelectorAll('#nav button[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
+  $('userBox').hidden = !Auth.token;
+  if (view === 'home') renderHome();
+  if (view === 'settings') renderSettings();
+  window.scrollTo(0, 0);
+}
+function banner(msg, btnText, fn) {
+  if (!msg) { $('banner').hidden = true; return; }
+  $('bannerMsg').textContent = msg; $('bannerBtn').textContent = btnText; $('bannerBtn').onclick = fn; $('banner').hidden = false;
+}
+
+function renderHome() {
+  const sh = State.sheet, s = State.settings; if (!sh) return;
+  $('homeSheetName').textContent = sh.title;
+  $('homeSheetLink').href = sh.url || ('https://docs.google.com/spreadsheets/d/' + sh.id);
+  const dl = $('homeSummary'); dl.textContent = '';
+  const hasKey = !!LS.get('geminiKey');
+  [['학생', State.studentCount + '명'], ['학교급', s.level + (s.classInfo ? ' · ' + s.classInfo : '')],
+   ['AI 모델', s.model + ' (' + s.tier + ')'], ['생성 분량', s.length], ['Gemini 키', hasKey ? '✅ 이 브라우저에 저장됨' : '❌ 아직 없음']
+  ].forEach(([k, v]) => { const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; dl.append(dt, dd); });
+  showMsg('homeWarn', hasKey ? '' : 'AI 생성을 쓰려면 ⚙️ 설정에서 Gemini API 키를 입력해 주세요.', 'info');
+  const chips = $('homeChips'); chips.textContent = '';
+  SHEET_ORDER.forEach(k => {
+    const c = document.createElement('span'); const on = !!sh.map[k];
+    c.className = 'chip' + (on ? ' on' : ''); c.textContent = (on ? '✓ ' : '· ') + SHEET_NAMES[k];
+    c.title = on ? '시트에 있음' : '아직 없음 (체크 화면에서 만들어집니다)'; chips.append(c);
+  });
+}
+
+function fillModelSelect() {
+  const sel = $('fModel'); sel.textContent = '';
+  MODELS.list.forEach(m => { const o = document.createElement('option'); o.value = m.id; o.textContent = m.label; sel.append(o); });
+  const o = document.createElement('option'); o.value = '__custom__'; o.textContent = '직접 입력…'; sel.append(o);
+}
+function setRadio(name, value) { document.querySelectorAll(`input[name="${name}"]`).forEach(r => { r.checked = r.value === value; }); }
+function getRadio(name) { const r = document.querySelector(`input[name="${name}"]:checked`); return r ? r.value : ''; }
+function getFormModel() {
+  const v = $('fModel').value;
+  return v === '__custom__' ? $('fModelCustom').value.trim().split(/\s+/)[0] : v;
+}
+function renderSettings() {
+  const s = State.settings;
+  $('fKey').value = LS.get('geminiKey') || '';
+  $('fKey').type = 'password'; $('btnKeyShow').textContent = '보기'; $('btnKeyShow').setAttribute('aria-pressed', 'false');
+  showMsg('keyResult', '');
+  $('keyImport').hidden = !(State.sheetKey && !LS.get('geminiKey'));
+  const inList = MODELS.list.some(m => m.id === s.model);
+  $('fModel').value = inList ? s.model : '__custom__';
+  $('fModelCustom').hidden = inList; $('fModelCustom').value = inList ? '' : s.model;
+  setRadio('tier', s.tier); setRadio('len', s.length);
+  $('fLevel').value = s.level; $('fClass').value = s.classInfo;
+  $('setSheetName').textContent = State.sheet ? State.sheet.title : '';
+}
+
+/* ───────── 10. 동작 ───────── */
+async function onPick() {
+  showMsg('connectMsg', '');
+  try {
+    const picked = await pickSheet(); if (!picked) return;
+    busy('시트를 확인하는 중…');
+    await loadSheet(picked.id);
+    busy(''); toast('시트를 연결했습니다.'); show('home');
+  } catch (e) { busy(''); if (e.status !== 401) showMsg('connectMsg', e.message, 'err'); }
+}
+async function onCreate() {
+  showMsg('connectMsg', '');
+  const title = $('newTitle').value.trim() || '생활기록부 AI 도우미';
+  const level = $('newLevel').value;
+  $('btnCreate').disabled = true;
+  try {
+    busy('새 시트를 만드는 중… (10초쯤 걸립니다)');
+    const id = await createV9Sheet(title, level);
+    await loadSheet(id);
+    busy(''); toast('새 시트를 만들었습니다.'); show('home');
+  } catch (e) { busy(''); if (e.status !== 401) showMsg('connectMsg', '시트를 만들지 못했습니다 — ' + e.message, 'err'); }
+  finally { $('btnCreate').disabled = false; }
+}
+async function onSave() {
+  const model = getFormModel();
+  if (!model) { toast('AI 모델 ID를 입력해 주세요.'); $('fModelCustom').focus(); return; }
+  const key = $('fKey').value.trim();
+  const next = { classInfo: $('fClass').value.trim(), level: $('fLevel').value, model: resolveModel(model), tier: getRadio('tier') || '무료', length: getRadio('len') || '보통' };
+  $('btnSave').disabled = true;
+  try {
+    busy('저장하는 중…');
+    await saveSettingsToSheet(next);
+    if (key) LS.set('geminiKey', key); else LS.del('geminiKey');
+    Object.assign(State.settings, next);
+    busy(''); renderSettings();
+    toast(next.model !== model ? `저장했습니다. (${model} → ${next.model} 자동 교체)` : '설정을 저장했습니다.');
+  } catch (e) { busy(''); if (e.status !== 401) toast('저장 실패 — ' + e.message, 6000); }
+  finally { $('btnSave').disabled = false; }
+}
+async function onKeyTest() {
+  const key = $('fKey').value.trim();
+  if (!key) { showMsg('keyResult', 'API 키를 먼저 입력해 주세요.', 'err'); return; }
+  const model = resolveModel(getFormModel());
+  $('btnKeyTest').disabled = true; showMsg('keyResult', '확인하는 중…', 'info');
+  try {
+    const out = await callGemini(key, model, '연결 확인용 요청입니다. "확인"이라는 두 글자만 답하세요.', 0.2);
+    showMsg('keyResult', `✅ 연결 성공 — ${model} 응답: ${out.substring(0, 40)}  (※ [설정 저장]을 눌러야 저장됩니다)`, 'ok');
+  } catch (e) { showMsg('keyResult', '❌ ' + geminiErrorKo(e), 'err'); }
+  finally { $('btnKeyTest').disabled = false; }
+}
+async function onReload() {
+  try { busy('시트를 다시 읽는 중…'); await loadSheet(State.sheet.id); busy(''); renderHome(); toast('최신 내용으로 불러왔습니다.'); }
+  catch (e) { busy(''); if (e.status !== 401) toast('불러오기 실패 — ' + e.message, 6000); }
+}
+function onDisconnect() {
+  if (!confirm('이 시트와의 연결을 끊고 다른 시트를 고를까요?\n(시트 파일은 드라이브에 그대로 남습니다)')) return;
+  LS.del('sheetId'); State.sheet = null; State.sheetKey = ''; show('connect');
+}
+function onLogout() {
+  if (!confirm('로그아웃할까요?')) return;
+  if (LS.get('geminiKey') && confirm('이 브라우저에 저장된 Gemini API 키도 지울까요?\n(여럿이 쓰는 컴퓨터라면 [확인]을 누르세요)')) LS.del('geminiKey');
+  Auth.clear(); LS.del('wasIn'); LS.del('email'); LS.del('userName');
+  State.sheet = null; banner(''); show('login');
+}
+
+async function afterLogin() {
+  SS.del('silentTried');
+  // 사용자 표시용 이름·이메일 (drive.file 범위로 조회 가능) — 실패해도 진행
+  try {
+    const about = await gfetch('https://www.googleapis.com/drive/v3/about?fields=user(displayName,emailAddress)');
+    if (about.user) { LS.set('email', about.user.emailAddress || ''); LS.set('userName', about.user.displayName || ''); }
+  } catch (e) { if (e.status === 401) return; }
+  $('userName').textContent = LS.get('email') || LS.get('userName') || '';
+  // 만료 5분 전 안내
+  setTimeout(() => banner('로그인 유지 시간이 곧 끝납니다. 작업 중인 내용을 저장한 뒤 연장해 주세요.', '로그인 연장', () => Auth.begin(true)),
+    Math.max(Auth.exp - Date.now() - 5 * 60000, 0));
+
+  const savedId = LS.get('sheetId');
+  if (savedId) {
+    try { await loadSheet(savedId); show('home'); return; }
+    catch (e) {
+      if (e.status === 401) return;
+      LS.del('sheetId');
+      show('connect');
+      showMsg('connectMsg', (e.status === 404 || e.status === 403)
+        ? '전에 연결한 시트를 찾을 수 없습니다. (삭제되었거나 다른 계정의 파일) 다시 연결해 주세요.' : e.message, 'err');
+      return;
+    }
+  }
+  show('connect');
+}
+
+async function boot() {
+  $('verLabel').textContent = CONFIG.VERSION;
+  fillModelSelect();
+  const y = new Date(), sem = (y.getMonth() + 1 >= 8 || y.getMonth() + 1 <= 1) ? 2 : 1;
+  $('newTitle').value = `생활기록부 AI 도우미 (${y.getMonth() + 1 <= 1 ? y.getFullYear() - 1 : y.getFullYear()} ${sem}학기)`;
+
+  $('btnLogin').onclick = () => Auth.begin(false);
+  $('btnLogout').onclick = onLogout;
+  $('btnPick').onclick = onPick;
+  $('btnCreate').onclick = onCreate;
+  $('btnReload').onclick = onReload;
+  $('btnSave').onclick = onSave;
+  $('btnKeyTest').onclick = onKeyTest;
+  $('btnDisconnect').onclick = onDisconnect;
+  $('btnKeyShow').onclick = () => {
+    const showing = $('fKey').type === 'text';
+    $('fKey').type = showing ? 'password' : 'text';
+    $('btnKeyShow').textContent = showing ? '보기' : '숨기기'; $('btnKeyShow').setAttribute('aria-pressed', String(!showing));
+  };
+  $('btnKeyImport').onclick = () => { $('fKey').value = State.sheetKey; $('keyImport').hidden = true; toast('키를 입력칸에 넣었습니다. [설정 저장]을 눌러 주세요.'); };
+  $('fModel').onchange = () => { const c = $('fModel').value === '__custom__'; $('fModelCustom').hidden = !c; if (c) $('fModelCustom').focus(); };
+  document.querySelectorAll('#nav button[data-view]').forEach(b => { b.onclick = () => show(b.dataset.view); });
+
+  const r = Auth.handleRedirect();
+  if (r && !r.ok) {
+    Auth.clear(); LS.del('wasIn');
+    show('login'); showMsg('loginMsg', Auth.errorKo(r.silent && r.error !== 'scope_missing' ? 'expired' : r.error), 'err');
+    return;
+  }
+  if (!r && !Auth.load()) {
+    // 전에 로그인했던 브라우저면 한 번만 조용히 재로그인 시도 (무한 반복 방지 플래그)
+    if (LS.get('wasIn') === '1' && SS.get('silentTried') !== '1') { SS.set('silentTried', '1'); Auth.begin(true); return; }
+    show('login'); return;
+  }
+  try { await afterLogin(); }
+  catch (e) { show('login'); showMsg('loginMsg', e.message, 'err'); }
+}
+
+if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>

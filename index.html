@@ -203,6 +203,14 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 .ntext{margin:0;font-size:15px;line-height:1.75;user-select:all}
 .cfpaste{border:1.5px dashed #b9c0dd;border-radius:12px;padding:10px 14px;background:#f7f8fc}
 .cfpaste summary{cursor:pointer;font-weight:700;font-size:15px}
+.cfprev{border:2px solid var(--accent);border-radius:12px;padding:14px;margin-bottom:12px;background:#fffdf7}
+.cfprev h3{margin:0}
+.cfpv{display:flex;gap:10px;align-items:flex-start;border:1.5px solid #dfe2ee;border-radius:10px;padding:10px 12px;margin-top:8px;background:#fff;cursor:pointer}
+.cfpv.warn{border-color:#e9a59c}
+.cfpv input{flex:none;width:20px;height:20px;margin-top:3px;accent-color:var(--navy)}
+.cfpv p{margin:0 0 3px;font-size:14px;line-height:1.6;white-space:pre-wrap}
+.cfpv p b{color:var(--sub);font-size:12.5px;margin-right:2px}
+.cfpv p.bad{background:#fdecea;border-radius:6px;padding:2px 6px}
 .cfcard{border:1.5px solid #dfe2ee;border-radius:12px;padding:12px 14px;margin-top:10px;background:#fff}
 .cfline{display:grid;grid-template-columns:150px 1fr 40px;gap:8px;align-items:end;margin-bottom:8px}
 .cfline label,.cfl{display:block;font-size:12.5px;font-weight:700;color:var(--sub)}
@@ -3823,7 +3831,7 @@ function renderNeis() {
 }
 
 /* ── 항목 설정: 교과 성취기준 · 창체 활동 · 행동특성 문구를 앱에서 편집 (v9 설정 탭과 같은 칸) ── */
-const CF = { kind: 'subject', rows: null, dirty: false, grp: '' };   // grp: 골라 보는 과목·유형·영역
+const CF = { kind: 'subject', rows: null, dirty: false, grp: '', src: null, srcText: '', imp: null };   // grp: 골라 보는 과목·유형·영역
 const CFW = { subject: 6, activity: 4, behavior: 3 };
 const ACT_TYPES = ['자율활동', '진로활동', '동아리활동', '봉사활동'];
 function cfLoad() {
@@ -3859,7 +3867,7 @@ function renderConfig() {
   tabs.textContent = ''; body.textContent = ''; tools.textContent = '';
   const names = { subject: '교과 성취기준', activity: '창체 활동', behavior: '행동특성 문구' };
   KINDS.forEach(k => tabs.append(el('button', { type: 'button', class: kind === k ? 'on' : '', text: names[k],
-    onclick: () => { if (k === kind) return; if (CF.dirty && !confirm('저장하지 않은 변경이 있습니다. 버리고 이동할까요?')) return; CF.kind = k; CF.rows = null; CF.grp = ''; renderConfig(); } })));
+    onclick: () => { if (k === kind) return; if (CF.dirty && !confirm('저장하지 않은 변경이 있습니다. 버리고 이동할까요?')) return; CF.kind = k; CF.rows = null; CF.grp = ''; CF.imp = null; CF.src = null; CF.srcText = ''; renderConfig(); } })));
   $('cfSave').hidden = !CF.dirty; $('cfState').textContent = CF.dirty ? '저장하지 않은 변경이 있습니다.' : `${CF.rows.length}개`;
   const blank = () => { const a = []; for (let i = 0; i < CFW[kind]; i++) a.push(''); return a; };
   const grown = [];
@@ -3870,15 +3878,16 @@ function renderConfig() {
 
   // ── ① 한꺼번에 넣기 (맨 위) ──
   const ta = el('textarea', { rows: 3, placeholder: P.ph, 'aria-label': '표에서 붙여넣기' });
-  const pasteBox = el('details', { class: 'cfpaste', open: !CF.rows.length }, [
-    el('summary', { text: '📥 표에서 한꺼번에 붙여넣기 (엑셀 · 구글시트 · 한글 표)' }),
+  const pasteBox = el('details', { class: 'cfpaste' }, [
+    el('summary', { text: '📥 칸 순서가 맞는 표를 그대로 붙여넣기 (AI 없이 · 엑셀 · 구글시트)' }),
     el('p', { class: 'muted', style: 'margin:8px 0', text: `표의 칸 순서가 [ ${P.cols} ]가 되게 여러 줄을 복사해 아래에 붙여넣으세요. 머리글 줄은 알아서 건너뜁니다.` }), ta,
     el('p', { style: 'margin:10px 0 0' }, [el('button', { class: 'btn', type: 'button', text: '붙여넣은 내용 추가', onclick: () => {
       const rows = parseTsv(ta.value).filter(r => !P.head.test(r[0] || '')).map(r => { const a = blank(); r.slice(0, kind === 'subject' ? 6 : kind === 'activity' ? 3 : 2).forEach((v, i) => { a[i] = v; }); return a; });
       const good = rows.filter(a => P.need.every(i => a[i]));
       if (!good.length) { toast('넣을 수 있는 줄을 찾지 못했습니다. 표에서 복사한 것인지(칸이 탭으로 구분되는지), 칸 순서가 맞는지 확인해 주세요.', 7000); return; }
       good.forEach(a => CF.rows.push(a)); CF.grp = ''; cfTouch(); renderConfig(); toast(`${good.length}줄을 추가했습니다.` + (rows.length > good.length ? ` (필수 칸이 빈 ${rows.length - good.length}줄 제외)` : '') + ' [저장]을 눌러 주세요.', 5000); } })])]);
-  tools.append(pasteBox);
+  if (CF.imp && CF.imp.kind === kind) tools.append(importPreview());
+  tools.append(importBox(), pasteBox);
   const quick = el('p', { class: 'row', style: 'margin:12px 0 0' });
   if (kind === 'activity') quick.append(el('button', { class: 'btn line sm', type: 'button', text: '기본 활동 중 없는 것 추가', onclick: () => {
     const have = new Set(CF.rows.map(r => r[0].trim() + '|' + r[1].trim())); const add = V9_DATA.activities.filter(a => !have.has(a[0] + '|' + a[1]));
@@ -3919,7 +3928,7 @@ function renderConfig() {
       body.append(line);
     });
   }
-  if (!CF.rows.length) body.append(el('p', { class: 'muted', style: 'margin-top:14px', text: '아직 항목이 없습니다. 위의 "표에서 한꺼번에 붙여넣기"를 쓰거나, 아래 [+ 한 줄 추가]로 하나씩 넣으세요.' }));
+  if (!CF.rows.length) body.append(el('p', { class: 'muted', style: 'margin-top:14px', text: '아직 항목이 없습니다. 위의 "문서에서 AI로 가져오기"에 평가계획 파일을 올리거나, 아래 [+ 한 줄 추가]로 하나씩 넣으세요.' }));
   body.append(el('p', { style: 'margin:14px 0 0' }, [el('button', { class: 'btn line', type: 'button', text: '+ 한 줄 추가' + (CF.grp ? ` (${CF.grp})` : ''), onclick: () => {
     const a = blank(); a[0] = CF.grp || ''; CF.rows.push(a); cfTouch(); renderConfig();
     const all = document.querySelectorAll('#cfBody .cfcard, #cfBody .cfrow:not(.head)'), last = all[all.length - 1];
@@ -3998,6 +4007,246 @@ async function onNewTerm() {
   } catch (e) { busy(''); if (e.status !== 401) toast('실패 — ' + e.message, 9000); }
 }
 
+/* ───────── 8-6. 문서에서 항목 가져오기 (AI 정리 + 미리보기) ─────────
+   평가계획 문서(한글 hwpx · 엑셀 · PDF · 사진 · 구글시트 · 붙여넣은 글)를 읽어
+   항목 설정의 칸(과목·영역·성취기준·상·중·하 등)에 맞게 Gemini가 정리한다.
+   표 모양이 학교마다 달라 규칙으로는 못 읽으므로 해석만 AI에 맡기고, 결과는 반드시 미리보기로 확인한 뒤 추가한다.
+   hwpx·엑셀·구글시트·붙여넣기는 원문 글자를 앱이 직접 꺼내므로, AI가 돌려준 문장이 원문에 실제로 있는지도 대조한다. */
+const IMPORT_MAX_TEXT = 150000, IMPORT_MAX_FILE = 15 * 1024 * 1024;
+
+/* ── zip(hwpx·xlsx) 읽기 — 브라우저 내장 압축 해제만 사용 ── */
+async function unzip(buf) {
+  const dv = new DataView(buf), u8 = new Uint8Array(buf), dec = new TextDecoder('utf-8'), files = {};
+  let e = -1; for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { e = i; break; }
+  if (e < 0) throw new Error('파일 형식을 읽을 수 없습니다. (zip 구조가 아님)');
+  let p = dv.getUint32(e + 16, true); const n = dv.getUint16(e + 10, true);
+  for (let k = 0; k < n && dv.getUint32(p, true) === 0x02014b50; k++) {
+    const method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), nlen = dv.getUint16(p + 28, true), xlen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true), off = dv.getUint32(p + 42, true);
+    files[dec.decode(u8.subarray(p + 46, p + 46 + nlen))] = { method, csize, off };
+    p += 46 + nlen + xlen + clen;
+  }
+  const read = async name => {
+    const f = files[name]; if (!f) return null;
+    const start = f.off + 30 + dv.getUint16(f.off + 26, true) + dv.getUint16(f.off + 28, true), data = u8.subarray(start, start + f.csize);
+    if (f.method === 0) return dec.decode(data);
+    if (f.method !== 8 || typeof DecompressionStream === 'undefined') throw new Error('이 브라우저에서는 이 파일의 압축을 풀 수 없습니다. PDF로 저장해서 올려 주세요.');
+    return dec.decode(await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+  };
+  return { names: Object.keys(files), read };
+}
+const xml = s => new DOMParser().parseFromString(s, 'application/xml');
+const kids = (el, name) => Array.from(el.children).filter(c => c.localName === name);
+const numOrder = (a, b) => (parseInt((a.match(/(\d+)\.xml$/) || [])[1], 10) || 0) - (parseInt((b.match(/(\d+)\.xml$/) || [])[1], 10) || 0);
+const cellClean = s => S(s).replace(/\s+/g, ' ').trim();
+function gridToText(grid) {            // 2차원 표 → "| 칸 | 칸 |" 줄
+  return grid.filter(r => r && r.some(v => v)).map(r => '| ' + Array.from(r, v => cellClean(v)).join(' | ') + ' |').join('\n');
+}
+// 엑셀: 시트마다 표로. 병합된 칸은 같은 값으로 채워 AI가 행을 읽기 쉽게 함
+async function xlsxToText(buf) {
+  const z = await unzip(buf), ss = [];
+  const sst = await z.read('xl/sharedStrings.xml');
+  if (sst) Array.from(xml(sst).getElementsByTagName('*')).filter(x => x.localName === 'si').forEach(si => ss.push(Array.from(si.getElementsByTagName('*')).filter(x => x.localName === 't' && x.parentNode.localName !== 'rPh').map(t => t.textContent).join('')));
+  let names = []; const wb = await z.read('xl/workbook.xml');
+  if (wb) names = Array.from(xml(wb).getElementsByTagName('*')).filter(x => x.localName === 'sheet').map(x => x.getAttribute('name'));
+  const out = [], sheets = z.names.filter(nm => /^xl\/worksheets\/sheet\d+\.xml$/.test(nm)).sort(numOrder);
+  const col = ref => { let c = 0; for (const ch of ref.replace(/\d+/g, '')) c = c * 26 + (ch.charCodeAt(0) - 64); return c - 1; };
+  for (let i = 0; i < sheets.length; i++) {
+    const doc = xml(await z.read(sheets[i])), grid = [];
+    Array.from(doc.getElementsByTagName('*')).filter(x => x.localName === 'c').forEach(c => {
+      const ref = c.getAttribute('r') || ''; if (!ref) return;
+      const r = parseInt(ref.replace(/\D+/g, ''), 10) - 1, t = c.getAttribute('t'), v = kids(c, 'v')[0];
+      let val = t === 's' ? ss[parseInt(v ? v.textContent : '-1', 10)] : t === 'inlineStr' ? Array.from(c.getElementsByTagName('*')).filter(x => x.localName === 't').map(x => x.textContent).join('') : v ? v.textContent : '';
+      if (val == null || val === '') return;
+      (grid[r] = grid[r] || [])[col(ref)] = val;
+    });
+    Array.from(doc.getElementsByTagName('*')).filter(x => x.localName === 'mergeCell').forEach(m => {
+      const [a, b] = (m.getAttribute('ref') || '').split(':'); if (!a || !b) return;
+      const r1 = parseInt(a.replace(/\D+/g, ''), 10) - 1, r2 = parseInt(b.replace(/\D+/g, ''), 10) - 1, c1 = col(a), c2 = col(b), v = (grid[r1] || [])[c1];
+      if (v == null) return;
+      for (let r = r1; r <= r2; r++) for (let c = c1; c <= c2; c++) (grid[r] = grid[r] || [])[c] = v;
+    });
+    const t = gridToText(grid); if (t) out.push(`[시트: ${names[i] || i + 1}]\n` + t);
+  }
+  return out.join('\n\n');
+}
+// 한글(hwpx): 본문 문단과 표를 문서 순서대로. 표는 셀 주소·병합 정보를 써서 격자로 복원
+function hwpxNode(el, lines, cur) {
+  if (el.localName === 'tbl') { if (cur.t.trim()) { lines.push(cur.t.trim()); cur.t = ''; } lines.push(hwpxTable(el)); return; }
+  if (el.localName === 't') { cur.t += el.textContent; return; }
+  if (el.localName === 'lineBreak' || el.localName === 'tab') { cur.t += ' '; return; }
+  Array.from(el.children).forEach(c => hwpxNode(c, lines, cur));
+  if (el.localName === 'p' && cur.t.trim()) { lines.push(cur.t.trim()); cur.t = ''; }
+}
+function hwpxTable(tbl) {
+  const grid = [];
+  kids(tbl, 'tr').forEach((tr, ri) => { let ci = 0;
+    kids(tr, 'tc').forEach(tc => {
+      const addr = kids(tc, 'cellAddr')[0], span = kids(tc, 'cellSpan')[0];
+      const r = addr ? parseInt(addr.getAttribute('rowAddr'), 10) : ri; let c = addr ? parseInt(addr.getAttribute('colAddr'), 10) : ci;
+      const rs = span ? parseInt(span.getAttribute('rowSpan'), 10) || 1 : 1, cs = span ? parseInt(span.getAttribute('colSpan'), 10) || 1 : 1;
+      const lines = [], cur = { t: '' }; Array.from(tc.children).forEach(x => hwpxNode(x, lines, cur)); if (cur.t.trim()) lines.push(cur.t.trim());
+      const text = lines.join(' ');
+      for (let a = 0; a < rs; a++) for (let b = 0; b < cs; b++) (grid[r + a] = grid[r + a] || [])[c + b] = text;
+      ci = c + cs;
+    }); });
+  return gridToText(grid);
+}
+async function hwpxToText(buf) {
+  const z = await unzip(buf), secs = z.names.filter(nm => /^Contents\/section\d+\.xml$/i.test(nm)).sort(numOrder), lines = [];
+  if (!secs.length) throw new Error('한글(hwpx) 문서의 본문을 찾지 못했습니다.');
+  for (const nm of secs) { const cur = { t: '' }; hwpxNode(xml(await z.read(nm)).documentElement, lines, cur); if (cur.t.trim()) lines.push(cur.t.trim()); }
+  return lines.join('\n');
+}
+const toBase64 = buf => { const u = new Uint8Array(buf); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
+// 파일 → { name, text } (원문 글자를 꺼낸 경우) 또는 { name, mime, b64 } (PDF·사진: Gemini가 직접 읽음)
+async function readImportFile(file) {
+  const name = file.name, ext = (name.split('.').pop() || '').toLowerCase();
+  if (file.size > IMPORT_MAX_FILE) throw new Error('파일이 너무 큽니다(15MB 초과). 필요한 쪽만 따로 저장해서 올려 주세요.');
+  if (ext === 'hwp') throw new Error('예전 한글 형식(.hwp)은 읽을 수 없습니다. 한글에서 [다른 이름으로 저장] → 파일 형식을 "한글 표준 문서(*.hwpx)" 또는 PDF로 바꿔 저장한 뒤 올려 주세요.');
+  if (ext === 'xls') throw new Error('예전 엑셀 형식(.xls)은 읽을 수 없습니다. 엑셀에서 .xlsx로 저장한 뒤 올려 주세요.');
+  const buf = await file.arrayBuffer();
+  if (ext === 'xlsx') return { name, text: await xlsxToText(buf) };
+  if (ext === 'hwpx') return { name, text: await hwpxToText(buf) };
+  if (ext === 'csv' || ext === 'txt' || ext === 'tsv') return { name, text: new TextDecoder('utf-8').decode(buf) };
+  const mime = ext === 'pdf' ? 'application/pdf' : ext === 'png' ? 'image/png' : (ext === 'jpg' || ext === 'jpeg') ? 'image/jpeg' : ext === 'webp' ? 'image/webp' : '';
+  if (!mime) throw new Error('읽을 수 없는 파일 형식입니다. 한글(hwpx)·엑셀(xlsx)·PDF·사진(png, jpg) 파일을 올려 주세요.');
+  return { name, mime, b64: toBase64(buf) };
+}
+// 구글 스프레드시트를 골라 모든 탭의 값을 읽음 (선생님이 직접 고른 파일만 접근 가능)
+async function readPickedSheet() {
+  const picked = await pickSheet(); if (!picked) return null;
+  const meta = await gfetch(`${SHEETS_API}/${encodeURIComponent(picked.id)}?fields=sheets.properties(title)`);
+  const titles = (meta.sheets || []).map(s => s.properties.title), p = new URLSearchParams();
+  titles.forEach(t => p.append('ranges', `'${t.replace(/'/g, "''")}'`));
+  const res = await gfetch(`${SHEETS_API}/${encodeURIComponent(picked.id)}/values:batchGet?${p.toString()}`);
+  const text = titles.map((t, i) => { const g = gridToText(((res.valueRanges || [])[i] || {}).values || []); return g ? `[시트: ${t}]\n` + g : ''; }).filter(Boolean).join('\n\n');
+  return { name: picked.name || '구글 스프레드시트', text };
+}
+
+/* ── Gemini에 정리 요청 ── */
+const IMPORT_SPEC = {
+  subject: { what: '교과 성취기준과 성취수준(상·중·하) 설명', shape: '[{"subject":"과목","domain":"영역","criteria":"성취기준","high":"상 수준 설명","mid":"중 수준 설명","low":"하 수준 설명"}]',
+    rules: ['subject(과목)는 "국어", "수학"처럼 짧은 과목 이름만 쓴다. 표에서 과목 칸이 병합되어 첫 줄에만 있으면 아래 줄에도 같은 과목을 채운다.',
+      'domain(영역)은 문서의 영역·단원·평가영역 칸을 쓴다. 없으면 빈 문자열.',
+      'criteria(성취기준)는 "[4국02-04] …"처럼 코드가 붙어 있으면 코드까지 그대로 옮긴다. 한 평가 항목에 성취기준이 여러 개면 줄바꿈(\\n)으로 이어 하나의 criteria에 넣는다.',
+      '수준 이름이 상/중/하가 아니어도(예: 잘함/보통/노력요함, A/B/C, 매우잘함/잘함/보통/노력요함) 가장 높은 단계 → high, 가장 낮은 단계 → low, 가운데(4단계면 "보통"에 해당하는 단계) → mid 로 넣는다.',
+      '수준별 설명이 문서에 없으면 high/mid/low는 빈 문자열로 둔다. 평가 방법·시기·배점·비고 같은 다른 칸은 무시한다.'],
+    row: o => [o.subject, o.domain, o.criteria, o.high, o.mid, o.low], need: [0, 2], key: r => r[0] + '|' + r[2] },
+  activity: { what: '창의적 체험활동의 활동 목록', shape: '[{"type":"자율활동|동아리활동|진로활동|봉사활동 중 하나","name":"활동명","content":"활동 내용"}]',
+    rules: ['type은 반드시 자율활동, 동아리활동, 진로활동, 봉사활동 중 하나로 쓴다. 문서에 "자율·자치활동"처럼 적혀 있으면 가장 가까운 것으로 고른다.',
+      'name(활동명)은 짧은 활동 이름, content는 그 활동의 내용 설명을 문서 문장 그대로 옮긴다. 내용 설명이 없으면 빈 문자열.', '시수·일시·장소·담당자 같은 칸은 무시한다.'],
+    row: o => [/동아리/.test(S(o.type)) ? '동아리활동' : /진로/.test(S(o.type)) ? '진로활동' : /봉사/.test(S(o.type)) ? '봉사활동' : /자율|자치/.test(S(o.type)) ? '자율활동' : S(o.type), o.name, o.content, ''], need: [0, 1], key: r => r[0] + '|' + r[1] },
+  behavior: { what: '행동특성 및 종합의견에 쓸 예시 문구', shape: '[{"area":"영역","phrase":"문구"}]',
+    rules: ['area(영역)는 문서의 분류 이름(예: 수업태도, 책임감)을 쓴다. 분류가 없으면 문구의 핵심 낱말 하나를 쓴다.', 'phrase(문구)는 한 문장씩 나누어 문서 문장 그대로 옮긴다.'],
+    row: o => [o.area, o.phrase, ''], need: [0, 1], key: r => r[1] }
+};
+function importPrompt(kind) {
+  const P = IMPORT_SPEC[kind];
+  return `당신은 학교 문서를 표로 옮겨 적는 사무 보조원입니다. 아래 문서에서 ${P.what}을(를) 찾아 JSON 배열로만 출력하세요.\n\n` +
+    `[출력 형식]\n${P.shape}\n\n[규칙 — 반드시 지킬 것]\n` +
+    ['문서에 적힌 문장을 글자 그대로 옮긴다. 고쳐 쓰기·요약·보충·맞춤법 교정을 하지 않는다.', '문서에 없는 내용을 지어내지 않는다. 찾을 수 없는 칸은 빈 문자열("")로 둔다.'].concat(P.rules,
+      ['문서에 해당 내용이 전혀 없으면 빈 배열 []을 출력한다.', '표는 줄마다 "|"로 칸을 나눠 적혀 있다. 병합된 칸은 같은 글이 여러 칸에 반복되어 있을 수 있다.', 'JSON 배열 외의 설명·머리말·코드블록 표시는 쓰지 않는다.']).map(r => '- ' + r).join('\n');
+}
+async function geminiJson(parts) {
+  const apiKey = LS.get('geminiKey') || '', model = _getGeminiModel();
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    let code = 0, body = {}, raw = '';
+    try {
+      for (let level = 0; level <= 3; level++) {
+        const gc = Object.assign(buildGenerationConfig(model, Math.min(level, 2), 0.1, level === 3 ? 8192 : 32768), { responseMimeType: 'application/json' });
+        const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts }], generationConfig: gc }) });
+        code = res.status; body = await res.json().catch(() => ({})); raw = (body.error && body.error.message) || '';
+        if (code === 400 && level < 3 && (isParamError(code, raw) || /max_?output_?tokens|maxOutputTokens/i.test(raw))) continue;
+        break;
+      }
+    } catch (e) { throw new Error('네트워크 오류 — 인터넷 연결을 확인해 주세요.'); }
+    if (code === 200) {
+      const cand = body.candidates && body.candidates[0], text = cand && cand.content && cand.content.parts && cand.content.parts.map(x => x.text || '').join('');
+      if (!text) throw new Error('AI가 내용을 읽지 못했습니다' + (body.promptFeedback && body.promptFeedback.blockReason ? ` (사유: ${body.promptFeedback.blockReason})` : '') + '. 파일을 PDF로 바꾸거나 필요한 표만 붙여넣어 다시 시도해 주세요.');
+      countUsage();
+      return { text, truncated: cand.finishReason === 'MAX_TOKENS' };
+    }
+    if ((code === 429 || code === 503) && attempt < 3) { for (let s = attempt * 15; s > 0; s--) { busy(`AI ${code === 429 ? '사용 한도' : '서버 혼잡'} — ${s}초 뒤 다시 시도합니다…`); await GEN.wait(1000); } busy('AI가 문서를 읽는 중…'); continue; }
+    throw new Error(code === 404 ? `모델 "${model}"을 찾을 수 없습니다. ⚙️ 설정에서 다른 모델을 선택하세요.` : geminiErrorKo(withStatus(new Error(raw || 'HTTP ' + code), code)));
+  }
+}
+function parseJsonArray(text) {
+  let t = S(text).replace(/^\s*```(?:json)?/i, '').replace(/```\s*$/, '').trim();
+  const a = t.indexOf('['), b = t.lastIndexOf(']'); if (a === -1 || b <= a) throw new Error('AI의 답을 표로 바꾸지 못했습니다. 다시 시도해 주세요.');
+  try { const v = JSON.parse(t.slice(a, b + 1)); if (Array.isArray(v)) return v; } catch (e) {}
+  throw new Error('AI의 답을 표로 바꾸지 못했습니다. 문서가 길면 과목별로 나눠서 올려 주세요.');
+}
+// AI가 돌려준 글이 원문에 실제로 있는지 (띄어쓰기·줄바꿈 차이는 무시, 줄 단위로 확인)
+const squash = s => S(s).replace(/[\s|]/g, '');
+function inSource(value, srcSquashed) { return S(value).split('\n').map(squash).filter(Boolean).every(line => srcSquashed.indexOf(line) !== -1); }
+
+async function runImport() {
+  const kind = CF.kind, P = IMPORT_SPEC[kind], pasted = S(CF.srcText).trim(), src = CF.src;
+  if (!LS.get('geminiKey')) { toast('먼저 ⚙️ 설정에서 Gemini API 키를 입력해 주세요.', 5000); return; }
+  if (!src && !pasted) { toast('파일을 고르거나 문서 내용을 붙여넣어 주세요.'); return; }
+  try {
+    busy('AI가 문서를 읽는 중… (문서 길이에 따라 10초~1분)');
+    let text = [src && src.text ? src.text : '', pasted].filter(Boolean).join('\n\n');
+    if (text.length > IMPORT_MAX_TEXT) throw new Error(`문서가 너무 깁니다(${Math.round(text.length / 1000)}천 자). 필요한 부분만 나눠서 올려 주세요.`);
+    const parts = [{ text: importPrompt(kind) + (text ? '\n\n[문서]\n' + text : '\n\n(문서는 첨부 파일입니다)') }];
+    if (src && src.b64) parts.push({ inline_data: { mime_type: src.mime, data: src.b64 } });
+    const out = await geminiJson(parts), arr = parseJsonArray(out.text), sq = squash(text), canCheck = !(src && src.b64) && !!text;
+    const have = new Set(CF.rows.map(r => P.key(r.map(v => v.trim())))), seen = new Set();
+    const items = arr.filter(o => o && typeof o === 'object').map(o => P.row(o).map(v => S(v).replace(/\r/g, '').trim()))
+      .filter(r => P.need.every(i => r[i]))
+      .map(r => { const k = P.key(r), dup = have.has(k) || seen.has(k); seen.add(k);
+        const bad = canCheck ? r.map((v, i) => !!v && !(kind === 'activity' && i === 0) && !inSource(v, sq)) : r.map(() => false);
+        return { row: r, bad, dup, on: !dup }; });
+    busy('');
+    if (!items.length) { toast(`문서에서 ${P.what}을(를) 찾지 못했습니다. 다른 파일이거나 표가 그림으로 들어 있을 수 있습니다.`, 8000); return; }
+    CF.imp = { kind, items, canCheck, truncated: out.truncated, name: src ? src.name : '붙여넣은 글' };
+    renderConfig();
+    const pv = document.getElementById('cfPreview'); if (pv) pv.scrollIntoView({ block: 'start' });
+  } catch (e) { busy(''); if (e.status !== 401) toast('가져오기 실패 — ' + e.message, 9000); }
+}
+
+/* ── 화면: 가져오기 칸 + 미리보기 ── */
+function importBox() {
+  const kind = CF.kind, P = IMPORT_SPEC[kind];
+  const status = el('span', { class: 'muted', text: CF.src ? '선택됨: ' + CF.src.name : '' });
+  const setSrc = async fn => { try { busy('파일을 읽는 중…'); const s = await fn(); busy(''); if (s) { if (s.text !== undefined && !s.text.trim()) throw new Error('파일에서 글자를 찾지 못했습니다. 표가 그림으로 들어 있다면 PDF나 화면 캡처로 올려 주세요.'); CF.src = s; status.textContent = '선택됨: ' + s.name; } }
+    catch (e) { busy(''); if (e.status !== 401) toast(e.message, 9000); } };
+  const file = el('input', { type: 'file', accept: '.hwpx,.hwp,.xlsx,.xls,.pdf,.png,.jpg,.jpeg,.webp,.csv,.txt', 'aria-label': '파일 고르기', style: 'max-width:100%', onchange: e => { const f = e.target.files[0]; if (f) setSrc(() => readImportFile(f)); } });
+  return el('details', { class: 'cfpaste', id: 'cfImport', open: !CF.rows.length && !CF.imp, style: 'margin-bottom:10px' }, [
+    el('summary', { text: '🤖 문서에서 AI로 가져오기 (한글 hwpx · 엑셀 · PDF · 사진 · 구글시트)' }),
+    el('p', { class: 'muted', style: 'margin:8px 0', text: `평가계획 문서를 그대로 올리면 AI가 ${P.what}을(를) 찾아 정리합니다. 표 모양이 달라도 됩니다. 정리된 내용은 미리보기로 확인한 뒤 추가합니다.` }),
+    el('div', { class: 'row' }, [file, el('button', { class: 'btn line sm', type: 'button', text: '구글 시트에서 고르기', onclick: () => setSrc(readPickedSheet) }), status]),
+    el('textarea', { rows: 2, value: CF.srcText || '', placeholder: '또는 문서 내용을 여기에 그대로 붙여넣기 (표 모양이 깨져도 괜찮습니다)', 'aria-label': '문서 내용 붙여넣기', style: 'margin-top:8px', oninput: e => { CF.srcText = e.target.value; } }),
+    el('p', { class: 'row', style: 'margin:10px 0 0' }, [el('button', { class: 'btn', type: 'button', text: 'AI로 정리하기', onclick: runImport }),
+      el('span', { class: 'muted', text: '문서 내용이 선생님의 Gemini 키로 Google에 전송됩니다. 학생 정보가 든 문서는 올리지 마세요. · 예전 형식 .hwp는 hwpx나 PDF로 저장해서 올려 주세요.' })])]);
+}
+function importPreview() {
+  const imp = CF.imp, kind = imp.kind, labels = { subject: ['과목', '영역', '성취기준', '상', '중', '하'], activity: ['유형', '활동명', '내용'], behavior: ['영역', '문구'] }[kind];
+  const box = el('div', { class: 'cfprev', id: 'cfPreview' }), nBad = imp.items.filter(x => x.bad.some(Boolean)).length, nDup = imp.items.filter(x => x.dup).length;
+  const count = el('b'), btn = el('button', { class: 'btn', type: 'button' });
+  const paint = () => { const n = imp.items.filter(x => x.on).length; count.textContent = `${n}줄 선택`; btn.textContent = `선택한 ${n}줄 추가`; btn.disabled = !n; };
+  box.append(el('h3', { text: `🔎 미리보기 — ${imp.name}에서 ${imp.items.length}줄을 찾았습니다` }),
+    el('p', { class: 'muted', style: 'margin:4px 0 8px', text: 'AI가 옮겨 적은 것이라 틀릴 수 있습니다. 원문과 비교해 확인하고, 넣을 줄만 체크해 추가하세요. 추가한 뒤에도 고칠 수 있습니다.' }));
+  if (imp.truncated) box.append(el('div', { class: 'msg err', text: '문서가 길어 AI의 답이 중간에 잘렸습니다. 뒤쪽 항목이 빠졌을 수 있으니 과목별로 나눠서 다시 올려 주세요.' }));
+  if (nBad) box.append(el('div', { class: 'msg err', text: `⚠ ${nBad}줄에 원문에서 찾을 수 없는 글이 있습니다(빨간 칸). AI가 문장을 바꿨거나 지어냈을 수 있으니 꼭 확인하세요.` }));
+  else if (imp.canCheck) box.append(el('div', { class: 'msg ok', text: '✓ 모든 글이 원문에 그대로 있는 문장입니다. (칸이 맞게 나뉘었는지만 확인하세요)' }));
+  else box.append(el('div', { class: 'msg info', text: 'PDF·사진은 앱이 원문 글자를 꺼낼 수 없어 자동 대조를 못 합니다. 문서와 직접 비교해 확인해 주세요.' }));
+  if (nDup) box.append(el('div', { class: 'msg info', text: `이미 있는 항목 ${nDup}줄은 체크를 꺼 두었습니다.` }));
+  imp.items.forEach(it => {
+    const card = el('label', { class: 'cfpv' + (it.bad.some(Boolean) ? ' warn' : '') });
+    card.append(el('input', { type: 'checkbox', checked: it.on, onchange: e => { it.on = e.target.checked; paint(); } }),
+      el('div', null, labels.map((lb, i) => it.row[i] ? el('p', { class: it.bad[i] ? 'bad' : '' }, [el('b', { text: lb + ' ' }), it.row[i], it.bad[i] ? el('span', { class: 'tag', text: '원문과 다름', style: 'margin-left:6px;background:#fadbd8;color:#8c241a' }) : null]) : null)
+        .concat(it.dup ? [el('p', null, [el('span', { class: 'tag', text: '이미 있음' })])] : [])));
+    box.append(card);
+  });
+  btn.onclick = () => { const add = imp.items.filter(x => x.on); add.forEach(x => { const a = x.row.slice(); while (a.length < CFW[kind]) a.push(''); CF.rows.push(a); });
+    CF.imp = null; CF.src = null; CF.srcText = ''; CF.grp = ''; cfTouch(); renderConfig(); toast(`${add.length}줄을 추가했습니다. 내용을 확인하고 [저장]을 눌러 주세요.`, 6000); };
+  box.append(el('p', { class: 'row', style: 'margin:12px 0 0' }, [btn, el('button', { class: 'btn line', type: 'button', text: '버리기', onclick: () => { CF.imp = null; renderConfig(); } }), count]));
+  paint();
+  return box;
+}
+
 /* ───────── 9. 화면 ───────── */
 const VIEWS = ['loading', 'login', 'connect', 'home', 'settings', 'roster', 'check', 'gen', 'result', 'neis', 'config'];
 async function show(view) {
@@ -4009,7 +4258,7 @@ async function show(view) {
   }
   if (State.view === 'config' && CF.dirty && view !== 'config') {
     if (!confirm('항목 설정에 저장하지 않은 변경이 있습니다. 버리고 이동할까요?')) return;
-    CF.dirty = false; CF.rows = null;
+    CF.dirty = false; CF.rows = null; CF.imp = null;
   }
   if ((view === 'gen' && !GEN.running) || (view === 'result' && !RV.running && !RV.busyKey) || view === 'neis' || (view === 'config' && !CF.dirty)) {                               // 생성 화면: 체크·결과를 항상 새로 읽음
     try { await Saver.drain(); busy('시트를 읽는 중…'); await refreshAll(); await loadResults(); busy(''); }

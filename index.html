@@ -301,8 +301,12 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
   <section id="v-connect" hidden>
     <div class="card">
       <h2>데이터를 저장할 시트를 연결하세요</h2>
-      <p class="muted">한 번만 연결하면 이 브라우저에서는 계속 기억합니다.</p>
+      <p class="muted">한 번 연결하면 이 브라우저에서 계속 기억하고, 다른 기기에서 로그인해도 마지막에 쓰던 시트를 자동으로 불러옵니다.</p>
       <div id="connectMsg" class="msg err" hidden></div>
+    </div>
+    <div class="card" id="mySheetsCard" hidden>
+      <h3>🗂 이 계정으로 이 앱에서 쓰던 시트</h3>
+      <div id="mySheets"></div>
     </div>
     <div class="grid2">
       <div class="card">
@@ -1981,6 +1985,33 @@ async function writeValues(data) {
   });
 }
 
+/* 다른 기기에서 로그인해도 쓰던 시트를 찾을 수 있게, 연결한 시트 파일에 "이 앱의 시트" 표식과 마지막 사용 시각을 남긴다.
+   (drive.file 권한으로는 이 앱이 만들었거나 선생님이 직접 고른 파일만 보이므로, 목록에도 그런 파일만 나온다) */
+const DRIVE_FILES = 'https://www.googleapis.com/drive/v3/files';
+function markSheet(id) {
+  gfetch(`${DRIVE_FILES}/${encodeURIComponent(id)}?fields=id`, { method: 'PATCH', body: JSON.stringify({ appProperties: { sgb: '1', sgbLast: new Date().toISOString() } }) }).catch(() => {});
+}
+async function listMySheets() {
+  const q = encodeURIComponent("mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
+  const r = await gfetch(`${DRIVE_FILES}?q=${q}&pageSize=50&orderBy=modifiedTime%20desc&fields=files(id,name,modifiedTime,appProperties)`);
+  const tag = f => (f.appProperties && f.appProperties.sgb) || '';
+  return (r.files || []).filter(f => tag(f) !== 'backup').map(f => ({ id: f.id, name: f.name, mine: tag(f) === '1', last: (f.appProperties && f.appProperties.sgbLast) || f.modifiedTime || '' }))
+    .sort((a, b) => (b.mine - a.mine) || (a.last < b.last ? 1 : a.last > b.last ? -1 : 0));
+}
+async function renderMySheets() {
+  const box = $('mySheets'), card = $('mySheetsCard'); box.textContent = ''; card.hidden = true;
+  let list = []; try { list = await listMySheets(); } catch (e) { return; }
+  if (!list.length || State.view !== 'connect') return;
+  card.hidden = false;
+  list.forEach(f => box.append(el('div', { class: 'row', style: 'justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)' }, [
+    el('span', null, [el('b', { text: f.name }), el('span', { class: 'muted', text: (f.mine ? '  · 마지막 사용 ' : '  · 수정 ') + S(f.last).slice(0, 10) })]),
+    el('button', { class: 'btn sm', type: 'button', text: '이 시트로 계속하기', onclick: () => useSheet(f.id) })])));
+}
+async function useSheet(id) {
+  showMsg('connectMsg', '');
+  try { busy('시트를 불러오는 중…'); await loadSheet(id); SS.del('noAuto'); busy(''); toast('시트를 연결했습니다.'); show('home'); }
+  catch (e) { busy(''); if (e.status !== 401) showMsg('connectMsg', e.message, 'err'); }
+}
 async function loadSheet(id) {
   let info;
   try { info = await inspectSheet(id); }
@@ -1992,6 +2023,7 @@ async function loadSheet(id) {
   State.sheet = Object.assign({ id }, info);
   State.data = null;
   LS.set('sheetId', id);
+  markSheet(id);
   await readSettings();
 }
 
@@ -3963,7 +3995,7 @@ const backupList = () => { try { return JSON.parse(LS.get('backups_' + State.she
 async function makeBackup() {
   await Saver.drain();
   const name = `${State.sheet.title} (백업 ${stamp()})`;
-  const res = await gfetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(State.sheet.id)}/copy?fields=id,name,webViewLink`, { method: 'POST', body: JSON.stringify({ name }) });
+  const res = await gfetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(State.sheet.id)}/copy?fields=id,name,webViewLink`, { method: 'POST', body: JSON.stringify({ name, appProperties: { sgb: 'backup' } }) });      // 백업 사본은 '쓰던 시트' 자동 연결 대상에서 제외
   const list = backupList(); list.unshift({ id: res.id, name: res.name || name, url: res.webViewLink || ('https://docs.google.com/spreadsheets/d/' + res.id), at: stamp() });
   LS.set('backups_' + State.sheet.id, JSON.stringify(list.slice(0, 20)));
   return list[0];
@@ -4283,6 +4315,7 @@ async function show(view) {
   if (view === 'neis') renderNeis();
   if (view === 'config') { if (!CF.dirty) CF.rows = null; renderConfig(); }
   if (view === 'settings') renderManage();
+  if (view === 'connect') renderMySheets();
   window.scrollTo(0, 0);
 }
 function banner(msg, btnText, fn) {
@@ -4391,7 +4424,7 @@ async function onReload() {
 }
 function onDisconnect() {
   if (!confirm('이 시트와의 연결을 끊고 다른 시트를 고를까요?\n(시트 파일은 드라이브에 그대로 남습니다)')) return;
-  LS.del('sheetId'); LS.del('pending'); SS.del('genResume'); Saver.q.clear(); State.sheet = null; State.data = null; State.sheetKey = ''; show('connect');
+  LS.del('sheetId'); LS.del('pending'); SS.del('genResume'); SS.set('noAuto', '1'); Saver.q.clear(); State.sheet = null; State.data = null; State.sheetKey = ''; show('connect');
 }
 function onLogout() {
   if (!confirm('로그아웃할까요?')) return;
@@ -4436,6 +4469,13 @@ async function afterLogin() {
         ? '전에 연결한 시트를 찾을 수 없습니다. (삭제되었거나 다른 계정의 파일) 다시 연결해 주세요.' : e.message, 'err');
       return;
     }
+  }
+  // 이 기기에 기억된 시트가 없음(새 기기·새 브라우저) → 마지막에 쓰던 시트를 드라이브에서 찾아 자동 연결
+  if (SS.get('noAuto') !== '1') {
+    try {
+      const mine = (await listMySheets()).filter(f => f.mine);
+      if (mine.length) { await loadSheet(mine[0].id); show('home'); toast(`쓰던 시트 "${State.sheet.title}"을(를) 불러왔습니다.` + (mine.length > 1 ? ' 다른 시트는 ⚙️ 설정 → [다른 시트로 바꾸기]에서 고를 수 있습니다.' : ''), 7000); return; }
+    } catch (e) { if (e.status === 401) return; State.sheet = null; LS.del('sheetId'); }
   }
   show('connect');
 }

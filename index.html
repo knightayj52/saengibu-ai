@@ -355,9 +355,15 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
         <label class="opt"><input type="radio" name="len" value="보통"><b>보통</b><span>교과 220~250자 · 창체/행특 430~480자</span></label>
         <label class="opt"><input type="radio" name="len" value="상세"><b>상세</b><span>교과 280~320자 · 창체/행특 550~600자</span></label>
       </div>
+      <label class="f">마무리(종합 평가) 문장 <small>("~성장이 기대됨"처럼 글 끝에 덧붙이는 맺음 문장)</small></label>
+      <div class="opts c3">
+        <label class="opt"><input type="checkbox" id="fCloseSubject"><b>교과에 붙이기</b><span>끄면 활동 서술로 끝남 (기본: 끔)</span></label>
+        <label class="opt"><input type="checkbox" id="fCloseActivity"><b>창체에 붙이기</b><span>종합 평가 1~2문장 (기본: 켬)</span></label>
+        <label class="opt"><input type="checkbox" id="fCloseBehavior"><b>행동특성에 붙이기</b><span>종합 평가 2~3문장 (기본: 켬)</span></label>
+      </div>
       <p style="margin:22px 0 0" class="row">
         <button id="btnSave" class="btn" type="button">설정 저장</button>
-        <span class="muted">모델·요금제·학교급·학년반·분량은 시트(⚙️설정)에 저장되어 v9와 공유됩니다.</span>
+        <span class="muted">이 설정들은 시트(⚙️설정)에 저장됩니다. 마무리 문장 설정만 웹앱 전용이고 나머지는 v9와 공유됩니다.</span>
       </p>
     </div>
 
@@ -1874,7 +1880,7 @@ async function gfetch(url, opt) {
 const State = {
   user: null,
   sheet: null,          // { id, title, url, map: { KEY: {title, sheetId} } }
-  settings: { classInfo: '', level: '초등학교', model: MODELS.default, tier: '무료', length: '보통' },
+  settings: { classInfo: '', level: '초등학교', model: MODELS.default, tier: '무료', length: '보통', closing: { subject: false, activity: true, behavior: true } },
   sheetKey: '',         // 시트 C14에 들어 있는 키(가져오기 안내용, 저장하지 않음)
   studentCount: 0,
   data: null,           // 2단계: { rows, list, cfg, chk } — 학생명단·설정·체크 시트 내용
@@ -1916,15 +1922,17 @@ async function loadSheet(id) {
 async function readSettings() {
   const p = new URLSearchParams();
   p.append('ranges', a1('SETTINGS', 'C14:C23'));
-  p.append('ranges', a1('SETTINGS', 'F23'));
+  p.append('ranges', a1('SETTINGS', 'F22:F23'));
   p.append('ranges', a1('STUDENTS', 'B4:B53'));
   p.set('valueRenderOption', 'UNFORMATTED_VALUE');
   const res = await gfetch(`${SHEETS_API}/${encodeURIComponent(State.sheet.id)}/values:batchGet?${p.toString()}`);
   const vr = res.valueRanges || [];
   const col = ((vr[0] && vr[0].values) || []).map(r => (r && r[0] != null) ? r[0] : '');
   const at = row => String(col[row - 14] != null ? col[row - 14] : '').trim();
-  const lenRaw = String((((vr[1] && vr[1].values) || [[]])[0] || [])[0] || '').trim().substring(0, 2);
+  const fcol = (vr[1] && vr[1].values) || [];
+  const lenRaw = String((fcol[1] || [])[0] || '').trim().substring(0, 2);
   const s = State.settings;
+  s.closing = parseClosing((fcol[0] || [])[0]);
   State.sheetKey = at(14);
   s.classInfo = at(18);
   s.level = SCHOOL_LEVELS.includes(at(19)) ? at(19) : '초등학교';
@@ -1944,9 +1952,19 @@ async function saveSettingsToSheet(s) {
   await writeValues([
     { range: a1('SETTINGS', 'C18:C20'), values: [[s.classInfo], [s.level], [s.model]] },
     { range: a1('SETTINGS', 'C23'), values: [[s.tier]] },
-    { range: a1('SETTINGS', 'F23'), values: [[lenOpt]] }
+    { range: a1('SETTINGS', 'F23'), values: [[lenOpt]] },
+    { range: a1('SETTINGS', 'E22:F22'), values: [['✍️ 마무리 문장', closingText(s.closing)]] }      // 웹앱 전용 칸 (v9는 읽지 않음)
   ]);
 }
+// 마무리(종합 평가) 문장을 붙일지 — 영역별. 칸이 비어 있으면 기본값: 교과 끔 · 창체 켬 · 행동특성 켬
+const CLOSING_DEFAULT = { subject: false, activity: true, behavior: true };
+const CLOSING_NAME = { subject: '교과', activity: '창체', behavior: '행동특성' };
+function parseClosing(v) {
+  const t = String(v == null ? '' : v), c = Object.assign({}, CLOSING_DEFAULT);
+  Object.keys(CLOSING_NAME).forEach(k => { const m = t.match(new RegExp(CLOSING_NAME[k] + '\\s*(켬|끔)')); if (m) c[k] = m[1] === '켬'; });
+  return c;
+}
+const closingText = c => Object.keys(CLOSING_NAME).map(k => CLOSING_NAME[k] + ' ' + (c[k] ? '켬' : '끔')).join(' · ');
 
 /* ───────── 7. 새 시트 만들기 (v9 initAllSheets와 같은 셀 배치) ───────── */
 function hexColor(h) {
@@ -3278,7 +3296,15 @@ function collectJobs(kind, targets, targetSubject) {
     : kind === 'subject' ? a.group.localeCompare(b.group, 'ko') : kind === 'activity' ? ACTIVITY_AREAS.indexOf(a.group) - ACTIVITY_AREAS.indexOf(b.group) : 0);
   return { jobs, skippedVolunteer };
 }
-function buildPrompt(job, basePrompt) {
+// 마무리(종합 평가) 문장을 끈 영역은 v9 프롬프트 끝의 "종합 평가 n문장을 추가" 지시를 "덧붙이지 말 것"으로 바꿈
+function applyClosing(prompt, kind) {
+  if (State.settings.closing[kind]) return prompt;                       // 켬 = v9 프롬프트 그대로
+  const re = /마지막에 (?:한 줄 띄우고|빈 줄 하나를 두고) 종합 평가[^,\n]*추가하되(?:\(글자 수에 포함\))?, 모든 문장은/;
+  if (!re.test(prompt)) throw new Error('프롬프트에서 마무리 문장 지시를 찾지 못했습니다.');
+  return prompt.replace(re, '종합 평가·기대·당부 같은 마무리 문장은 따로 덧붙이지 말고, 활동 모습 서술로 글을 끝내세요(맨 끝을 "~기대됨", "~바람"으로 맺지 말 것). 줄바꿈 없이 한 문단으로 쓰고, 모든 문장은');
+}
+function buildPrompt(job, basePrompt) { const b = buildPromptV9(job, basePrompt); b.prompt = applyClosing(b.prompt, job.kind); return b; }
+function buildPromptV9(job, basePrompt) {
   const schoolLevel = _getSchoolLevel(), trait = job.trait, kind = job.kind, lenSpec = _getLengthSpec(null, kind);
   if (kind === 'subject') {
     const subject = job.group, items = job.items;
@@ -3428,7 +3454,7 @@ function similarityFindings() {
 function renderGen() {
   const d = State.data, hasKey = !!LS.get('geminiKey'), s = State.settings;
   const ready = $('genReady'); ready.textContent = '';
-  ready.append(`모델 ${_getGeminiModel()} (${s.tier}) · 분량 ${s.length} · ${s.level} · 오늘 AI 호출 ${GEN.usage.count}회 `);
+  ready.append(`모델 ${_getGeminiModel()} (${s.tier}) · 분량 ${s.length} · ${s.level} · 마무리 문장: ${closingText(s.closing)} · 오늘 AI 호출 ${GEN.usage.count}회 `);
   if (!hasKey) ready.append(el('b', { text: '— Gemini API 키가 없습니다. ' }), el('button', { class: 'btn sm', type: 'button', text: '⚙️ 설정으로', onclick: () => show('settings') }));
   ready.className = 'msg ' + (hasKey ? 'info' : 'err');
   const tabs = $('genTabs'); tabs.textContent = '';
@@ -3737,6 +3763,7 @@ function renderSettings() {
   $('fModel').value = inList ? s.model : '__custom__';
   $('fModelCustom').hidden = inList; $('fModelCustom').value = inList ? '' : s.model;
   setRadio('tier', s.tier); setRadio('len', s.length);
+  $('fCloseSubject').checked = s.closing.subject; $('fCloseActivity').checked = s.closing.activity; $('fCloseBehavior').checked = s.closing.behavior;
   $('fLevel').value = s.level; $('fClass').value = s.classInfo;
   $('setSheetName').textContent = State.sheet ? State.sheet.title : '';
 }
@@ -3768,7 +3795,8 @@ async function onSave() {
   const model = getFormModel();
   if (!model) { toast('AI 모델 ID를 입력해 주세요.'); $('fModelCustom').focus(); return; }
   const key = $('fKey').value.trim();
-  const next = { classInfo: $('fClass').value.trim(), level: $('fLevel').value, model: resolveModel(model), tier: getRadio('tier') || '무료', length: getRadio('len') || '보통' };
+  const next = { classInfo: $('fClass').value.trim(), level: $('fLevel').value, model: resolveModel(model), tier: getRadio('tier') || '무료', length: getRadio('len') || '보통',
+    closing: { subject: $('fCloseSubject').checked, activity: $('fCloseActivity').checked, behavior: $('fCloseBehavior').checked } };
   $('btnSave').disabled = true;
   try {
     busy('저장하는 중…');

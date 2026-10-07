@@ -97,6 +97,67 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:18px 16px 26p
 .spinner{width:38px;height:38px;border-radius:50%;border:4px solid #cfd4ee;border-top-color:var(--navy);animation:sp 0.8s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.spinner{animation-duration:2.4s}}
+/* 2단계: 학생명단 · 체크 */
+textarea{font:inherit;width:100%;padding:9px 11px;border:1.5px solid #cdd1e0;border-radius:10px;background:#fff;color:var(--ink);resize:vertical;line-height:1.5}
+textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
+#saveState{font-size:12.5px;padding:3px 10px;border-radius:99px;background:rgba(255,255,255,.14);white-space:nowrap}
+#saveState.bad{background:#c0392b;cursor:pointer}
+.srow{display:grid;grid-template-columns:58px 110px 1fr 1fr 1fr 40px;gap:8px;align-items:start;padding:10px 0;border-top:1px solid var(--line)}
+.srow.head{font-size:12.5px;font-weight:700;color:var(--sub);border-top:0;padding-bottom:4px}
+.srow input{min-height:40px;padding:8px 9px}
+.srow textarea{min-height:40px;font-size:14px}
+.srow .lb{display:none;font-size:12px;color:var(--sub);font-weight:700;margin-bottom:2px}
+.xbtn{border:1px solid #e2b4ae;background:#fff;color:var(--bad);border-radius:8px;min-height:40px;cursor:pointer;font-size:15px}
+@media(max-width:760px){
+  #userName,.brand small{display:none}
+  .brand b{font-size:15px}
+  #btnLogout{white-space:nowrap}
+  .srow{grid-template-columns:58px 1fr 40px}
+  .srow.head{display:none}
+  .srow .tr{grid-column:1 / -1}
+  .srow .lb{display:block}
+}
+.addbox{border-top:1px solid var(--line);margin-top:8px;padding-top:4px}
+.stickybar{position:sticky;top:0;z-index:20;padding:12px 14px;box-shadow:0 4px 14px rgba(28,35,64,.06)}
+.sturow{display:flex;gap:8px;align-items:center}
+.sturow select{flex:1;font-weight:700;font-size:16px}
+.navbtn{min-width:46px;min-height:46px;border-radius:10px;border:1.5px solid var(--navy);background:#fff;color:var(--navy);font-size:18px;cursor:pointer}
+.navbtn:disabled{opacity:.35;cursor:not-allowed}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.tabs button{font:inherit;font-weight:700;font-size:14.5px;border:1.5px solid #cdd1e0;background:#fff;color:var(--sub);border-radius:10px;padding:9px 4px;cursor:pointer}
+.tabs button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.tabs button b{font-weight:800;margin-left:4px}
+.chipbar{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 14px}
+.chipbar button{font:inherit;font-size:14px;font-weight:600;border:1.5px solid #cdd1e0;background:#fff;color:var(--ink);border-radius:99px;padding:7px 13px;cursor:pointer}
+.chipbar button.on{background:#eef0fb;border-color:var(--navy);color:var(--navy)}
+.chipbar button small{color:var(--sub);font-weight:400;margin-left:4px}
+.crit{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;background:#fff}
+.crit .dom{font-size:12.5px;font-weight:700;color:var(--sub);margin-bottom:8px}
+.lv{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;font:inherit;font-size:14.5px;line-height:1.5;border:1.5px solid #dfe2ee;background:#fff;color:var(--ink);border-radius:10px;padding:10px 11px;margin-top:6px;cursor:pointer}
+.lv .bd{flex:none;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;background:#eef0f6;color:var(--sub)}
+.lv.on{border-color:var(--navy);box-shadow:inset 0 0 0 1px var(--navy)}
+.lv.on.l0{background:#d5f5e3}.lv.on.l1{background:#fef9e7}.lv.on.l2{background:#fde8e8}
+.lv.on .bd{background:var(--navy);color:#fff}
+.grp{font-size:14px;font-weight:800;margin:18px 0 6px;color:var(--navy)}
+.grp small{font-weight:400;color:var(--sub);margin-left:6px}
+.item{display:block;border:1.5px solid #dfe2ee;border-radius:10px;padding:10px 12px;margin-top:6px;background:#fff}
+.item.on{border-color:var(--navy);background:#f4f6ff}
+.item label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.item input[type=checkbox]{flex:none;width:22px;height:22px;margin-top:1px;accent-color:var(--navy)}
+.item .nm{font-weight:700;font-size:15px}
+.item .ct{font-size:13px;color:var(--sub);margin-top:2px}
+.item .memo{margin-top:8px}
+.item .memo input{min-height:40px;font-size:14px;background:#fffde7}
+.item.pos:not(.on){background:#f6fcf8}.item.grow:not(.on){background:#fffaf1}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 8px;border-radius:99px;background:#fff3d6;color:#8a5a00;margin-right:6px;vertical-align:1px}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.toolbar input[type=text]{flex:1;min-width:160px}
+.toolbar label{font-size:14px;display:flex;gap:6px;align-items:center;white-space:nowrap}
+.trait{background:#f7f8fc;border-radius:10px;padding:10px 12px;margin-bottom:14px}
+.trait label{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
+.trait small{font-weight:400;color:var(--sub)}
+.notice{text-align:center;padding:26px 16px}
+.notice p{margin:0 0 14px}
 </style>
 </head>
 <body>
@@ -107,6 +168,7 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:18px 16px 26p
     <div><b>생활기록부 AI 도우미</b><small id="verLabel">웹앱</small></div>
   </div>
   <div id="userBox" hidden>
+    <span id="saveState" hidden role="status"></span>
     <span id="userName"></span>
     <button id="btnLogout" class="btn ghost sm" type="button">로그아웃</button>
   </div>
@@ -115,7 +177,8 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:18px 16px 26p
 <nav id="nav" hidden aria-label="화면 이동">
   <button type="button" data-view="home">홈</button>
   <button type="button" data-view="settings">⚙️ 설정</button>
-  <button type="button" disabled title="2단계에서 열립니다">👥 학생·체크</button>
+  <button type="button" data-view="roster">👥 학생명단</button>
+  <button type="button" data-view="check">✅ 체크</button>
   <button type="button" disabled title="3단계에서 열립니다">✨ 생성</button>
   <button type="button" disabled title="4단계에서 열립니다">📈 결과</button>
   <button type="button" disabled title="5단계에서 열립니다">📑 NEIS 입력</button>
@@ -190,10 +253,10 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:18px 16px 26p
     </div>
     <div class="card">
       <h2>진행 단계</h2>
-      <p class="muted">지금은 1단계(로그인·시트 연결·설정)까지 열려 있습니다.</p>
+      <p class="muted">지금은 2단계(학생명단·체크 입력)까지 열려 있습니다.</p>
       <div class="steps">
         <div class="step done"><b>① 로그인 · 시트 연결 · 설정</b>지금 쓸 수 있어요</div>
-        <div class="step"><b>② 학생명단 · 체크 입력</b>준비 중</div>
+        <div class="step done"><b>② 학생명단 · 체크 입력</b>지금 쓸 수 있어요</div>
         <div class="step"><b>③ AI 생성</b>준비 중</div>
         <div class="step"><b>④ 결과 검토 · 수정 · 재생성</b>준비 중</div>
         <div class="step"><b>⑤ NEIS 입력 스테이션 · 새 학기 · 백업</b>준비 중</div>
@@ -263,6 +326,37 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:18px 16px 26p
       <span class="muted">연결만 끊습니다. 시트 파일은 드라이브에 그대로 남습니다.</span></p>
     </div>
   </section>
+
+  <!-- 학생명단 -->
+  <section id="v-roster" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <h2 style="margin:0">👥 학생명단 <span id="rosterCount" class="muted"></span></h2>
+        <button id="btnRosterReload" class="btn line sm" type="button">시트에서 다시 읽기</button>
+      </div>
+      <p class="muted">개인 특성은 선택 사항입니다. 적어 두면 같은 항목을 체크해도 학생마다 다른 문장이 만들어집니다. 이 칸의 글은 AI에 그대로 전달되므로 이름·연락처·건강 정보는 적지 마세요.</p>
+      <div id="rosterMsg" class="msg err" hidden></div>
+      <div id="rosterList"></div>
+      <div class="addbox">
+        <label class="f" for="addNames">학생 추가 <small>(한 줄에 한 명 · 명렬표에서 여러 명을 붙여넣어도 됩니다)</small></label>
+        <textarea id="addNames" rows="3" placeholder="김가람&#10;이나래"></textarea>
+        <p style="margin:10px 0 0"><button id="btnAdd" class="btn" type="button">추가</button></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 체크 입력 -->
+  <section id="v-check" hidden>
+    <div class="card stickybar" id="checkBar">
+      <div class="sturow">
+        <button id="btnPrev" class="navbtn" type="button" aria-label="이전 학생">◀</button>
+        <select id="stuSel" aria-label="학생 선택"></select>
+        <button id="btnNext" class="navbtn" type="button" aria-label="다음 학생">▶</button>
+      </div>
+      <div class="tabs" id="areaTabs" role="tablist"></div>
+    </div>
+    <div class="card" id="checkBody"></div>
+  </section>
 </main>
 
 <footer>
@@ -281,7 +375,7 @@ footer{text-align:center;font-size:12.5px;color:var(--sub);padding:18px 16px 26p
 
 /* ───────── 1. 앱 설정 ───────── */
 const CONFIG = {
-  VERSION: 'web 0.1 · 1단계',
+  VERSION: 'web 0.2 · 2단계',
   CLIENT_ID: '522445423766-m3cop5vh489598e0hkefumd0r202tncp.apps.googleusercontent.com',
   PICKER_KEY: 'AIzaSyDuMaSWfi7yfybCUJnUvghOcirBA5JzXoE',
   APP_ID: '522445423766',                                   // Cloud 프로젝트 번호 (Picker가 고른 파일에 drive.file 권한을 붙이는 데 필요)
@@ -1641,6 +1735,7 @@ const Auth = {
   begin(silent) {
     const state = randomHex(16);
     SS.set('state', state); SS.set('silent', silent ? '1' : '');
+    if (State.sheet) SS.set('resume', JSON.stringify({ view: State.view, cur: Cur }));
     const p = new URLSearchParams({
       client_id: CONFIG.CLIENT_ID, redirect_uri: REDIRECT_URI, response_type: 'token',
       scope: CONFIG.SCOPE, state: state, include_granted_scopes: 'true'
@@ -1692,15 +1787,17 @@ const State = {
   sheet: null,          // { id, title, url, map: { KEY: {title, sheetId} } }
   settings: { classInfo: '', level: '초등학교', model: MODELS.default, tier: '무료', length: '보통' },
   sheetKey: '',         // 시트 C14에 들어 있는 키(가져오기 안내용, 저장하지 않음)
-  studentCount: 0
+  studentCount: 0,
+  data: null,           // 2단계: { rows, list, cfg, chk } — 학생명단·설정·체크 시트 내용
+  view: 'loading'
 };
 
 async function inspectSheet(id) {
-  const meta = await gfetch(`${SHEETS_API}/${encodeURIComponent(id)}?fields=properties.title,spreadsheetUrl,sheets.properties(sheetId,title)`);
+  const meta = await gfetch(`${SHEETS_API}/${encodeURIComponent(id)}?fields=properties.title,spreadsheetUrl,sheets.properties(sheetId,title,index)`);
   const map = {};
   (meta.sheets || []).forEach(s => {
     const t = s.properties.title;
-    SHEET_ORDER.forEach(k => { if (normName(t) === normName(SHEET_NAMES[k])) map[k] = { title: t, sheetId: s.properties.sheetId }; });
+    SHEET_ORDER.forEach(k => { if (normName(t) === normName(SHEET_NAMES[k])) map[k] = { title: t, sheetId: s.properties.sheetId, index: s.properties.index }; });
   });
   return { title: (meta.properties && meta.properties.title) || '(제목 없음)', url: meta.spreadsheetUrl, map };
 }
@@ -1721,6 +1818,7 @@ async function loadSheet(id) {
     err.code = 'NOT_V9'; throw err;
   }
   State.sheet = Object.assign({ id }, info);
+  State.data = null;
   LS.set('sheetId', id);
   await readSettings();
 }
@@ -1774,19 +1872,20 @@ function gridRange(sheetId, ref) {
   const c1 = colNum(m[1]), r1 = +m[2], c2 = m[3] ? colNum(m[3]) : c1, r2 = m[4] ? +m[4] : r1;
   return { sheetId, startRowIndex: r1 - 1, endRowIndex: r2, startColumnIndex: c1 - 1, endColumnIndex: c2 };
 }
-function fmtReq(sheetId, ref, o) {
+function fmtReq(sheetId, ref, o) { return fmtR(gridRange(sheetId, ref), o); }
+function fmtR(range, o) {
   const f = {}, fields = [], tf = {};
   if (o.bg) { f.backgroundColor = hexColor(o.bg); fields.push('backgroundColor'); }
   if (o.fg) tf.foregroundColor = hexColor(o.fg);
   if (o.bold != null) tf.bold = o.bold;
-  if (o.italic) tf.italic = true;
+  if (o.italic != null) tf.italic = !!o.italic;
   if (o.size) tf.fontSize = o.size;
   Object.keys(tf).forEach(k => fields.push('textFormat.' + k));
   if (fields.some(x => x.indexOf('textFormat') === 0)) f.textFormat = tf;
   if (o.align) { f.horizontalAlignment = o.align; fields.push('horizontalAlignment'); }
   if (o.valign) { f.verticalAlignment = o.valign; fields.push('verticalAlignment'); }
   if (o.wrap) { f.wrapStrategy = 'WRAP'; fields.push('wrapStrategy'); }
-  return { repeatCell: { range: gridRange(sheetId, ref), cell: { userEnteredFormat: f }, fields: fields.map(x => 'userEnteredFormat.' + x).join(',') } };
+  return { repeatCell: { range: range, cell: { userEnteredFormat: f }, fields: fields.map(x => 'userEnteredFormat.' + x).join(',') } };
 }
 const mergeReq = (id, ref) => ({ mergeCells: { range: gridRange(id, ref), mergeType: 'MERGE_ALL' } });
 const colW = (id, col, px) => ({ updateDimensionProperties: { range: { sheetId: id, dimension: 'COLUMNS', startIndex: col - 1, endIndex: col }, properties: { pixelSize: px }, fields: 'pixelSize' } });
@@ -1951,16 +2050,595 @@ async function pickSheet() {
   });
 }
 
+/* ───────── 8-2. 학생명단 · 체크 시트 (v9와 같은 셀 배치) ─────────
+   v9 규칙: 체크 시트의 학생 열은 "학생명단 B4:B53에서 이름이 있는 순서"와 1:1로 대응한다.
+   · 교과  : 4행부터 [과목, 영역, 수준별 설명, 상/중/하, 학생…]  (과목이 바뀌면 띠 행 1줄)
+   · 창체  : 4행부터 체크 행 / 메모 행이 번갈아  [유형, 활동명, 공통 내용, 학생…]
+   · 행동  : 4행부터 [영역, 예시 문구, 학생…] */
+const CHK = {
+  subject:  { check: 'SUBJECT_CHECK',  result: 'SUBJECT_RESULT',  config: 'SUBJECT_CONFIG',  cfgRange: 'A4:F', firstCol: 5, label: '교과',     traitCol: 'C', traitIdx: 0 },
+  activity: { check: 'ACTIVITY_CHECK', result: 'ACTIVITY_RESULT', config: 'ACTIVITY_CONFIG', cfgRange: 'A4:D', firstCol: 4, label: '창체',     traitCol: 'D', traitIdx: 1 },
+  behavior: { check: 'BEHAVIOR_CHECK', result: 'BEHAVIOR_RESULT', config: 'BEHAVIOR',        cfgRange: 'A4:C', firstCol: 3, label: '행동특성', traitCol: 'E', traitIdx: 2 }
+};
+const KINDS = ['subject', 'activity', 'behavior'];
+const LEVELS = ['상', '중', '하'];
+const MAX_STUDENTS = 50;
+const S = v => v == null ? '' : String(v);
+const Cur = { stu: 0, area: 'subject', subj: '', q: '', only: false };
+
+function colLetter(col) { let s = ''; while (col > 0) { const m = (col - 1) % 26; s = String.fromCharCode(65 + m) + s; col = Math.floor((col - 1) / 26); } return s; }
+const RG = (sheetId, r1, c1, r2, c2) => ({ sheetId, startRowIndex: r1 - 1, endRowIndex: r2, startColumnIndex: c1 - 1, endColumnIndex: c2 });
+const newSheetId = () => 100000 + Math.floor(Math.random() * 2000000000);
+function cellV(v) {
+  if (v === true || v === false) return { userEnteredValue: { boolValue: v } };
+  if (v && typeof v === 'object' && v.f) return { userEnteredValue: { formulaValue: v.f } };
+  if (typeof v === 'number') return { userEnteredValue: { numberValue: v } };
+  if (v == null || v === '') return {};
+  return { userEnteredValue: { stringValue: String(v) } };
+}
+// v9 _applyCheckCountHeaders와 같은 수식 — 이름 아래에 체크 수가 실시간 표시됨
+function headFormula(name, col) { const L = colLetter(col); return { f: '="' + name.replace(/"/g, '""') + '"&CHAR(10)&"✓ "&COUNTIF(' + L + '4:' + L + ',TRUE)' }; }
+// v9 _isGrowthPhrase 이식 — '개선·성장 지원' 성격의 문구인지
+function isGrowthPhrase(text) {
+  const t = S(text);
+  if (/(경우가\s*(있|많|잦)|필요가\s*있|필요함|필요하|지도가\s*필요|지도함|지도하|개선|보완|노력이\s*필요|아직\s*[가-힣\s]*않)/.test(t)) return true;
+  const tail = t.split(/[,，]/).pop() || t;
+  return /(부족|미흡|아쉬|서툴|흐트러|산만|소극|주저|망설|자주\s*잊|의존|기르도록|키워\s*갈|다지도록|형성하도록)/.test(tail);
+}
+// v9 _normalizeActivityArea — 봉사활동 등은 특기사항을 생성하지 않음
+function activityArea(type) { const t = S(type); return t.indexOf('자율') !== -1 ? '자율활동' : t.indexOf('동아리') !== -1 ? '동아리활동' : t.indexOf('진로') !== -1 ? '진로활동' : null; }
+
+/* ── 읽기 ── */
+function parseRoster(values) {
+  const rows = [];
+  for (let i = 0; i < MAX_STUDENTS; i++) {
+    const r = (values && values[i]) || [];
+    rows.push({ row: 4 + i, num: r[0] == null ? '' : r[0], name: S(r[1]).trim(), t: [S(r[2]), S(r[3]), S(r[4])], note: S(r[5]) });
+  }
+  return rows;
+}
+// 항목마다 key(체크를 이어 붙일 때 쓰는 이름표)와 sig(설정이 바뀌었는지 비교용)를 붙임
+function keyify(kind, items) {
+  const seen = {}, pseen = {};
+  items.forEach(it => {
+    let k;
+    if (kind === 'subject') {
+      k = [it.subject, it.domain, it.text, it.level].join('\u0001');
+      const pb = [it.subject, it.domain, it.level].join('\u0001');
+      pseen[pb] = (pseen[pb] || 0) + 1; it.pkey = pb + '\u0001' + pseen[pb];      // 설명만 고친 경우를 위한 위치 기준 키
+    } else if (kind === 'activity') k = it.type + '\u0001' + it.name;
+    else k = it.phrase;
+    seen[k] = (seen[k] || 0) + 1;
+    it.key = seen[k] > 1 ? k + '\u0002' + seen[k] : k;
+    it.sig = kind === 'activity' ? it.key + '\u0001' + it.content : kind === 'behavior' ? it.area + '\u0001' + it.key : it.key;
+  });
+  return items;
+}
+// 설정 시트 → 체크 시트에 있어야 할 항목 (v9 build*CheckSheet의 필터와 동일)
+function expectedItems(kind, values) {
+  const out = [];
+  (values || []).forEach(r => {
+    r = r || [];
+    if (kind === 'subject') {
+      const subject = S(r[0]).trim(), domain = S(r[1]).trim(), crit = S(r[2]).trim();
+      if (!subject || !crit) return;
+      [3, 4, 5].forEach((c, i) => out.push({ subject, domain, text: S(r[c]).trim() || crit, level: LEVELS[i] }));
+    } else if (kind === 'activity') {
+      const type = S(r[0]).trim(), name = S(r[1]).trim();
+      if (!type || !name || S(r[3]).trim().toUpperCase() === 'X') return;
+      out.push({ type, name, content: S(r[2]).trim() });
+    } else {
+      const area = S(r[0]).trim(), phrase = S(r[1]).trim();
+      if (!area || !phrase || S(r[2]).trim().toUpperCase() === 'X') return;
+      out.push({ area, phrase });
+    }
+  });
+  return keyify(kind, out);
+}
+// 체크 시트 전체 값(1행부터) → 항목과 학생별 체크
+function parseCheck(kind, values) {
+  values = values || [];
+  const fc = CHK[kind].firstCol - 1, head = values[2] || [];
+  const names = head.slice(fc).map(v => S(v).split('\n')[0].trim());
+  while (names.length && !names[names.length - 1]) names.pop();
+  const n = names.length, body = values.slice(3), items = [];
+  const bools = r => { const a = []; for (let i = 0; i < n; i++) a.push(r[fc + i] === true); return a; };
+  if (kind === 'activity') {
+    for (let i = 0; i < body.length; i += 2) {
+      const r = body[i] || [], m = body[i + 1] || [];
+      const type = S(r[0]).trim(), name = S(r[1]).trim();
+      if (!type || !name) continue;
+      const memos = []; for (let k = 0; k < n; k++) memos.push(S(m[fc + k]).trim());
+      items.push({ row: 4 + i, memoRow: 5 + i, type, name, content: S(r[2]).trim(), vals: bools(r), memos });
+    }
+  } else body.forEach((r, i) => {
+    r = r || [];
+    if (kind === 'subject') {
+      const subject = S(r[0]).trim(), text = S(r[2]).trim();
+      if (!subject || !text) return;                         // 과목 띠 행
+      items.push({ row: 4 + i, subject, domain: S(r[1]).trim(), text, level: S(r[3]).trim(), vals: bools(r) });
+    } else {
+      const phrase = S(r[1]).trim();
+      if (!phrase) return;
+      items.push({ row: 4 + i, area: S(r[0]).trim(), phrase, vals: bools(r) });
+    }
+  });
+  return { names, items: keyify(kind, items) };
+}
+// 교과: 상/중/하 3행을 성취기준 1개로 묶음
+function subjectGroups(items) {
+  const groups = []; let g = null;
+  items.forEach(it => {
+    if (!g || g.subject !== it.subject || g.domain !== it.domain || it.level === '상' || g.items.some(x => x.level === it.level)) {
+      g = { subject: it.subject, domain: it.domain, items: [] }; groups.push(g);
+    }
+    g.items.push(it);
+  });
+  return groups;
+}
+
+const qn = key => `'${State.sheet.map[key].title.replace(/'/g, "''")}'`;
+async function loadData() {
+  const m = State.sheet.map, p = new URLSearchParams(), at = {};
+  const add = (name, range) => { at[name] = p.getAll('ranges').length; p.append('ranges', range); };
+  add('roster', a1('STUDENTS', 'A4:F53'));
+  KINDS.forEach(k => {
+    const c = CHK[k];
+    if (m[c.config]) add('cfg_' + k, a1(c.config, c.cfgRange));
+    if (m[c.check]) add('chk_' + k, qn(c.check));
+  });
+  p.set('valueRenderOption', 'UNFORMATTED_VALUE');
+  const res = await gfetch(`${SHEETS_API}/${encodeURIComponent(State.sheet.id)}/values:batchGet?${p.toString()}`);
+  const val = name => at[name] == null ? null : (((res.valueRanges || [])[at[name]] || {}).values || []);
+  const rows = parseRoster(val('roster')), list = rows.filter(r => r.name);
+  const d = { rows, list, cfg: {}, chk: {} };
+  KINDS.forEach(k => {
+    d.cfg[k] = val('cfg_' + k) ? expectedItems(k, val('cfg_' + k)) : null;
+    const v = val('chk_' + k);
+    if (!v) { d.chk[k] = null; return; }
+    const c = parseCheck(k, v), exp = d.cfg[k];
+    c.aligned = c.names.length === list.length && c.names.every((x, i) => x === list[i].name);
+    c.stale = !!exp && exp.length > 0 && (exp.length !== c.items.length || exp.some((e, i) => e.sig !== c.items[i].sig));
+    if (k === 'subject') c.groups = subjectGroups(c.items);
+    d.chk[k] = c;
+  });
+  State.data = d; State.studentCount = list.length;
+  return d;
+}
+async function refreshAll() {
+  const info = await inspectSheet(State.sheet.id);
+  Object.assign(State.sheet, info);
+  await loadData();
+}
+
+/* ── 저장 대기열: 체크·메모·특성은 누르는 즉시 시트에 저장 (0.5초 묶음) ──
+   로그인 갱신으로 화면이 넘어가도 잃지 않도록 브라우저에도 잠시 적어 둠 */
+const Saver = {
+  q: new Map(), timer: null, busy: false, failed: false,
+  put(range, value) {
+    this.q.set(range, value); this.persist(); this.paint();
+    clearTimeout(this.timer); this.timer = setTimeout(() => this.flush(), 500);
+  },
+  persist() {
+    if (this.q.size && State.sheet) LS.set('pending', JSON.stringify({ id: State.sheet.id, items: Array.from(this.q) }));
+    else LS.del('pending');
+  },
+  restore() {
+    try {
+      const p = JSON.parse(LS.get('pending') || 'null');
+      if (p && State.sheet && p.id === State.sheet.id && p.items && p.items.length) { p.items.forEach(([r, v]) => this.q.set(r, v)); this.paint(); return this.flush(); }
+    } catch (e) {}
+    LS.del('pending');
+  },
+  async flush() {
+    clearTimeout(this.timer);
+    if (this.busy || !this.q.size) return;
+    this.busy = true; this.paint();
+    const batch = Array.from(this.q);
+    try {
+      await writeValues(batch.map(([range, v]) => ({ range, values: [[v]] })));
+      batch.forEach(([k, v]) => { if (this.q.get(k) === v) this.q.delete(k); });
+      this.failed = false;
+    } catch (e) { this.failed = true; this.err = e.message; }
+    this.busy = false; this.persist(); this.paint();
+    if (this.q.size && !this.failed) this.timer = setTimeout(() => this.flush(), 300);
+  },
+  // 구조를 바꾸는 작업(학생 추가·삭제 등) 전에 남은 저장을 모두 끝냄
+  async drain() {
+    for (let i = 0; i < 20 && (this.q.size || this.busy); i++) {
+      if (this.busy) { await sleep(150); continue; }
+      await this.flush();
+      if (this.failed) throw new Error('저장하지 못한 변경이 있습니다 — ' + (this.err || '') + ' 인터넷 연결을 확인한 뒤 다시 시도해 주세요.');
+    }
+  },
+  paint() {
+    const el = $('saveState'); if (!el) return;
+    if (this.failed && this.q.size) { el.hidden = false; el.className = 'bad'; el.textContent = '⚠ 저장 실패 · 눌러서 다시 시도'; }
+    else if (this.q.size || this.busy) { el.hidden = false; el.className = ''; el.textContent = '저장 중…'; }
+    else if (!el.hidden) { el.className = ''; el.textContent = '✓ 저장됨'; }
+  }
+};
+
+/* ── 체크 시트 만들기 / 고치기 ──
+   새 시트를 통째로 만들어 바꿔 끼운다. 기존 체크·메모는 (항목, 학생) 기준으로 옮겨 담고,
+   삭제→생성→값→서식을 한 번의 요청으로 보내므로 중간에 실패하면 아무것도 바뀌지 않는다.
+   결과 시트(생성된 문장)는 건드리지 않는다. */
+const CHECK_STYLE = {
+  subject:  { tab: '#1e8449', bg: '#1e8449', tipBg: '#e9f7ef', title: '📊 교과평가체크 – 각 학생의 해당 성취수준에 체크하세요',
+              tip: '💡 성취기준별 해당 학생 체크박스 선택 → 메뉴 → 📚교과평가 → "② 전체 생성" 또는 "③ 특정 학생 생성"',
+              heads: ['과목명', '영역명', '성취기준 설명', '수준'], widths: [75, 80, 230, 42] },
+  activity: { tab: '#7d3c98', bg: '#7d3c98', tipBg: '#f5eef8', title: '📋 창체활동체크 – 각 학생의 해당 활동에 체크하고 개인 메모를 입력하세요',
+              tip: '💡 해당 학생 체크박스 선택 → 학생 열 바로 아래 개인 메모 입력 가능 → 메뉴 → 🎯창체활동 → "② 전체 생성" 또는 "③ 특정 학생 생성"',
+              heads: ['활동 유형', '활동명', '활동 공통 내용'], widths: [85, 120, 220] },
+  behavior: { tab: '#e67e22', bg: '#e67e22', tipBg: '#fef3e2', title: '💬 행동특성체크 – 각 학생에 해당하는 항목에 체크하세요',
+              tip: '💡 각 예시문구 행에서 해당 학생 체크박스 선택 → 메뉴 → 💬행동특성 → "② 전체 생성" 또는 "③ 특정 학생 생성"',
+              heads: ['영역', '행동특성 예시 문구'], widths: [80, 300] }
+};
+const RESULT_STYLE = {
+  subject:  { tab: '#145a32', bg: '#145a32', tipBg: '#e9f7ef', tipH: 32, title: '📈 교과평가결과 – 학생별·과목별 AI 생성 결과',
+              tip: '💡 G열 "선택" 체크 → 메뉴 → 📚교과평가 → "🔁 선택 학생 재생성" 또는 "📑 선택 학생 NEIS 복사"',
+              heads: ['학생 이름', '과목명', 'AI 생성 결과 (세부능력 및 특기사항)', '글자수\n(byte)', '상태', '생성일시', '선택'], widths: [90, 80, 480, 70, 65, 120, 55] },
+  activity: { tab: '#6c3483', bg: '#6c3483', tipBg: '#f5eef8', tipH: 34, title: '🌟 창체활동결과 – 학생별 · 영역별(자율/동아리/진로) AI 생성 결과',
+              tip: '💡 NEIS 입력 단위에 맞춰 자율·동아리·진로가 각각 생성됩니다 (봉사활동은 생성 안 함) / G열 "선택" 체크 → 메뉴 → 🎯창체활동 → 재생성·NEIS 복사·맞춤법 교정',
+              heads: ['학생 이름', '영역', '선택된 활동', 'AI 생성 결과 (영역별 특기사항)', '글자수\n(byte)', '상태', '선택'], widths: [90, 80, 220, 560, 70, 65, 55] },
+  behavior: { tab: '#16a085', bg: '#16a085', tipBg: '#e8f8f5', tipH: 32, title: '✨ 행동특성 결과 – 학생별 AI 생성 결과',
+              tip: '💡 G열 "선택" 체크 → 메뉴 → 💬행동특성 → "🔁 선택 학생 재생성" 또는 "📑 선택 학생 NEIS 복사"',
+              heads: ['학생 이름', '선택된 예시 문구', '추가 메모', 'AI 생성 결과 (행동특성 종합의견)', '글자수\n(byte)', '상태', '선택'], widths: [90, 200, 110, 700, 70, 65, 55] }
+};
+const SUBJECT_PALETTE = ['#dbeafe', '#fce7f3', '#fef3c7', '#d1fae5', '#ede9fe', '#ffedd5', '#e0f2fe', '#fdf4ff', '#ecfdf5', '#fff1f2'];
+const SUBJECT_BAND = ['#2563eb', '#db2777', '#d97706', '#059669', '#7c3aed', '#ea580c', '#0284c7', '#c026d3', '#0d9488', '#e11d48'];
+const LEVEL_COLORS = { '상': '#d5f5e3', '중': '#fef9e7', '하': '#fde8e8' };
+const TYPE_COLORS = { '자율활동': '#eaf4fb', '진로활동': '#e9f7ef', '동아리활동': '#fdf5e6', '봉사활동': '#fdedec' };
+
+// names: 새 학생 순서 / colMap[i]: 새 i번째 학생이 예전 시트의 몇 번째 열이었는지(-1 = 새 학생)
+function planRebuild(kind, names, colMap) {
+  const d = State.data, old = d.chk[kind], exp = d.cfg[kind] || [];
+  const byKey = new Map(), byPos = new Map();
+  if (old) old.items.forEach(it => { byKey.set(it.key, it); if (it.pkey) byPos.set(it.pkey, it); });
+  const expKeys = new Set(exp.map(e => e.key)), used = new Set();
+  const items = exp.map(e => {
+    let o = byKey.get(e.key);
+    if (!o && e.pkey) { const c = byPos.get(e.pkey); if (c && !expKeys.has(c.key) && !used.has(c)) o = c; }   // 설명 문구만 고친 항목
+    if (o) used.add(o);
+    const it = Object.assign({}, e);
+    it.vals = names.map((_, i) => !!(o && colMap[i] >= 0 && o.vals[colMap[i]]));
+    if (kind === 'activity') it.memos = names.map((_, i) => (o && colMap[i] >= 0 && o.memos[colMap[i]]) || '');
+    return it;
+  });
+  const cnt = its => its.reduce((a, it) => a + it.vals.filter(Boolean).length + (it.memos ? it.memos.filter(Boolean).length : 0), 0);
+  return { kind, names, items, lost: (old ? cnt(old.items) : 0) - cnt(items) };
+}
+function runs(list) {   // [4,5,6,8,9] → [[4,6],[8,9]]
+  const out = []; list.forEach(r => { const l = out[out.length - 1]; if (l && l[1] === r - 1) l[1] = r; else out.push([r, r]); }); return out;
+}
+function buildCheckRequests(plan, sheetId, index) {
+  const kind = plan.kind, c = CHK[kind], T = CHECK_STYLE[kind], fc = c.firstCol, names = plan.names, n = names.length, nCols = fc - 1 + n;
+  const R = (r1, c1, r2, c2) => RG(sheetId, r1, c1, r2, c2);
+  const H = (r1, r2, px) => rowH(sheetId, r1, r2, px);
+  const box = (r1, r2) => ({ setDataValidation: { range: R(r1, fc, r2, nCols), rule: { condition: { type: 'BOOLEAN' }, strict: true } } });
+  const rows = [[T.title], [T.tip], T.heads.concat(names.map((nm, i) => headFormula(nm, fc + i)))];
+  const post = [];
+  if (kind === 'subject') {
+    const colorOf = {}, dataRows = []; let prev = null, ci = 0;
+    plan.items.forEach(it => {
+      if (!(it.subject in colorOf)) colorOf[it.subject] = ci++;
+      const pi = colorOf[it.subject] % SUBJECT_PALETTE.length;
+      if (it.subject !== prev) {
+        rows.push(['📘 ' + it.subject]); const b = rows.length;
+        post.push({ mergeCells: { range: R(b, 1, b, nCols), mergeType: 'MERGE_ALL' } },
+          fmtR(R(b, 1, b, nCols), { bg: SUBJECT_BAND[pi], fg: '#ffffff', bold: true, size: 12, align: 'LEFT', valign: 'MIDDLE' }), H(b, b, 30));
+        prev = it.subject;
+      }
+      rows.push([it.subject, it.domain, it.text, it.level].concat(it.vals)); const r = rows.length; dataRows.push(r);
+      post.push(fmtR(R(r, 1, r, 1), { bg: SUBJECT_PALETTE[pi], bold: true }), fmtR(R(r, 2, r, 4), { bg: LEVEL_COLORS[it.level] || '#ffffff' }));
+    });
+    runs(dataRows).forEach(([a, b]) => post.push(box(a, b), H(a, b, 38), fmtR(R(a, 3, b, 3), { wrap: true }), fmtR(R(a, 4, b, nCols), { align: 'CENTER' })));
+  } else if (kind === 'activity') {
+    plan.items.forEach(it => { rows.push([it.type, it.name, it.content].concat(it.vals)); rows.push(['', '↑ 개인 메모 →', ''].concat(it.memos)); });
+    if (plan.items.length) {
+      const a = 4, b = 3 + plan.items.length * 2;
+      post.push(fmtR(R(a, 1, b, 1), { bg: '#f8f8f8', fg: '#bbbbbb', size: 8 }), fmtR(R(a, 2, b, 2), { bg: '#f8f8f8', fg: '#999999', size: 9, italic: true }),
+        fmtR(R(a, 3, b, 3), { bg: '#f8f8f8' }), fmtR(R(a, fc, b, nCols), { bg: '#fffde7', wrap: true, size: 9 }), H(a, b, 35));
+      plan.items.forEach((it, i) => {
+        const r = 4 + i * 2;
+        post.push(fmtR(R(r, 1, r, 2), { bg: TYPE_COLORS[it.type] || '#f9f9f9', fg: '#000000', bold: true, italic: false, size: 10 }), fmtR(R(r, 1, r, 1), { size: 9 }),
+          fmtR(R(r, 3, r, 3), { bg: '#ffffff', wrap: true, size: 9 }), fmtR(R(r, fc, r, nCols), { bg: '#ffffff', align: 'CENTER' }), box(r, r), H(r, r, 42));
+      });
+    }
+  } else {
+    const pos = [], grow = [];
+    plan.items.forEach(it => { rows.push([it.area, it.phrase].concat(it.vals)); (isGrowthPhrase(it.phrase) ? grow : pos).push(rows.length); });
+    if (plan.items.length) {
+      const a = 4, b = 3 + plan.items.length;
+      post.push(fmtR(R(a, 1, b, 1), { bg: '#fff9e6', bold: true, size: 9 }), fmtR(R(a, 2, b, 2), { wrap: true, size: 10 }),
+        fmtR(R(a, fc, b, nCols), { bg: '#ffffff', align: 'CENTER' }), box(a, b), H(a, b, 30));
+      runs(pos).forEach(([x, y]) => post.push(fmtR(R(x, 2, y, 2), { bg: '#eafaf1' })));
+      runs(grow).forEach(([x, y]) => post.push(fmtR(R(x, 2, y, 2), { bg: '#fff4e5' })));
+    }
+  }
+  const nRows = rows.length, props = { sheetId, title: SHEET_NAMES[c.check], tabColorStyle: { rgbColor: hexColor(T.tab) },
+    gridProperties: { rowCount: Math.max(nRows + 5, 30), columnCount: Math.max(nCols, 10), frozenRowCount: 3 } };
+  if (index != null) props.index = index;
+  const req = [{ addSheet: { properties: props } },
+    { updateCells: { start: { sheetId, rowIndex: 0, columnIndex: 0 }, rows: rows.map(r => ({ values: r.map(cellV) })), fields: 'userEnteredValue' } },
+    { mergeCells: { range: R(1, 1, 1, nCols), mergeType: 'MERGE_ALL' } }, fmtR(R(1, 1, 1, nCols), { bg: T.bg, fg: '#ffffff', bold: true, size: 13, align: 'CENTER', valign: 'MIDDLE' }), H(1, 1, 40),
+    { mergeCells: { range: R(2, 1, 2, nCols), mergeType: 'MERGE_ALL' } }, fmtR(R(2, 1, 2, nCols), { bg: T.tipBg, fg: '#555555', italic: true, size: 10, wrap: true }), H(2, 2, 28),
+    fmtR(R(3, 1, 3, nCols), { bg: '#2c3e50', fg: '#ffffff', bold: true, align: 'CENTER', valign: 'MIDDLE', wrap: true }), fmtR(R(3, fc, 3, nCols), { size: 9 }), H(3, 3, 52)];
+  T.widths.forEach((w, i) => req.push(colW(sheetId, i + 1, w)));
+  req.push({ updateDimensionProperties: { range: { sheetId, dimension: 'COLUMNS', startIndex: fc - 1, endIndex: nCols }, properties: { pixelSize: 42 }, fields: 'pixelSize' } });
+  post.forEach(x => req.push(x));
+  const bd = { style: 'SOLID', color: hexColor('#cccccc') };
+  req.push({ updateBorders: { range: R(3, 1, nRows, nCols), top: bd, bottom: bd, left: bd, right: bd, innerHorizontal: bd, innerVertical: bd } });
+  return req;
+}
+// v9와 같은 머리글의 빈 결과 시트 (없을 때만 만든다 — v9 메뉴의 생성 기능이 이 시트를 요구함)
+function resultRequests(kind, sheetId) {
+  const T = RESULT_STYLE[kind], R = (r1, c1, r2, c2) => RG(sheetId, r1, c1, r2, c2);
+  const req = [{ addSheet: { properties: { sheetId, title: SHEET_NAMES[CHK[kind].result], tabColorStyle: { rgbColor: hexColor(T.tab) }, gridProperties: { rowCount: 200, columnCount: 8 } } } },
+    { updateCells: { start: { sheetId, rowIndex: 0, columnIndex: 0 }, rows: [[T.title], [T.tip], T.heads].map(r => ({ values: r.map(cellV) })), fields: 'userEnteredValue' } },
+    { mergeCells: { range: R(1, 1, 1, 7), mergeType: 'MERGE_ALL' } }, fmtR(R(1, 1, 1, 7), { bg: T.bg, fg: '#ffffff', bold: true, size: 13, align: 'CENTER', valign: 'MIDDLE' }), rowH(sheetId, 1, 1, 40),
+    { mergeCells: { range: R(2, 1, 2, 7), mergeType: 'MERGE_ALL' } }, fmtR(R(2, 1, 2, 7), { bg: T.tipBg, fg: '#555555', italic: true, size: 10, wrap: true }), rowH(sheetId, 2, 2, T.tipH),
+    fmtR(R(3, 1, 3, 7), { bg: '#2c3e50', fg: '#ffffff', bold: true, align: 'CENTER', valign: 'MIDDLE', wrap: true }), rowH(sheetId, 3, 3, 35)];
+  T.widths.forEach((w, i) => req.push(colW(sheetId, i + 1, w)));
+  return req;
+}
+async function sendBatch(requests) {
+  return gfetch(`${SHEETS_API}/${encodeURIComponent(State.sheet.id)}:batchUpdate`, { method: 'POST', body: JSON.stringify({ requests }) });
+}
+async function rebuild(plans, extraRequests) {
+  const m = State.sheet.map, req = (extraRequests || []).slice();
+  plans.forEach(p => {
+    const c = CHK[p.kind], old = m[c.check];
+    if (old) req.push({ deleteSheet: { sheetId: old.sheetId } });
+    buildCheckRequests(p, newSheetId(), old ? old.index : undefined).forEach(x => req.push(x));
+    if (!m[c.result]) resultRequests(p.kind, newSheetId()).forEach(x => req.push(x));
+  });
+  if (req.length) await sendBatch(req);
+  await refreshAll();
+}
+
+/* ── 학생명단 편집 ── */
+const numCell = v => { const s = S(v).trim(); return s !== '' && !isNaN(Number(s)) ? cellV(Number(s)) : cellV(s); };
+function rosterRequest(rows, startRow) {
+  return { updateCells: { start: { sheetId: State.sheet.map.STUDENTS.sheetId, rowIndex: startRow - 1, columnIndex: 0 },
+    rows: rows.map(r => ({ values: [numCell(r.num), cellV(r.name), cellV(r.t[0]), cellV(r.t[1]), cellV(r.t[2]), cellV(r.note)] })), fields: 'userEnteredValue' } };
+}
+const builtKinds = () => KINDS.filter(k => State.data.chk[k]);
+function misaligned() { return builtKinds().filter(k => !State.data.chk[k].aligned); }
+function guardAligned() {
+  const bad = misaligned(); if (!bad.length) return true;
+  showMsg('rosterMsg', `${bad.map(k => CHK[k].label).join('·')} 체크 시트의 학생 열이 명단과 다릅니다. 먼저 [✅ 체크] 화면에서 "이름 기준으로 맞추기"를 눌러 주세요.`, 'err');
+  return false;
+}
+async function structural(label, fn) {
+  showMsg('rosterMsg', '');
+  try { await Saver.drain(); busy(label); await fn(); busy(''); renderRoster(); return true; }
+  catch (e) { busy(''); if (e.status !== 401) showMsg('rosterMsg', e.message, 'err'); return false; }
+}
+async function onAddStudents() {
+  const d = State.data;
+  const names = $('addNames').value.split(/\r?\n/).map(s => s.replace(/^\s*\d+\s*[.)\t ]\s*/, '').trim()).filter(Boolean);
+  if (!names.length) { $('addNames').focus(); return; }
+  const have = new Set(d.list.map(s => s.name)), dup = names.filter((nm, i) => have.has(nm) || names.indexOf(nm) !== i);
+  if (dup.length) { showMsg('rosterMsg', `이름이 겹칩니다: ${Array.from(new Set(dup)).join(', ')} — 같은 이름은 "김민준A", "김민준B"처럼 구분해 주세요. (결과가 이름으로 저장됩니다)`, 'err'); return; }
+  let last = -1; d.rows.forEach((r, i) => { if (r.name) last = i; });
+  if (last + 1 + names.length > MAX_STUDENTS) { showMsg('rosterMsg', `학생은 ${MAX_STUDENTS}명까지 넣을 수 있습니다.`, 'err'); return; }
+  if (!guardAligned()) return;
+  let num = d.list.reduce((a, s) => Math.max(a, Number(s.num) || 0), 0) || d.list.length;
+  const add = names.map(nm => ({ num: ++num, name: nm, t: ['', '', ''], note: '' }));
+  const oldN = d.list.length, all = d.list.map(s => s.name).concat(names), colMap = all.map((_, i) => i < oldN ? i : -1);
+  const ok = await structural('학생을 추가하는 중…', () => rebuild(builtKinds().map(k => planRebuild(k, all, colMap)), [rosterRequest(add, 5 + last)]));
+  if (ok) { $('addNames').value = ''; toast(`${names.length}명을 추가했습니다.`); }
+}
+async function onDeleteStudent(li) {
+  const d = State.data, st = d.list[li];
+  if (!guardAligned()) return;
+  if (!confirm(`"${st.name}" 학생을 명단에서 삭제할까요?\n\n· 이 학생의 체크와 메모가 함께 지워집니다.\n· 이미 생성된 결과 문장은 결과 시트에 그대로 남습니다.`)) return;
+  const rows = d.rows.filter(r => r !== st).map(r => ({ num: r.num, name: r.name, t: r.t, note: r.note }));
+  rows.push({ num: '', name: '', t: ['', '', ''], note: '' });
+  const all = d.list.filter(s => s !== st).map(s => s.name), colMap = all.map((_, i) => i < li ? i : i + 1);
+  const ok = await structural('학생을 삭제하는 중…', () => rebuild(all.length ? builtKinds().map(k => planRebuild(k, all, colMap)) : [], [rosterRequest(rows, 4)]));
+  if (ok) { if (Cur.stu >= State.data.list.length) Cur.stu = 0; toast(`"${st.name}" 학생을 삭제했습니다.`); }
+}
+async function onRename(st, input) {
+  const d = State.data, name = input.value.trim(), old = st.name;
+  if (name === old) { input.value = old; return; }
+  const back = msg => { input.value = old; showMsg('rosterMsg', msg, 'err'); };
+  if (!name) return back('이름을 비울 수는 없습니다. 학생을 빼려면 오른쪽 ✕(삭제)를 눌러 주세요.');
+  if (d.list.some(s => s !== st && s.name === name)) return back(`"${name}" 학생이 이미 있습니다. 같은 이름은 "A", "B"를 붙여 구분해 주세요.`);
+  if (!guardAligned()) { input.value = old; return; }
+  const li = d.list.indexOf(st), m = State.sheet.map;
+  const one = (sheetId, row, col, v) => ({ updateCells: { start: { sheetId, rowIndex: row - 1, columnIndex: col - 1 }, rows: [{ values: [cellV(v)] }], fields: 'userEnteredValue' } });
+  const ok = await structural('이름을 바꾸는 중…', async () => {
+    const req = [one(m.STUDENTS.sheetId, st.row, 2, name)];
+    builtKinds().forEach(k => req.push(one(m[CHK[k].check].sheetId, 3, CHK[k].firstCol + li, headFormula(name, CHK[k].firstCol + li))));
+    const res = KINDS.filter(k => m[CHK[k].result]);                      // 결과 시트의 이름(A열)도 함께 변경
+    if (res.length) {
+      const p = new URLSearchParams(); res.forEach(k => p.append('ranges', a1(CHK[k].result, 'A4:A')));
+      const got = await gfetch(`${SHEETS_API}/${encodeURIComponent(State.sheet.id)}/values:batchGet?${p.toString()}`);
+      res.forEach((k, i) => ((got.valueRanges[i] || {}).values || []).forEach((r, j) => { if (S(r && r[0]).trim() === old) req.push(one(m[CHK[k].result].sheetId, 4 + j, 1, name)); }));
+    }
+    await sendBatch(req); await refreshAll();
+  });
+  if (ok) toast(`"${old}" → "${name}"`); else input.value = old;
+}
+
+/* ── 화면 그리기 도구 ── */
+function el(tag, props, kids) {
+  const e = document.createElement(tag);
+  if (props) Object.keys(props).forEach(k => {
+    const v = props[k];
+    if (k === 'class') e.className = v; else if (k === 'text') e.textContent = v;
+    else if (k === 'value') e.value = v; else if (k === 'checked') e.checked = !!v; else if (k === 'hidden') e.hidden = !!v;
+    else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v);
+    else if (v === true) e.setAttribute(k, ''); else if (v !== false && v != null) e.setAttribute(k, v);
+  });
+  (kids || []).forEach(c => { if (c != null) e.append(c); });
+  return e;
+}
+function notice(text, btnText, fn, extra) {
+  return el('div', { class: 'notice' }, [el('p', { text }), btnText ? el('button', { class: 'btn', type: 'button', text: btnText, onclick: fn }) : null, extra || null]);
+}
+const tabLink = key => `https://docs.google.com/spreadsheets/d/${State.sheet.id}/edit#gid=${State.sheet.map[key].sheetId}`;
+
+/* ── 학생명단 화면 ── */
+function renderRoster() {
+  const d = State.data, box = $('rosterList'); box.textContent = '';
+  $('rosterCount').textContent = `(${d.list.length}명)`;
+  if (!d.list.length) { box.append(el('p', { class: 'muted', text: '아직 학생이 없습니다. 아래 칸에 이름을 넣고 [추가]를 눌러 주세요.' })); return; }
+  box.append(el('div', { class: 'srow head' }, ['번호', '이름', '📚 교과 개인 특성', '🎯 창체 개인 특성', '💬 행동 개인 특성', ''].map(t => el('div', { text: t }))));
+  const ph = ['예) 토론 시 논리정연, 책 좋아함', '예) 학급 도우미, 발표 적극', '예) 친구 잘 챙김, 차분함'], lb = ['📚 교과 개인 특성', '🎯 창체 개인 특성', '💬 행동 개인 특성'], cols = ['C', 'D', 'E'];
+  d.list.forEach((st, li) => {
+    const row = el('div', { class: 'srow' });
+    row.append(el('input', { type: 'text', inputmode: 'numeric', value: S(st.num), 'aria-label': st.name + ' 번호',
+      onchange: e => { const v = e.target.value.trim(); st.num = v; Saver.put(a1('STUDENTS', 'A' + st.row), v !== '' && !isNaN(Number(v)) ? Number(v) : v); } }));
+    row.append(el('input', { type: 'text', value: st.name, maxlength: 20, 'aria-label': '이름', style: 'font-weight:700', onchange: e => onRename(st, e.target) }));
+    st.t.forEach((v, ti) => row.append(el('div', { class: 'tr' }, [el('div', { class: 'lb', text: lb[ti] }),
+      el('textarea', { rows: 2, value: v, placeholder: ph[ti], 'aria-label': st.name + ' ' + lb[ti],
+        onchange: e => { st.t[ti] = e.target.value; Saver.put(a1('STUDENTS', cols[ti] + st.row), e.target.value); } })])));
+    row.append(el('button', { class: 'xbtn', type: 'button', text: '✕', title: '삭제', 'aria-label': st.name + ' 삭제', onclick: () => onDeleteStudent(li) }));
+    box.append(row);
+  });
+}
+
+/* ── 체크 화면 (학생 1명씩 세로형) ── */
+const editable = k => { const c = State.data.chk[k]; return !!(c && c.aligned); };
+const countFor = (k, si) => editable(k) ? State.data.chk[k].items.filter(it => it.vals[si]).length : 0;
+const cellRef = (k, row, si) => a1(CHK[k].check, colLetter(CHK[k].firstCol + si) + row);
+function renderCheck() {
+  const d = State.data, list = d.list, body = $('checkBody');
+  $('checkBar').hidden = !list.length;
+  if (!list.length) { body.textContent = ''; body.append(notice('학생명단이 비어 있습니다. 먼저 학생을 추가해 주세요.', '학생명단으로 가기', () => show('roster'))); return; }
+  if (Cur.stu >= list.length || Cur.stu < 0) Cur.stu = 0;
+  const sel = $('stuSel'); sel.textContent = '';
+  list.forEach((st, i) => {
+    const total = KINDS.reduce((a, k) => a + countFor(k, i), 0);
+    sel.append(el('option', { value: i, text: `${S(st.num) !== '' ? st.num + '. ' : ''}${st.name}${total ? '  ✓' + total : ''}` }));
+  });
+  sel.value = Cur.stu;
+  $('btnPrev').disabled = Cur.stu === 0; $('btnNext').disabled = Cur.stu === list.length - 1;
+  paintTabs(); renderArea();
+}
+function paintTabs() {
+  const box = $('areaTabs'); box.textContent = '';
+  KINDS.forEach(k => box.append(el('button', { type: 'button', role: 'tab', class: Cur.area === k ? 'on' : '', 'aria-selected': Cur.area === k ? 'true' : 'false',
+    onclick: () => { Cur.area = k; paintTabs(); renderArea(); } }, [CHK[k].label, el('b', { text: countFor(k, Cur.stu) || '' })])));
+  const o = $('stuSel').options[Cur.stu];
+  if (o) { const st = State.data.list[Cur.stu], total = KINDS.reduce((a, k) => a + countFor(k, Cur.stu), 0); o.textContent = `${S(st.num) !== '' ? st.num + '. ' : ''}${st.name}${total ? '  ✓' + total : ''}`; }
+}
+function gotoStudent(i) { Cur.stu = i; renderCheck(); window.scrollTo(0, 0); }
+
+async function runRebuild(kind, byName, okMsg) {
+  const d = State.data, names = d.list.map(s => s.name), old = d.chk[kind];
+  let colMap = names.map((_, i) => i);
+  if (byName && old) { const used = new Set(); colMap = names.map(nm => { const j = old.names.findIndex((x, q) => x === nm && !used.has(q)); if (j >= 0) used.add(j); return j; }); }
+  const plan = planRebuild(kind, names, colMap);
+  if (plan.lost > 0 && !confirm(`체크·메모 ${plan.lost}개는 대응하는 ${byName ? '학생이나 ' : ''}항목이 없어 지워집니다.\n(나머지는 그대로 옮겨집니다) 계속할까요?`)) return;
+  try { await Saver.drain(); busy('체크 시트를 정리하는 중…'); await rebuild([plan]); busy(''); toast(okMsg); renderCheck(); }
+  catch (e) { busy(''); if (e.status !== 401) toast('실패 — ' + e.message, 7000); }
+}
+function renderArea() {
+  const d = State.data, k = Cur.area, c = d.chk[k], cfg = d.cfg[k], body = $('checkBody'), si = Cur.stu, st = d.list[si], K = CHK[k];
+  body.textContent = '';
+  const cfgName = SHEET_NAMES[K.config], hasCfg = !!State.sheet.map[K.config];
+  if (!c) {
+    if (!cfg || !cfg.length) body.append(notice(`${cfgName} 탭에 항목이 없습니다. 시트의 ${cfgName} 탭에 내용을 입력한 뒤, 홈에서 [새로고침]을 눌러 주세요.`, null, null,
+      hasCfg ? el('a', { class: 'btn line', href: tabLink(K.config), target: '_blank', rel: 'noopener', style: 'text-decoration:none;display:inline-block', text: cfgName + ' 탭 열기 ↗' }) : null));
+    else body.append(notice(`${K.label} 체크 시트가 아직 없습니다. ${cfgName}의 ${k === 'subject' ? '성취기준 ' + cfg.length / 3 : '항목 ' + cfg.length}개와 학생 ${d.list.length}명으로 만듭니다.`,
+      '체크 시트 만들기', () => runRebuild(k, false, '체크 시트를 만들었습니다.')));
+    return;
+  }
+  if (!c.aligned) {
+    body.append(notice(`체크 시트의 학생 열(${c.names.length}명)이 학생명단(${d.list.length}명)과 다릅니다. 이 상태로 체크하면 다른 학생에게 기록될 수 있어 입력을 막았습니다.`,
+      '이름 기준으로 맞추기', () => runRebuild(k, true, '학생 열을 명단에 맞췄습니다.'),
+      el('p', { class: 'muted', style: 'margin-top:12px', text: '이름이 같은 학생의 체크·메모는 그대로 옮겨집니다.' })));
+    return;
+  }
+  if (c.stale) body.append(el('div', { class: 'msg info' }, [`${cfgName} 내용이 체크 시트를 만든 뒤에 바뀌었습니다. `,
+    el('button', { class: 'btn sm', type: 'button', text: '체크 시트에 반영', style: 'margin-left:6px', onclick: () => runRebuild(k, false, '설정을 반영했습니다.') })]));
+  body.append(el('div', { class: 'trait' }, [el('label', { for: 'traitBox' }, [`${st.name} · ${K.label} 개인 특성 `, el('small', { text: '(선택 · 문장에 반영됩니다)' })]),
+    el('textarea', { id: 'traitBox', rows: 2, value: st.t[K.traitIdx], onchange: e => { st.t[K.traitIdx] = e.target.value; Saver.put(a1('STUDENTS', K.traitCol + st.row), e.target.value); } })]));
+  if (!c.items.length) { body.append(el('p', { class: 'muted', text: '체크할 항목이 없습니다.' })); return; }
+  if (k === 'subject') areaSubject(body, c, si); else if (k === 'activity') areaActivity(body, c, si); else areaBehavior(body, c, si);
+}
+function areaSubject(body, c, si) {
+  const subjects = []; c.groups.forEach(g => { if (subjects.indexOf(g.subject) === -1) subjects.push(g.subject); });
+  if (subjects.indexOf(Cur.subj) === -1) Cur.subj = subjects[0];
+  const done = s => c.groups.filter(g => g.subject === s && g.items.some(it => it.vals[si])).length;
+  const bar = el('div', { class: 'chipbar' }), chips = {};
+  subjects.forEach(s => { chips[s] = el('small'); bar.append(el('button', { type: 'button', class: s === Cur.subj ? 'on' : '', onclick: () => { Cur.subj = s; renderArea(); } }, [s, chips[s]])); });
+  const paintChips = () => subjects.forEach(s => { chips[s].textContent = `${done(s)}/${c.groups.filter(g => g.subject === s).length}`; });
+  paintChips(); body.append(bar);
+  c.groups.filter(g => g.subject === Cur.subj).forEach(g => {
+    const card = el('div', { class: 'crit' }, [g.domain ? el('div', { class: 'dom', text: g.domain }) : null]), btns = [];
+    const paint = () => g.items.forEach((it, i) => { btns[i].classList.toggle('on', it.vals[si]); btns[i].setAttribute('aria-pressed', it.vals[si] ? 'true' : 'false'); });
+    g.items.forEach(it => {
+      const b = el('button', { type: 'button', class: 'lv l' + Math.max(0, LEVELS.indexOf(it.level)), onclick: () => {
+        const on = !it.vals[si];                                   // 한 성취기준에 하나만 — 다시 누르면 해제
+        g.items.forEach(x => { const nv = x === it ? on : false; if (x.vals[si] !== nv) { x.vals[si] = nv; Saver.put(cellRef('subject', x.row, si), nv); } });
+        paint(); paintChips(); paintTabs();
+      } }, [el('span', { class: 'bd', text: it.level }), el('span', { text: it.text })]);
+      btns.push(b); card.append(b);
+    });
+    paint(); body.append(card);
+  });
+}
+function areaActivity(body, c, si) {
+  const types = []; c.items.forEach(it => { if (types.indexOf(it.type) === -1) types.push(it.type); });
+  types.forEach(t => {
+    body.append(el('div', { class: 'grp' }, [t, activityArea(t) ? null : el('small', { text: '특기사항 문장은 생성하지 않는 영역' })]));
+    c.items.filter(it => it.type === t).forEach(it => {
+      const memo = el('div', { class: 'memo', hidden: !it.vals[si] }, [el('input', { type: 'text', value: it.memos[si], maxlength: 300, placeholder: '이 학생만의 개인 메모 (선택)', 'aria-label': it.name + ' 개인 메모',
+        onchange: e => { it.memos[si] = e.target.value.trim(); Saver.put(cellRef('activity', it.memoRow, si), it.memos[si]); } })]);
+      const box = el('div', { class: 'item' + (it.vals[si] ? ' on' : '') });
+      box.append(el('label', null, [el('input', { type: 'checkbox', checked: it.vals[si], onchange: e => {
+        it.vals[si] = e.target.checked; Saver.put(cellRef('activity', it.row, si), it.vals[si]);
+        box.classList.toggle('on', it.vals[si]); memo.hidden = !it.vals[si]; paintTabs();
+      } }), el('div', null, [el('div', { class: 'nm', text: it.name }), it.content ? el('div', { class: 'ct', text: it.content }) : null])]), memo);
+      body.append(box);
+    });
+  });
+}
+function areaBehavior(body, c, si) {
+  const list = el('div'), cnt = el('span', { class: 'muted' });
+  const draw = () => {
+    list.textContent = ''; const q = Cur.q.trim();
+    const shown = c.items.filter(it => (!Cur.only || it.vals[si]) && (!q || it.phrase.indexOf(q) !== -1 || it.area.indexOf(q) !== -1));
+    cnt.textContent = `선택 ${c.items.filter(it => it.vals[si]).length}개`;
+    if (!shown.length) list.append(el('p', { class: 'muted', text: Cur.only ? '체크한 문구가 없습니다.' : '검색 결과가 없습니다.' }));
+    shown.forEach(it => {
+      const box = el('div', { class: 'item ' + (isGrowthPhrase(it.phrase) ? 'grow' : 'pos') + (it.vals[si] ? ' on' : '') });
+      box.append(el('label', null, [el('input', { type: 'checkbox', checked: it.vals[si], onchange: e => {
+        it.vals[si] = e.target.checked; Saver.put(cellRef('behavior', it.row, si), it.vals[si]);
+        box.classList.toggle('on', it.vals[si]); cnt.textContent = `선택 ${c.items.filter(x => x.vals[si]).length}개`; paintTabs();
+      } }), el('div', null, [el('span', { class: 'tag', text: it.area }), it.phrase])]));
+      list.append(box);
+    });
+  };
+  body.append(el('div', { class: 'toolbar' }, [
+    el('input', { type: 'text', value: Cur.q, placeholder: '문구 검색 (예: 배려, 책임)', 'aria-label': '문구 검색', oninput: e => { Cur.q = e.target.value; draw(); } }),
+    el('label', null, [el('input', { type: 'checkbox', checked: Cur.only, onchange: e => { Cur.only = e.target.checked; draw(); } }), '체크한 것만']), cnt]));
+  body.append(el('p', { class: 'muted', style: 'margin:0 0 6px', text: '연녹색은 긍정 문구, 연주황은 개선·성장 지원 문구입니다. 많이 골라도 AI는 특징적인 3~4개를 중심으로 씁니다.' }), list);
+  draw();
+}
+
 /* ───────── 9. 화면 ───────── */
-const VIEWS = ['loading', 'login', 'connect', 'home', 'settings'];
-function show(view) {
+const VIEWS = ['loading', 'login', 'connect', 'home', 'settings', 'roster', 'check'];
+async function show(view) {
+  if ((view === 'roster' || view === 'check') && !State.data) {      // 학생명단·체크 시트는 처음 열 때 읽음
+    try { busy('시트를 읽는 중…'); await loadData(); busy(''); }
+    catch (e) { busy(''); if (e.status !== 401) toast('시트를 읽지 못했습니다 — ' + e.message, 7000); return; }
+  }
+  State.view = view;
   VIEWS.forEach(v => { $('v-' + v).hidden = v !== view; });
-  const inApp = view === 'home' || view === 'settings';
+  const inApp = ['home', 'settings', 'roster', 'check'].indexOf(view) !== -1;
   $('nav').hidden = !inApp;
   document.querySelectorAll('#nav button[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
   $('userBox').hidden = !Auth.token;
   if (view === 'home') renderHome();
   if (view === 'settings') renderSettings();
+  if (view === 'roster') { showMsg('rosterMsg', ''); renderRoster(); }
+  if (view === 'check') renderCheck();
   window.scrollTo(0, 0);
 }
 function banner(msg, btnText, fn) {
@@ -1977,7 +2655,7 @@ function renderHome() {
   [['학생', State.studentCount + '명'], ['학교급', s.level + (s.classInfo ? ' · ' + s.classInfo : '')],
    ['AI 모델', s.model + ' (' + s.tier + ')'], ['생성 분량', s.length], ['Gemini 키', hasKey ? '✅ 이 브라우저에 저장됨' : '❌ 아직 없음']
   ].forEach(([k, v]) => { const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; dl.append(dt, dd); });
-  showMsg('homeWarn', hasKey ? '' : 'AI 생성을 쓰려면 ⚙️ 설정에서 Gemini API 키를 입력해 주세요.', 'info');
+  showMsg('homeWarn', !State.studentCount ? '👥 학생명단에서 학생을 먼저 추가해 주세요.' : hasKey ? '' : 'AI 생성을 쓰려면 ⚙️ 설정에서 Gemini API 키를 입력해 주세요.', 'info');
   const chips = $('homeChips'); chips.textContent = '';
   SHEET_ORDER.forEach(k => {
     const c = document.createElement('span'); const on = !!sh.map[k];
@@ -2062,18 +2740,18 @@ async function onKeyTest() {
   finally { $('btnKeyTest').disabled = false; }
 }
 async function onReload() {
-  try { busy('시트를 다시 읽는 중…'); await loadSheet(State.sheet.id); busy(''); renderHome(); toast('최신 내용으로 불러왔습니다.'); }
+  try { await Saver.drain(); busy('시트를 다시 읽는 중…'); await loadSheet(State.sheet.id); busy(''); renderHome(); toast('최신 내용으로 불러왔습니다.'); }
   catch (e) { busy(''); if (e.status !== 401) toast('불러오기 실패 — ' + e.message, 6000); }
 }
 function onDisconnect() {
   if (!confirm('이 시트와의 연결을 끊고 다른 시트를 고를까요?\n(시트 파일은 드라이브에 그대로 남습니다)')) return;
-  LS.del('sheetId'); State.sheet = null; State.sheetKey = ''; show('connect');
+  LS.del('sheetId'); LS.del('pending'); Saver.q.clear(); State.sheet = null; State.data = null; State.sheetKey = ''; show('connect');
 }
 function onLogout() {
   if (!confirm('로그아웃할까요?')) return;
   if (LS.get('geminiKey') && confirm('이 브라우저에 저장된 Gemini API 키도 지울까요?\n(여럿이 쓰는 컴퓨터라면 [확인]을 누르세요)')) LS.del('geminiKey');
   Auth.clear(); LS.del('wasIn'); LS.del('email'); LS.del('userName');
-  State.sheet = null; banner(''); show('login');
+  State.sheet = null; State.data = null; banner(''); show('login');
 }
 
 async function afterLogin() {
@@ -2085,12 +2763,20 @@ async function afterLogin() {
   } catch (e) { if (e.status === 401) return; }
   $('userName').textContent = LS.get('email') || LS.get('userName') || '';
   // 만료 5분 전 안내
-  setTimeout(() => banner('로그인 유지 시간이 곧 끝납니다. 작업 중인 내용을 저장한 뒤 연장해 주세요.', '로그인 연장', () => Auth.begin(true)),
+  setTimeout(() => banner('로그인 유지 시간이 곧 끝납니다. 작업 중인 내용을 저장한 뒤 연장해 주세요.', '로그인 연장', async () => { try { await Saver.drain(); } catch (e) {} Auth.begin(true); }),
     Math.max(Auth.exp - Date.now() - 5 * 60000, 0));
 
   const savedId = LS.get('sheetId');
   if (savedId) {
-    try { await loadSheet(savedId); show('home'); return; }
+    try {
+      await loadSheet(savedId);
+      await Saver.restore();                              // 로그인 갱신 직전에 못 보낸 저장이 있으면 먼저 보냄
+      let resume = null; try { resume = JSON.parse(SS.get('resume') || 'null'); } catch (e) {}
+      SS.del('resume');
+      if (resume && (resume.view === 'roster' || resume.view === 'check' || resume.view === 'settings')) { Object.assign(Cur, resume.cur || {}); await show(resume.view); }
+      else show('home');
+      return;
+    }
     catch (e) {
       if (e.status === 401) return;
       LS.del('sheetId');
@@ -2125,6 +2811,17 @@ async function boot() {
   $('btnKeyImport').onclick = () => { $('fKey').value = State.sheetKey; $('keyImport').hidden = true; toast('키를 입력칸에 넣었습니다. [설정 저장]을 눌러 주세요.'); };
   $('fModel').onchange = () => { const c = $('fModel').value === '__custom__'; $('fModelCustom').hidden = !c; if (c) $('fModelCustom').focus(); };
   document.querySelectorAll('#nav button[data-view]').forEach(b => { b.onclick = () => show(b.dataset.view); });
+  $('btnAdd').onclick = onAddStudents;
+  $('btnRosterReload').onclick = async () => {
+    try { await Saver.drain(); busy('시트를 읽는 중…'); await refreshAll(); busy(''); renderRoster(); toast('최신 내용으로 불러왔습니다.'); }
+    catch (e) { busy(''); if (e.status !== 401) showMsg('rosterMsg', e.message, 'err'); }
+  };
+  $('stuSel').onchange = e => gotoStudent(Number(e.target.value));
+  $('btnPrev').onclick = () => { if (Cur.stu > 0) gotoStudent(Cur.stu - 1); };
+  $('btnNext').onclick = () => { if (Cur.stu < State.data.list.length - 1) gotoStudent(Cur.stu + 1); };
+  $('saveState').onclick = () => { if (Saver.failed) { Saver.failed = false; Saver.flush(); } };
+  window.addEventListener('beforeunload', e => { if (Saver.q.size && !SS.get('state')) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('online', () => { if (Saver.failed) { Saver.failed = false; Saver.flush(); } });
 
   const r = Auth.handleRedirect();
   if (r && !r.ok) {

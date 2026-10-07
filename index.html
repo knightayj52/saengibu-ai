@@ -198,6 +198,27 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 .rsrc{margin-top:8px;font-size:13.5px;color:var(--sub)}
 .rsrc summary{cursor:pointer}
 .rsrc p{margin:4px 0 0}
+.ncard{border:1.5px solid #dfe2ee;border-radius:12px;padding:12px 14px;margin-top:10px;background:#fff}
+.ncard.done{background:#f7fbf8;border-color:#cfe6d8}
+.ntext{margin:0;font-size:15px;line-height:1.75;user-select:all}
+.cfrow{display:grid;gap:6px;align-items:start;padding:8px 0;border-top:1px solid var(--line)}
+.cfrow.k-subject{grid-template-columns:74px 90px 1.1fr 1fr 1fr 1fr 40px}
+.cfrow.k-activity{grid-template-columns:120px 150px 1fr 64px 40px}
+.cfrow.k-behavior{grid-template-columns:130px 1fr 64px 40px}
+.cfrow.head{font-size:12.5px;font-weight:700;color:var(--sub);border-top:0;padding-bottom:2px}
+.cfrow input[type=text],.cfrow select{min-height:40px;padding:7px 8px;font-size:14px}
+.cfrow textarea{font-size:13.5px;min-height:40px;padding:7px 8px}
+.cfuse{font-size:13px;display:flex;gap:4px;align-items:center;min-height:40px;white-space:nowrap}
+@media(max-width:760px){
+  .cfrow.head{display:none}
+  .cfrow.k-subject{grid-template-columns:1fr 1fr 40px}
+  .cfrow.k-subject textarea{grid-column:1 / -1}
+  .cfrow.k-subject .xbtn{grid-row:1;grid-column:3}
+  .cfrow.k-activity{grid-template-columns:1fr 1fr 40px}
+  .cfrow.k-activity textarea{grid-column:1 / 3}
+  .cfrow.k-behavior{grid-template-columns:1fr 64px 40px}
+  .cfrow.k-behavior textarea{grid-column:1 / -1}
+}
 .notice{text-align:center;padding:26px 16px}
 .notice p{margin:0 0 14px}
 </style>
@@ -218,12 +239,13 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 
 <nav id="nav" hidden aria-label="화면 이동">
   <button type="button" data-view="home">홈</button>
-  <button type="button" data-view="settings">⚙️ 설정</button>
   <button type="button" data-view="roster">👥 학생명단</button>
+  <button type="button" data-view="config">📋 항목</button>
   <button type="button" data-view="check">✅ 체크</button>
   <button type="button" data-view="gen">✨ 생성</button>
   <button type="button" data-view="result">📈 결과</button>
-  <button type="button" disabled title="5단계에서 열립니다">📑 NEIS 입력</button>
+  <button type="button" data-view="neis">📑 NEIS 입력</button>
+  <button type="button" data-view="settings">⚙️ 설정</button>
 </nav>
 
 <div id="banner" hidden role="status"><span id="bannerMsg"></span><button id="bannerBtn" class="btn sm" type="button"></button></div>
@@ -295,13 +317,13 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
     </div>
     <div class="card">
       <h2>진행 단계</h2>
-      <p class="muted">지금은 4단계(결과 검토·수정·재생성)까지 열려 있습니다.</p>
+      <p class="muted">모든 단계를 쓸 수 있습니다. 왼쪽부터 순서대로 진행하면 됩니다: 학생명단 → 항목 → 체크 → 생성 → 결과 → NEIS 입력</p>
       <div class="steps">
         <div class="step done"><b>① 로그인 · 시트 연결 · 설정</b>지금 쓸 수 있어요</div>
         <div class="step done"><b>② 학생명단 · 체크 입력</b>지금 쓸 수 있어요</div>
         <div class="step done"><b>③ AI 생성</b>지금 쓸 수 있어요</div>
         <div class="step done"><b>④ 결과 검토 · 수정 · 재생성</b>지금 쓸 수 있어요</div>
-        <div class="step"><b>⑤ NEIS 입력 스테이션 · 새 학기 · 백업</b>준비 중</div>
+        <div class="step done"><b>⑤ NEIS 입력 스테이션 · 새 학기 · 백업</b>지금 쓸 수 있어요</div>
       </div>
     </div>
   </section>
@@ -367,6 +389,20 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
       </p>
     </div>
 
+    <div class="card">
+      <h2>💾 백업</h2>
+      <p class="muted">스프레드시트 파일 전체를 내 드라이브에 사본으로 저장합니다. 되돌리려면 아래 [다른 시트로 바꾸기]에서 그 사본을 고르면 됩니다.</p>
+      <p><button id="btnBackup" class="btn line" type="button">지금 백업 사본 만들기</button></p>
+      <div id="backupList"></div>
+    </div>
+    <div class="card">
+      <h2>🆕 새 학기 시작</h2>
+      <p class="muted">지금까지의 결과를 📦 탭으로 보관하고, 결과와 체크를 비웁니다. 학생명단·개인 특성·설정·항목은 그대로 둡니다.</p>
+      <label class="f" for="termName">보관할 이름 <small>(예: 2026-1학기)</small></label>
+      <input type="text" id="termName" maxlength="20" placeholder="예) 2026-1학기">
+      <p style="margin:10px 0"><label><input type="checkbox" id="termBackup" checked> 시작 전에 백업 사본도 만들기 (권장)</label></p>
+      <p><button id="btnNewTerm" class="btn danger" type="button">새 학기 시작</button></p>
+    </div>
     <div class="card">
       <h2>📄 연결된 시트</h2>
       <p><b id="setSheetName"></b></p>
@@ -444,6 +480,26 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
     </div>
   </section>
 
+  <!-- NEIS 입력 스테이션 -->
+  <section id="v-neis" hidden>
+    <div class="card stickybar" id="neisBar"></div>
+    <div class="card" id="neisBody"></div>
+  </section>
+
+  <!-- 항목 설정 -->
+  <section id="v-config" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;position:sticky;top:0;z-index:5;background:#fff;padding:8px 0">
+        <h2 style="margin:0">📋 항목 설정</h2>
+        <span class="row"><span id="cfState" class="muted"></span><button id="cfSave" class="btn" type="button" hidden>저장</button></span>
+      </div>
+      <p class="muted">체크할 항목(성취기준·활동·문구)을 정합니다. 학기 초에 한 번 입력하면 됩니다. 저장하면 시트의 설정 탭에 기록되고 체크 화면에 반영됩니다.</p>
+      <div class="tabs" id="cfTabs" style="margin:12px 0"></div>
+      <div id="cfBody"></div>
+      <div id="cfTools" style="margin-top:14px"></div>
+    </div>
+  </section>
+
   <!-- 결과 -->
   <section id="v-result" hidden>
     <div class="card stickybar">
@@ -470,7 +526,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 
 /* ───────── 1. 앱 설정 ───────── */
 const CONFIG = {
-  VERSION: 'web 0.4 · 4단계',
+  VERSION: 'web 0.5 · 베타',
   CLIENT_ID: '522445423766-m3cop5vh489598e0hkefumd0r202tncp.apps.googleusercontent.com',
   PICKER_KEY: 'AIzaSyDuMaSWfi7yfybCUJnUvghOcirBA5JzXoE',
   APP_ID: '522445423766',                                   // Cloud 프로젝트 번호 (Picker가 고른 파일에 drive.file 권한을 붙이는 데 필요)
@@ -1888,13 +1944,13 @@ const State = {
 };
 
 async function inspectSheet(id) {
-  const meta = await gfetch(`${SHEETS_API}/${encodeURIComponent(id)}?fields=properties.title,spreadsheetUrl,sheets.properties(sheetId,title,index)`);
+  const meta = await gfetch(`${SHEETS_API}/${encodeURIComponent(id)}?fields=properties.title,spreadsheetUrl,sheets.properties(sheetId,title,index,gridProperties.rowCount)`);
   const map = {};
   (meta.sheets || []).forEach(s => {
     const t = s.properties.title;
-    SHEET_ORDER.forEach(k => { if (normName(t) === normName(SHEET_NAMES[k])) map[k] = { title: t, sheetId: s.properties.sheetId, index: s.properties.index }; });
+    SHEET_ORDER.forEach(k => { if (normName(t) === normName(SHEET_NAMES[k])) map[k] = { title: t, sheetId: s.properties.sheetId, index: s.properties.index, rowCount: (s.properties.gridProperties || {}).rowCount || 0 }; });
   });
-  return { title: (meta.properties && meta.properties.title) || '(제목 없음)', url: meta.spreadsheetUrl, map };
+  return { title: (meta.properties && meta.properties.title) || '(제목 없음)', url: meta.spreadsheetUrl, map, titles: (meta.sheets || []).map(s => s.properties.title) };
 }
 const a1 = (key, range) => `'${State.sheet.map[key].title.replace(/'/g, "''")}'!${range}`;
 
@@ -2298,8 +2354,9 @@ async function loadData() {
   const res = await gfetch(`${SHEETS_API}/${encodeURIComponent(State.sheet.id)}/values:batchGet?${p.toString()}`);
   const val = name => at[name] == null ? null : (((res.valueRanges || [])[at[name]] || {}).values || []);
   const rows = parseRoster(val('roster')), list = rows.filter(r => r.name);
-  const d = { rows, list, cfg: {}, chk: {} };
+  const d = { rows, list, cfg: {}, chk: {}, raw: {} };
   KINDS.forEach(k => {
+    d.raw[k] = val('cfg_' + k) || [];
     d.cfg[k] = val('cfg_' + k) ? expectedItems(k, val('cfg_' + k)) : null;
     const v = val('chk_' + k);
     if (!v) { d.chk[k] = null; return; }
@@ -2659,8 +2716,7 @@ function renderArea() {
   body.textContent = '';
   const cfgName = SHEET_NAMES[K.config], hasCfg = !!State.sheet.map[K.config];
   if (!c) {
-    if (!cfg || !cfg.length) body.append(notice(`${cfgName} 탭에 항목이 없습니다. 시트의 ${cfgName} 탭에 내용을 입력한 뒤, 홈에서 [새로고침]을 눌러 주세요.`, null, null,
-      hasCfg ? el('a', { class: 'btn line', href: tabLink(K.config), target: '_blank', rel: 'noopener', style: 'text-decoration:none;display:inline-block', text: cfgName + ' 탭 열기 ↗' }) : null));
+    if (!cfg || !cfg.length) body.append(notice(`${K.label} 항목이 아직 없습니다. 먼저 [📋 항목] 화면에서 ${k === 'subject' ? '과목과 성취기준' : k === 'activity' ? '활동' : '문구'}을 입력해 주세요.`, '📋 항목 설정으로', () => { CF.kind = k; CF.rows = null; show('config'); }));
     else body.append(notice(`${K.label} 체크 시트가 아직 없습니다. ${cfgName}의 ${k === 'subject' ? '성취기준 ' + cfg.length / 3 : '항목 ' + cfg.length}개와 학생 ${d.list.length}명으로 만듭니다.`,
       '체크 시트 만들기', () => runRebuild(k, false, '체크 시트를 만들었습니다.')));
     return;
@@ -3688,8 +3744,214 @@ async function regenMany(list) {
   toast((RV.stopAsked ? '중지했습니다. ' : '') + `재생성 ${okN}건 완료` + (lastErr ? ` · 실패: ${lastErr}` : ''), lastErr ? 8000 : 3500);
 }
 
+/* ───────── 8-5. NEIS 입력 스테이션 · 항목 설정 · 백업 · 새 학기 ───────── */
+
+/* ── NEIS 입력 스테이션: 완료된 결과를 NEIS 입력 순서대로 놓고 하나씩 복사 ──
+   복사한 항목은 이 브라우저에 "복사함" 표시를 남긴다(문장이 바뀌면 표시가 풀림). */
+const NV = { mode: 'student', stu: 0, pick: '' };
+const strHash = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return String(h); };
+const neisMarks = () => { try { return JSON.parse(LS.get('neis_' + State.sheet.id) || '{}'); } catch (e) { return {}; } };
+function neisItems() {
+  const out = [], seenB = {};
+  KINDS.forEach(kind => (State.results[kind] || []).forEach(r => {
+    if (!r.name || r.status !== DONE || !r.text || r.text.indexOf('❌') === 0) return;
+    if (kind === 'behavior') { if (seenB[r.name]) return; seenB[r.name] = true; }           // 행동특성은 학생당 1건 (v9와 동일)
+    const cat = kind === 'subject' ? '📚 ' + r.group : kind === 'activity' ? '🎯 ' + r.group : '💬 행동특성 및 종합의견';
+    out.push({ kind, name: r.name, group: r.group, cat, text: toPlain(r.text), key: kind + '|' + r.name + '|' + r.group });
+  }));
+  return out;
+}
+function neisCats(items) {          // NEIS 입력 순서: 교과(과목 가나다) → 창체(자율·동아리·진로) → 행동특성
+  const subj = uniq(items.filter(x => x.kind === 'subject').map(x => x.cat)).sort((a, b) => a.localeCompare(b, 'ko'));
+  const act = ACTIVITY_AREAS.map(a => '🎯 ' + a).filter(c => items.some(x => x.cat === c));
+  const others = uniq(items.filter(x => x.kind === 'activity').map(x => x.cat)).filter(c => act.indexOf(c) === -1);
+  return subj.concat(act, others, items.some(x => x.kind === 'behavior') ? ['💬 행동특성 및 종합의견'] : []);
+}
+function renderNeis() {
+  const d = State.data, items = neisItems(), marks = neisMarks(), bar = $('neisBar'), body = $('neisBody'), cats = neisCats(items);
+  bar.textContent = ''; body.textContent = '';
+  const isDone = it => marks[it.key] === strHash(it.text);
+  bar.append(el('div', { class: 'seg', role: 'group', 'aria-label': '보기 방식' }, [
+    el('button', { type: 'button', class: NV.mode === 'student' ? 'on' : '', text: '👤 학생별', onclick: () => { NV.mode = 'student'; renderNeis(); } }),
+    el('button', { type: 'button', class: NV.mode === 'cat' ? 'on' : '', onclick: () => { NV.mode = 'cat'; renderNeis(); } }, ['📚 과목·영역별 ', el('small', { text: 'NEIS 입력 화면 순서' })])]));
+  if (!items.length) { body.append(notice('아직 완료된 결과가 없습니다.', '✨ 생성 화면으로', () => show('gen'))); return; }
+  const names = d.list.map(s => s.name).filter(nm => items.some(x => x.name === nm)).concat(uniq(items.map(x => x.name)).filter(nm => !d.list.some(s => s.name === nm)));
+  let shown;
+  if (NV.mode === 'student') {
+    if (NV.stu >= names.length || NV.stu < 0) NV.stu = 0;
+    const sel = el('select', { 'aria-label': '학생 선택', onchange: e => { NV.stu = Number(e.target.value); renderNeis(); window.scrollTo(0, 0); } });
+    names.forEach((nm, i) => { const mine = items.filter(x => x.name === nm), dn = mine.filter(isDone).length; sel.append(el('option', { value: i, text: `${nm}  (${dn}/${mine.length})` })); });
+    sel.value = NV.stu;
+    bar.append(el('div', { class: 'sturow' }, [
+      el('button', { class: 'navbtn', type: 'button', text: '◀', 'aria-label': '이전 학생', disabled: NV.stu === 0, onclick: () => { NV.stu--; renderNeis(); window.scrollTo(0, 0); } }), sel,
+      el('button', { class: 'navbtn', type: 'button', text: '▶', 'aria-label': '다음 학생', disabled: NV.stu === names.length - 1, onclick: () => { NV.stu++; renderNeis(); window.scrollTo(0, 0); } })]));
+    shown = items.filter(x => x.name === names[NV.stu]).sort((a, b) => cats.indexOf(a.cat) - cats.indexOf(b.cat));
+  } else {
+    if (cats.indexOf(NV.pick) === -1) NV.pick = cats[0];
+    const chips = el('div', { class: 'chipbar', style: 'margin:0' });
+    cats.forEach(c => { const mine = items.filter(x => x.cat === c); chips.append(el('button', { type: 'button', class: c === NV.pick ? 'on' : '', onclick: () => { NV.pick = c; renderNeis(); } }, [c, el('small', { text: `${mine.filter(isDone).length}/${mine.length}` })])); });
+    bar.append(chips);
+    shown = items.filter(x => x.cat === NV.pick).sort((a, b) => names.indexOf(a.name) - names.indexOf(b.name));
+  }
+  const total = items.filter(isDone).length;
+  body.append(el('div', { class: 'toolbar' }, [el('span', { class: 'muted', text: `[복사]를 누른 뒤 NEIS 입력란에 Ctrl+V 하세요. 줄바꿈은 한 칸 띄어쓰기로 바뀝니다. · 전체 진행 ${total}/${items.length}` }),
+    total ? el('button', { class: 'btn line sm', type: 'button', text: '복사 표시 모두 지우기', style: 'margin-left:auto', onclick: () => { if (confirm('"복사함" 표시를 모두 지울까요? (문장은 그대로입니다)')) { LS.del('neis_' + State.sheet.id); renderNeis(); } } }) : null]));
+  shown.forEach(it => {
+    const byte = _getByteSize(it.text), over = byte > _getNeisByteLimit(null, it.kind), done = isDone(it);
+    const card = el('div', { class: 'ncard' + (done ? ' done' : '') });
+    card.append(el('div', { class: 'rhead' }, [el('b', { text: NV.mode === 'student' ? it.cat : it.name }), el('span', { class: 'bchip ' + (over ? 'bad' : 'good'), text: byte + ' byte' + (over ? ' · NEIS 한도 초과' : '') }),
+      done ? el('span', { class: 'tag', text: '✓ 복사함', style: 'margin-left:8px;background:#e7f6ee;color:#14603d' }) : null]),
+      el('p', { class: 'ntext', text: it.text }),
+      el('div', { class: 'row', style: 'margin-top:8px' }, [
+        el('button', { class: 'btn' + (done ? ' line' : ''), type: 'button', text: done ? '다시 복사' : '📋 복사', onclick: async () => { await copyText(it.text); const m = neisMarks(); m[it.key] = strHash(it.text); LS.set('neis_' + State.sheet.id, JSON.stringify(m)); renderNeis(); } }),
+        done ? el('button', { class: 'btn line sm', type: 'button', text: '표시 해제', onclick: () => { const m = neisMarks(); delete m[it.key]; LS.set('neis_' + State.sheet.id, JSON.stringify(m)); renderNeis(); } }) : null]));
+    body.append(card);
+  });
+}
+
+/* ── 항목 설정: 교과 성취기준 · 창체 활동 · 행동특성 문구를 앱에서 편집 (v9 설정 탭과 같은 칸) ── */
+const CF = { kind: 'subject', rows: null, dirty: false };
+const CFW = { subject: 6, activity: 4, behavior: 3 };
+const ACT_TYPES = ['자율활동', '진로활동', '동아리활동', '봉사활동'];
+function cfLoad() {
+  const w = CFW[CF.kind], raw = (State.data.raw && State.data.raw[CF.kind]) || [];
+  CF.rows = raw.map(r => { const a = []; for (let i = 0; i < w; i++) a.push(S((r || [])[i])); return a; }).filter(a => a.some(v => v.trim() !== ''));
+  CF.dirty = false;
+}
+// 엑셀·한글 표에서 복사한 글(탭으로 구분, 칸 안 줄바꿈은 따옴표로 감싸짐)을 행으로
+function parseTsv(text) {
+  const rows = []; let row = [], cell = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i + 1] === '"') { cell += '"'; i++; } else q = false; } else cell += c; }
+    else if (c === '"' && cell === '') q = true;
+    else if (c === '\t') { row.push(cell); cell = ''; }
+    else if (c === '\n') { row.push(cell); rows.push(row); row = []; cell = ''; }
+    else if (c !== '\r') cell += c;
+  }
+  row.push(cell); rows.push(row);
+  return rows.map(r => r.map(v => v.trim())).filter(r => r.some(v => v !== ''));
+}
+function cfTouch() { CF.dirty = true; $('cfSave').hidden = false; $('cfState').textContent = '저장하지 않은 변경이 있습니다.'; }
+function renderConfig() {
+  const kind = CF.kind, tabs = $('cfTabs'), body = $('cfBody'), tools = $('cfTools');
+  if (!CF.rows) cfLoad();
+  tabs.textContent = ''; body.textContent = ''; tools.textContent = '';
+  const names = { subject: '교과 성취기준', activity: '창체 활동', behavior: '행동특성 문구' };
+  KINDS.forEach(k => tabs.append(el('button', { type: 'button', class: kind === k ? 'on' : '', text: names[k],
+    onclick: () => { if (k === kind) return; if (CF.dirty && !confirm('저장하지 않은 변경이 있습니다. 버리고 이동할까요?')) return; CF.kind = k; CF.rows = null; renderConfig(); } })));
+  $('cfSave').hidden = !CF.dirty; $('cfState').textContent = CF.dirty ? '저장하지 않은 변경이 있습니다.' : `${CF.rows.length}개`;
+  const inp = (row, i, tag, ph, extra) => el(tag, Object.assign({ value: row[i], placeholder: ph, 'aria-label': ph, oninput: e => { row[i] = e.target.value; cfTouch(); } }, tag === 'textarea' ? { rows: 2 } : { type: 'text' }, extra || {}));
+  const del = idx => el('button', { class: 'xbtn', type: 'button', text: '✕', title: '이 줄 삭제', 'aria-label': '이 줄 삭제', onclick: () => { CF.rows.splice(idx, 1); cfTouch(); renderConfig(); } });
+  const use = (row, i) => el('label', { class: 'cfuse', title: '끄면 체크 항목에서 제외됩니다 (시트에는 X로 표시)' }, [el('input', { type: 'checkbox', checked: row[i].trim().toUpperCase() !== 'X', onchange: e => { row[i] = e.target.checked ? '' : 'X'; cfTouch(); } }), '사용']);
+  const heads = { subject: ['과목', '영역', '성취기준', '상(上) 수준 설명', '중(中) 수준 설명', '하(下) 수준 설명', ''], activity: ['유형', '활동명', '활동 공통 내용 (반 전체 공통)', '', ''], behavior: ['영역', '예시 문구', '', ''] }[kind];
+  if (CF.rows.length) body.append(el('div', { class: 'cfrow head k-' + kind }, heads.map(h => el('div', { text: h }))));
+  CF.rows.forEach((row, idx) => {
+    const line = el('div', { class: 'cfrow k-' + kind });
+    if (kind === 'subject') line.append(inp(row, 0, 'input', '과목'), inp(row, 1, 'input', '영역'), inp(row, 2, 'textarea', '성취기준'), inp(row, 3, 'textarea', '상 수준 설명'), inp(row, 4, 'textarea', '중 수준 설명'), inp(row, 5, 'textarea', '하 수준 설명'), del(idx));
+    else if (kind === 'activity') {
+      const sel = el('select', { 'aria-label': '유형', onchange: e => { row[0] = e.target.value; cfTouch(); } }, uniq(ACT_TYPES.concat(row[0] ? [row[0]] : [])).map(t => el('option', { value: t, text: t })));
+      sel.value = row[0] || ACT_TYPES[0]; if (!row[0]) row[0] = ACT_TYPES[0];
+      line.append(sel, inp(row, 1, 'input', '활동명'), inp(row, 2, 'textarea', '활동 공통 내용'), use(row, 3), del(idx));
+    } else line.append(inp(row, 0, 'input', '영역'), inp(row, 1, 'textarea', '예시 문구'), use(row, 2), del(idx));
+    body.append(line);
+  });
+  if (!CF.rows.length) body.append(el('p', { class: 'muted', text: '아직 항목이 없습니다. 아래에서 추가해 주세요.' }));
+  const blank = () => { const a = []; for (let i = 0; i < CFW[kind]; i++) a.push(''); return a; };
+  tools.append(el('button', { class: 'btn line', type: 'button', text: '+ 한 줄 추가', onclick: () => { CF.rows.push(blank()); cfTouch(); renderConfig(); const rows = document.querySelectorAll('#cfBody .cfrow:not(.head)'); const last = rows[rows.length - 1]; if (last) { last.scrollIntoView({ block: 'center' }); const f = last.querySelector('input[type=text],select'); if (f) f.focus(); } } }));
+  if (kind === 'subject') {
+    const ta = el('textarea', { rows: 3, placeholder: '과목 [탭] 영역 [탭] 성취기준 [탭] 상 [탭] 중 [탭] 하  — 엑셀·구글시트·한글 표에서 여러 줄을 복사해 그대로 붙여넣으세요', 'aria-label': '표에서 붙여넣기' });
+    tools.append(el('div', { class: 'addbox', style: 'margin-top:14px' }, [el('label', { class: 'f', text: '표에서 여러 줄 붙여넣기' }), ta,
+      el('p', { style: 'margin:10px 0 0' }, [el('button', { class: 'btn line', type: 'button', text: '붙여넣은 내용 추가', onclick: () => {
+        const rows = parseTsv(ta.value).map(r => { const a = blank(); r.slice(0, 6).forEach((v, i) => { a[i] = v; }); return a; }).filter(a => !(a[0] === '과목명' || a[0] === '과목'));
+        const good = rows.filter(a => a[0] && a[2]);
+        if (!good.length) { toast('과목과 성취기준이 있는 줄을 찾지 못했습니다. 칸이 탭으로 구분되어 있는지 확인해 주세요.', 6000); return; }
+        good.forEach(a => CF.rows.push(a)); ta.value = ''; cfTouch(); renderConfig(); toast(`${good.length}줄을 추가했습니다.` + (rows.length > good.length ? ` (과목·성취기준이 빈 ${rows.length - good.length}줄 제외)` : '')); } })])]));
+  } else if (kind === 'activity') {
+    tools.append(el('button', { class: 'btn line', type: 'button', text: '기본 활동 중 없는 것 추가', style: 'margin-left:8px', onclick: () => {
+      const have = new Set(CF.rows.map(r => r[0].trim() + '|' + r[1].trim())); const add = V9_DATA.activities.filter(a => !have.has(a[0] + '|' + a[1]));
+      if (!add.length) { toast('기본 활동 30개가 이미 모두 있습니다.'); return; }
+      add.forEach(a => CF.rows.push(a.slice(0, 4).map(S))); cfTouch(); renderConfig(); toast(`기본 활동 ${add.length}개를 추가했습니다.`); } }));
+  } else {
+    [['초등용', V9_DATA.behaviorElementary], ['중·고등용', V9_DATA.behaviorSecondary]].forEach(([nm, set]) => tools.append(el('button', { class: 'btn line', type: 'button', text: `${nm} 기본 문구로 교체`, style: 'margin-left:8px', onclick: () => {
+      if (!confirm(`행동특성 문구를 ${nm} 기본 세트(${set.length}개)로 바꿉니다.\n직접 추가·수정한 문구는 사라집니다. 계속할까요?\n([저장]을 눌러야 실제로 반영됩니다)`)) return;
+      CF.rows = set.map(a => a.slice(0, 3).map(S)); cfTouch(); renderConfig(); } })));
+  }
+}
+async function saveConfig() {
+  const kind = CF.kind, K = CHK[kind], w = CFW[kind], m = State.sheet.map;
+  const rows = CF.rows.map(r => r.map(v => v.replace(/\r/g, '').trim())).filter(r => r.some(v => v !== ''));
+  const skip = rows.filter(r => kind === 'subject' ? !(r[0] && r[2]) : !(r[0] && r[1])).length;
+  if (skip && !confirm(`${skip}줄은 ${kind === 'subject' ? '과목 또는 성취기준' : kind === 'activity' ? '유형 또는 활동명' : '영역 또는 문구'}이 비어 있어 체크 항목에서 빠집니다. 그대로 저장할까요?`)) return;
+  try {
+    busy('저장하는 중…');
+    if (!m[K.config]) throw new Error(`${SHEET_NAMES[K.config]} 탭이 시트에 없습니다.`);
+    const old = ((State.data.raw && State.data.raw[kind]) || []).length, n = Math.max(old, rows.length), req = [], need = 3 + n - (m[K.config].rowCount || 0);
+    if (need > 0) req.push({ appendDimension: { sheetId: m[K.config].sheetId, dimension: 'ROWS', length: need + 10 } });
+    const out = []; for (let i = 0; i < n; i++) { const r = rows[i] || []; const cells = []; for (let c = 0; c < w; c++) cells.push(cellV(r[c] || '')); out.push({ values: cells }); }
+    if (n) req.push({ updateCells: { start: { sheetId: m[K.config].sheetId, rowIndex: 3, columnIndex: 0 }, rows: out, fields: 'userEnteredValue' } });
+    if (req.length) await sendBatch(req);
+    await refreshAll(); CF.rows = null; cfLoad(); busy(''); renderConfig(); toast('저장했습니다.');
+  } catch (e) { busy(''); if (e.status !== 401) toast('저장 실패 — ' + e.message, 7000); return; }
+  // 체크 시트에 반영
+  const d = State.data, c = d.chk[kind], cfg = d.cfg[kind] || [];
+  if (!d.list.length || !cfg.length) return;
+  if (!c) { if (confirm(`${K.label} 체크 시트를 지금 만들까요? (학생 ${d.list.length}명)`)) await runRebuild(kind, false, '체크 시트를 만들었습니다.'); }
+  else if (c.aligned && c.stale && confirm(`바뀐 내용을 ${K.label} 체크 시트에 반영할까요?\n(이미 한 체크는 같은 항목끼리 그대로 옮겨집니다)`)) await runRebuild(kind, false, '체크 시트에 반영했습니다.');
+}
+
+/* ── 백업: 스프레드시트 파일 전체를 드라이브에 사본으로 저장 (서식·결과·v9 메뉴까지 그대로) ── */
+const stamp = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}-${p(d.getMinutes())}`; };
+const backupList = () => { try { return JSON.parse(LS.get('backups_' + State.sheet.id) || '[]'); } catch (e) { return []; } };
+async function makeBackup() {
+  await Saver.drain();
+  const name = `${State.sheet.title} (백업 ${stamp()})`;
+  const res = await gfetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(State.sheet.id)}/copy?fields=id,name,webViewLink`, { method: 'POST', body: JSON.stringify({ name }) });
+  const list = backupList(); list.unshift({ id: res.id, name: res.name || name, url: res.webViewLink || ('https://docs.google.com/spreadsheets/d/' + res.id), at: stamp() });
+  LS.set('backups_' + State.sheet.id, JSON.stringify(list.slice(0, 20)));
+  return list[0];
+}
+function renderManage() {
+  const box = $('backupList'); if (!box || !State.sheet) return; box.textContent = '';
+  const list = backupList();
+  if (!list.length) { box.append(el('p', { class: 'muted', text: '이 브라우저에서 만든 백업이 아직 없습니다.' })); return; }
+  list.forEach(b => box.append(el('p', { style: 'margin:6px 0' }, [el('a', { href: b.url, target: '_blank', rel: 'noopener', text: b.name }), el('span', { class: 'muted', text: '  ' + b.at })])));
+}
+async function onBackup() {
+  try { busy('백업 사본을 만드는 중…'); const b = await makeBackup(); busy(''); renderManage(); toast(`백업을 만들었습니다: ${b.name}`, 5000); }
+  catch (e) { busy(''); if (e.status !== 401) toast('백업 실패 — ' + e.message, 8000); }
+}
+/* ── 새 학기 시작 (v9 startNewSemester): 결과 시트를 📦사본으로 보관 → 결과 비움 → 체크·메모 초기화. 학생명단·설정·항목은 유지 ── */
+async function onNewTerm() {
+  const term = ($('termName').value.trim() || '이전학기').replace(/[\[\]\*\?\/\\:]/g, ' ');
+  if (!confirm(`새 학기를 시작합니다.\n\n📦 보관: 교과·창체·행동특성 결과를 "📦${term}_…" 탭으로 복사\n🧹 초기화: 결과 시트의 문장 삭제, 체크 해제, 창체 개인 메모 삭제\n✅ 유지: 학생명단, 개인 특성, 설정, 성취기준·활동·문구\n\n계속할까요?`)) return;
+  try {
+    await Saver.drain(); busy('준비 중…'); await refreshAll(); await loadResults();
+    if ($('termBackup').checked) { busy('먼저 백업 사본을 만드는 중…'); await makeBackup(); }
+    busy('새 학기로 정리하는 중…');
+    const m = State.sheet.map, titles = State.sheet.titles.slice(), req = [], log = []; let at = titles.length;
+    KINDS.forEach(k => {
+      const rs = m[CHK[k].result], n = (State.results[k] || []).length; if (!rs) return;
+      if (!n) { log.push(`${SHEET_NAMES[CHK[k].result]}: 보관할 결과 없음`); return; }
+      let name = `📦${term}_${SHEET_NAMES[CHK[k].result]}`; for (let i = 2; titles.indexOf(name) !== -1; i++) name = `📦${term}_${SHEET_NAMES[CHK[k].result]}(${i})`;
+      titles.push(name); const id = newSheetId();
+      req.push({ duplicateSheet: { sourceSheetId: rs.sheetId, insertSheetIndex: at++, newSheetId: id, newSheetName: name } },
+        { updateSheetProperties: { properties: { sheetId: id, tabColorStyle: { rgbColor: hexColor('#9e9e9e') } }, fields: 'tabColorStyle' } },
+        { deleteDimension: { range: { sheetId: rs.sheetId, dimension: 'ROWS', startIndex: 3, endIndex: 3 + n } } });
+      log.push(`${SHEET_NAMES[CHK[k].result]} → ${name} (${n}행 보관)`);
+    });
+    const names = State.data.list.map(s => s.name);
+    const plans = names.length ? builtKinds().filter(k => (State.data.cfg[k] || []).length).map(k => planRebuild(k, names, names.map(() => -1))) : [];
+    await rebuild(plans, req);
+    if (m.OUTPUT) { try { await gfetch(`${SHEETS_API}/${encodeURIComponent(State.sheet.id)}/values/${encodeURIComponent(a1('OUTPUT', 'A5:Z'))}:clear`, { method: 'POST', body: '{}' }); } catch (e) {} }
+    LS.del('neis_' + State.sheet.id);
+    busy(''); renderManage(); $('termName').value = '';
+    alert('새 학기 준비를 마쳤습니다.\n\n' + log.join('\n') + (plans.length ? `\n체크 시트 ${plans.length}개 초기화` : '') + '\n\n학생이 바뀌었으면 [👥 학생명단]에서 고쳐 주세요.');
+  } catch (e) { busy(''); if (e.status !== 401) toast('실패 — ' + e.message, 9000); }
+}
+
 /* ───────── 9. 화면 ───────── */
-const VIEWS = ['loading', 'login', 'connect', 'home', 'settings', 'roster', 'check', 'gen', 'result'];
+const VIEWS = ['loading', 'login', 'connect', 'home', 'settings', 'roster', 'check', 'gen', 'result', 'neis', 'config'];
 async function show(view) {
   if (GEN.running && view !== 'gen') { toast('생성 중에는 다른 화면으로 갈 수 없습니다. 먼저 [중지]를 눌러 주세요.'); return; }
   if ((RV.running || RV.busyKey) && view !== 'result') { toast('재생성 중에는 다른 화면으로 갈 수 없습니다.'); return; }
@@ -3697,7 +3959,11 @@ async function show(view) {
     if (!confirm('저장하지 않은 수정이 있습니다. 버리고 이동할까요?')) return;
     RV.draft = {};
   }
-  if ((view === 'gen' && !GEN.running) || (view === 'result' && !RV.running && !RV.busyKey)) {                               // 생성 화면: 체크·결과를 항상 새로 읽음
+  if (State.view === 'config' && CF.dirty && view !== 'config') {
+    if (!confirm('항목 설정에 저장하지 않은 변경이 있습니다. 버리고 이동할까요?')) return;
+    CF.dirty = false; CF.rows = null;
+  }
+  if ((view === 'gen' && !GEN.running) || (view === 'result' && !RV.running && !RV.busyKey) || view === 'neis' || (view === 'config' && !CF.dirty)) {                               // 생성 화면: 체크·결과를 항상 새로 읽음
     try { await Saver.drain(); busy('시트를 읽는 중…'); await refreshAll(); await loadResults(); busy(''); }
     catch (e) { busy(''); if (e.status !== 401) toast('시트를 읽지 못했습니다 — ' + e.message, 7000); return; }
   }
@@ -3707,7 +3973,7 @@ async function show(view) {
   }
   State.view = view;
   VIEWS.forEach(v => { $('v-' + v).hidden = v !== view; });
-  const inApp = ['home', 'settings', 'roster', 'check', 'gen', 'result'].indexOf(view) !== -1;
+  const inApp = ['home', 'settings', 'roster', 'check', 'gen', 'result', 'neis', 'config'].indexOf(view) !== -1;
   $('nav').hidden = !inApp;
   document.querySelectorAll('#nav button[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
   $('userBox').hidden = !Auth.token;
@@ -3717,6 +3983,9 @@ async function show(view) {
   if (view === 'check') renderCheck();
   if (view === 'gen') renderGen();
   if (view === 'result') renderResults();
+  if (view === 'neis') renderNeis();
+  if (view === 'config') { if (!CF.dirty) CF.rows = null; renderConfig(); }
+  if (view === 'settings') renderManage();
   window.scrollTo(0, 0);
 }
 function banner(msg, btnText, fn) {
@@ -3858,7 +4127,7 @@ async function afterLogin() {
         GEN.kind = genResume.kind; GEN.subject = genResume.subject || ''; GEN.all = !genResume.names; GEN.picked = {}; (genResume.names || []).forEach(n => { GEN.picked[n] = true; });
         await show('gen'); runGeneration(genResume);
       }
-      else if (resume && ['roster', 'check', 'settings', 'gen', 'result'].indexOf(resume.view) !== -1) { Object.assign(Cur, resume.cur || {}); await show(resume.view); }
+      else if (resume && ['roster', 'check', 'settings', 'gen', 'result', 'neis', 'config'].indexOf(resume.view) !== -1) { Object.assign(Cur, resume.cur || {}); await show(resume.view); }
       else show('home');
       return;
     }
@@ -3904,6 +4173,9 @@ async function boot() {
   $('stuSel').onchange = e => gotoStudent(Number(e.target.value));
   $('btnGenStart').onclick = () => { State.simShown = false; runGeneration(genScope()); renderGen(); };
   $('btnGenStop').onclick = () => { GEN.stop = true; $('btnGenStop').disabled = true; GEN.msg2 = '지금 만들던 항목까지만 처리하고 멈춥니다…'; paintRun(); };
+  $('cfSave').onclick = saveConfig;
+  $('btnBackup').onclick = onBackup;
+  $('btnNewTerm').onclick = onNewTerm;
   $('btnToResult').onclick = () => { RV.kind = GEN.kind; show('result'); };
   $('btnSim').onclick = async () => { try { busy('결과를 읽는 중…'); await loadResults(); busy(''); State.simShown = true; renderSim(); } catch (e) { busy(''); if (e.status !== 401) toast(e.message, 6000); } };
   $('modeStudent').onclick = () => setMode('student');
@@ -3911,7 +4183,7 @@ async function boot() {
   $('btnPrev').onclick = () => { if (Cur.stu > 0) gotoStudent(Cur.stu - 1); };
   $('btnNext').onclick = () => { if (Cur.stu < State.data.list.length - 1) gotoStudent(Cur.stu + 1); };
   $('saveState').onclick = () => { if (Saver.failed) { Saver.failed = false; Saver.flush(); } };
-  window.addEventListener('beforeunload', e => { if ((Saver.q.size || GEN.running || RV.running || RV.busyKey || Object.keys(RV.draft).length) && !SS.get('state')) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', e => { if ((Saver.q.size || GEN.running || RV.running || RV.busyKey || Object.keys(RV.draft).length || CF.dirty) && !SS.get('state')) { e.preventDefault(); e.returnValue = ''; } });
   window.addEventListener('online', () => { if (Saver.failed) { Saver.failed = false; Saver.flush(); } });
 
   const r = Auth.handleRedirect();

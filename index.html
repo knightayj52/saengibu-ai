@@ -201,6 +201,19 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 .ncard{border:1.5px solid #dfe2ee;border-radius:12px;padding:12px 14px;margin-top:10px;background:#fff}
 .ncard.done{background:#f7fbf8;border-color:#cfe6d8}
 .ntext{margin:0;font-size:15px;line-height:1.75;user-select:all}
+.cfpaste{border:1.5px dashed #b9c0dd;border-radius:12px;padding:10px 14px;background:#f7f8fc}
+.cfpaste summary{cursor:pointer;font-weight:700;font-size:15px}
+.cfcard{border:1.5px solid #dfe2ee;border-radius:12px;padding:12px 14px;margin-top:10px;background:#fff}
+.cfline{display:grid;grid-template-columns:150px 1fr 40px;gap:8px;align-items:end;margin-bottom:8px}
+.cfline label,.cfl{display:block;font-size:12.5px;font-weight:700;color:var(--sub)}
+.cfline input{margin-top:2px;min-height:40px;padding:7px 9px;font-size:15px;font-weight:700}
+.cfl{margin-top:6px}
+.cfl textarea,.cfrow textarea{font-weight:400;color:var(--ink);display:block;margin-top:2px;font-size:14.5px;line-height:1.6;padding:8px 10px;resize:none;overflow:hidden;min-height:40px}
+.cfl.lv0,.cfl.lv1,.cfl.lv2{display:grid;grid-template-columns:30px 1fr;gap:8px;align-items:start}
+.cfl .bd{width:26px;height:26px;margin-top:9px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:var(--ink)}
+.cfl.lv0 .bd{background:#d5f5e3}.cfl.lv1 .bd{background:#fef9e7}.cfl.lv2 .bd{background:#fde8e8}
+.cfl.lv0 textarea,.cfl.lv1 textarea,.cfl.lv2 textarea{margin-top:0}
+@media(max-width:760px){.cfline{grid-template-columns:1fr 1fr 40px}}
 .cfrow{display:grid;gap:6px;align-items:start;padding:8px 0;border-top:1px solid var(--line)}
 .cfrow.k-subject{grid-template-columns:74px 90px 1.1fr 1fr 1fr 1fr 40px}
 .cfrow.k-activity{grid-template-columns:120px 150px 1fr 64px 40px}
@@ -495,8 +508,8 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
       </div>
       <p class="muted">체크할 항목(성취기준·활동·문구)을 정합니다. 학기 초에 한 번 입력하면 됩니다. 저장하면 시트의 설정 탭에 기록되고 체크 화면에 반영됩니다.</p>
       <div class="tabs" id="cfTabs" style="margin:12px 0"></div>
+      <div id="cfTools"></div>
       <div id="cfBody"></div>
-      <div id="cfTools" style="margin-top:14px"></div>
     </div>
   </section>
 
@@ -3810,7 +3823,7 @@ function renderNeis() {
 }
 
 /* ── 항목 설정: 교과 성취기준 · 창체 활동 · 행동특성 문구를 앱에서 편집 (v9 설정 탭과 같은 칸) ── */
-const CF = { kind: 'subject', rows: null, dirty: false };
+const CF = { kind: 'subject', rows: null, dirty: false, grp: '' };   // grp: 골라 보는 과목·유형·영역
 const CFW = { subject: 6, activity: 4, behavior: 3 };
 const ACT_TYPES = ['자율활동', '진로활동', '동아리활동', '봉사활동'];
 function cfLoad() {
@@ -3833,50 +3846,85 @@ function parseTsv(text) {
   return rows.map(r => r.map(v => v.trim())).filter(r => r.some(v => v !== ''));
 }
 function cfTouch() { CF.dirty = true; $('cfSave').hidden = false; $('cfState').textContent = '저장하지 않은 변경이 있습니다.'; }
+function autoGrow(ta) { ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px'; }
+// 표에서 복사한 글을 항목 줄로 — 칸 수는 영역마다 다름 (머리글 줄·필수 칸이 빈 줄은 제외)
+const CF_PASTE = {
+  subject:  { cols: '과목 · 영역 · 성취기준 · 상 · 중 · 하', need: [0, 2], head: /^과목(명)?$/, ph: '예)  국어 [탭] 읽기 [탭] [4국02-04] 글에 나타난… [탭] 상 수준 설명 [탭] 중 수준 설명 [탭] 하 수준 설명' },
+  activity: { cols: '유형 · 활동명 · 활동 내용', need: [0, 1], head: /^(활동\s*)?유형$/, ph: '예)  자율활동 [탭] 학급자치활동 [탭] 학급 회의를 통해 규칙을 정하고…' },
+  behavior: { cols: '영역 · 문구', need: [0, 1], head: /^영역$/, ph: '예)  수업태도 [탭] 수업에 집중하며 적극적으로 참여함.' }
+};
 function renderConfig() {
-  const kind = CF.kind, tabs = $('cfTabs'), body = $('cfBody'), tools = $('cfTools');
+  const kind = CF.kind, tabs = $('cfTabs'), body = $('cfBody'), tools = $('cfTools'), P = CF_PASTE[kind];
   if (!CF.rows) cfLoad();
   tabs.textContent = ''; body.textContent = ''; tools.textContent = '';
   const names = { subject: '교과 성취기준', activity: '창체 활동', behavior: '행동특성 문구' };
   KINDS.forEach(k => tabs.append(el('button', { type: 'button', class: kind === k ? 'on' : '', text: names[k],
-    onclick: () => { if (k === kind) return; if (CF.dirty && !confirm('저장하지 않은 변경이 있습니다. 버리고 이동할까요?')) return; CF.kind = k; CF.rows = null; renderConfig(); } })));
+    onclick: () => { if (k === kind) return; if (CF.dirty && !confirm('저장하지 않은 변경이 있습니다. 버리고 이동할까요?')) return; CF.kind = k; CF.rows = null; CF.grp = ''; renderConfig(); } })));
   $('cfSave').hidden = !CF.dirty; $('cfState').textContent = CF.dirty ? '저장하지 않은 변경이 있습니다.' : `${CF.rows.length}개`;
-  const inp = (row, i, tag, ph, extra) => el(tag, Object.assign({ value: row[i], placeholder: ph, 'aria-label': ph, oninput: e => { row[i] = e.target.value; cfTouch(); } }, tag === 'textarea' ? { rows: 2 } : { type: 'text' }, extra || {}));
-  const del = idx => el('button', { class: 'xbtn', type: 'button', text: '✕', title: '이 줄 삭제', 'aria-label': '이 줄 삭제', onclick: () => { CF.rows.splice(idx, 1); cfTouch(); renderConfig(); } });
-  const use = (row, i) => el('label', { class: 'cfuse', title: '끄면 체크 항목에서 제외됩니다 (시트에는 X로 표시)' }, [el('input', { type: 'checkbox', checked: row[i].trim().toUpperCase() !== 'X', onchange: e => { row[i] = e.target.checked ? '' : 'X'; cfTouch(); } }), '사용']);
-  const heads = { subject: ['과목', '영역', '성취기준', '상(上) 수준 설명', '중(中) 수준 설명', '하(下) 수준 설명', ''], activity: ['유형', '활동명', '활동 공통 내용 (반 전체 공통)', '', ''], behavior: ['영역', '예시 문구', '', ''] }[kind];
-  if (CF.rows.length) body.append(el('div', { class: 'cfrow head k-' + kind }, heads.map(h => el('div', { text: h }))));
-  CF.rows.forEach((row, idx) => {
-    const line = el('div', { class: 'cfrow k-' + kind });
-    if (kind === 'subject') line.append(inp(row, 0, 'input', '과목'), inp(row, 1, 'input', '영역'), inp(row, 2, 'textarea', '성취기준'), inp(row, 3, 'textarea', '상 수준 설명'), inp(row, 4, 'textarea', '중 수준 설명'), inp(row, 5, 'textarea', '하 수준 설명'), del(idx));
-    else if (kind === 'activity') {
-      const sel = el('select', { 'aria-label': '유형', onchange: e => { row[0] = e.target.value; cfTouch(); } }, uniq(ACT_TYPES.concat(row[0] ? [row[0]] : [])).map(t => el('option', { value: t, text: t })));
-      sel.value = row[0] || ACT_TYPES[0]; if (!row[0]) row[0] = ACT_TYPES[0];
-      line.append(sel, inp(row, 1, 'input', '활동명'), inp(row, 2, 'textarea', '활동 공통 내용'), use(row, 3), del(idx));
-    } else line.append(inp(row, 0, 'input', '영역'), inp(row, 1, 'textarea', '예시 문구'), use(row, 2), del(idx));
-    body.append(line);
-  });
-  if (!CF.rows.length) body.append(el('p', { class: 'muted', text: '아직 항목이 없습니다. 아래에서 추가해 주세요.' }));
   const blank = () => { const a = []; for (let i = 0; i < CFW[kind]; i++) a.push(''); return a; };
-  tools.append(el('button', { class: 'btn line', type: 'button', text: '+ 한 줄 추가', onclick: () => { CF.rows.push(blank()); cfTouch(); renderConfig(); const rows = document.querySelectorAll('#cfBody .cfrow:not(.head)'); const last = rows[rows.length - 1]; if (last) { last.scrollIntoView({ block: 'center' }); const f = last.querySelector('input[type=text],select'); if (f) f.focus(); } } }));
-  if (kind === 'subject') {
-    const ta = el('textarea', { rows: 3, placeholder: '과목 [탭] 영역 [탭] 성취기준 [탭] 상 [탭] 중 [탭] 하  — 엑셀·구글시트·한글 표에서 여러 줄을 복사해 그대로 붙여넣으세요', 'aria-label': '표에서 붙여넣기' });
-    tools.append(el('div', { class: 'addbox', style: 'margin-top:14px' }, [el('label', { class: 'f', text: '표에서 여러 줄 붙여넣기' }), ta,
-      el('p', { style: 'margin:10px 0 0' }, [el('button', { class: 'btn line', type: 'button', text: '붙여넣은 내용 추가', onclick: () => {
-        const rows = parseTsv(ta.value).map(r => { const a = blank(); r.slice(0, 6).forEach((v, i) => { a[i] = v; }); return a; }).filter(a => !(a[0] === '과목명' || a[0] === '과목'));
-        const good = rows.filter(a => a[0] && a[2]);
-        if (!good.length) { toast('과목과 성취기준이 있는 줄을 찾지 못했습니다. 칸이 탭으로 구분되어 있는지 확인해 주세요.', 6000); return; }
-        good.forEach(a => CF.rows.push(a)); ta.value = ''; cfTouch(); renderConfig(); toast(`${good.length}줄을 추가했습니다.` + (rows.length > good.length ? ` (과목·성취기준이 빈 ${rows.length - good.length}줄 제외)` : '')); } })])]));
-  } else if (kind === 'activity') {
-    tools.append(el('button', { class: 'btn line', type: 'button', text: '기본 활동 중 없는 것 추가', style: 'margin-left:8px', onclick: () => {
-      const have = new Set(CF.rows.map(r => r[0].trim() + '|' + r[1].trim())); const add = V9_DATA.activities.filter(a => !have.has(a[0] + '|' + a[1]));
-      if (!add.length) { toast('기본 활동 30개가 이미 모두 있습니다.'); return; }
-      add.forEach(a => CF.rows.push(a.slice(0, 4).map(S))); cfTouch(); renderConfig(); toast(`기본 활동 ${add.length}개를 추가했습니다.`); } }));
-  } else {
-    [['초등용', V9_DATA.behaviorElementary], ['중·고등용', V9_DATA.behaviorSecondary]].forEach(([nm, set]) => tools.append(el('button', { class: 'btn line', type: 'button', text: `${nm} 기본 문구로 교체`, style: 'margin-left:8px', onclick: () => {
-      if (!confirm(`행동특성 문구를 ${nm} 기본 세트(${set.length}개)로 바꿉니다.\n직접 추가·수정한 문구는 사라집니다. 계속할까요?\n([저장]을 눌러야 실제로 반영됩니다)`)) return;
-      CF.rows = set.map(a => a.slice(0, 3).map(S)); cfTouch(); renderConfig(); } })));
+  const grown = [];
+  const area = (row, i, ph) => { const t = el('textarea', { rows: 1, value: row[i], placeholder: ph, 'aria-label': ph, oninput: e => { row[i] = e.target.value; autoGrow(e.target); cfTouch(); } }); grown.push(t); return t; };
+  const text = (row, i, ph, onchange) => el('input', { type: 'text', value: row[i], placeholder: ph, 'aria-label': ph, oninput: e => { row[i] = e.target.value; cfTouch(); }, onchange: onchange || null });
+  const del = row => el('button', { class: 'xbtn', type: 'button', text: '✕', title: '삭제', 'aria-label': '삭제', onclick: () => { CF.rows.splice(CF.rows.indexOf(row), 1); cfTouch(); renderConfig(); } });
+  const use = (row, i) => el('label', { class: 'cfuse', title: '끄면 체크 항목에서 제외됩니다 (시트에는 X로 표시)' }, [el('input', { type: 'checkbox', checked: row[i].trim().toUpperCase() !== 'X', onchange: e => { row[i] = e.target.checked ? '' : 'X'; cfTouch(); } }), '사용']);
+
+  // ── ① 한꺼번에 넣기 (맨 위) ──
+  const ta = el('textarea', { rows: 3, placeholder: P.ph, 'aria-label': '표에서 붙여넣기' });
+  const pasteBox = el('details', { class: 'cfpaste', open: !CF.rows.length }, [
+    el('summary', { text: '📥 표에서 한꺼번에 붙여넣기 (엑셀 · 구글시트 · 한글 표)' }),
+    el('p', { class: 'muted', style: 'margin:8px 0', text: `표의 칸 순서가 [ ${P.cols} ]가 되게 여러 줄을 복사해 아래에 붙여넣으세요. 머리글 줄은 알아서 건너뜁니다.` }), ta,
+    el('p', { style: 'margin:10px 0 0' }, [el('button', { class: 'btn', type: 'button', text: '붙여넣은 내용 추가', onclick: () => {
+      const rows = parseTsv(ta.value).filter(r => !P.head.test(r[0] || '')).map(r => { const a = blank(); r.slice(0, kind === 'subject' ? 6 : kind === 'activity' ? 3 : 2).forEach((v, i) => { a[i] = v; }); return a; });
+      const good = rows.filter(a => P.need.every(i => a[i]));
+      if (!good.length) { toast('넣을 수 있는 줄을 찾지 못했습니다. 표에서 복사한 것인지(칸이 탭으로 구분되는지), 칸 순서가 맞는지 확인해 주세요.', 7000); return; }
+      good.forEach(a => CF.rows.push(a)); CF.grp = ''; cfTouch(); renderConfig(); toast(`${good.length}줄을 추가했습니다.` + (rows.length > good.length ? ` (필수 칸이 빈 ${rows.length - good.length}줄 제외)` : '') + ' [저장]을 눌러 주세요.', 5000); } })])]);
+  tools.append(pasteBox);
+  const quick = el('p', { class: 'row', style: 'margin:12px 0 0' });
+  if (kind === 'activity') quick.append(el('button', { class: 'btn line sm', type: 'button', text: '기본 활동 중 없는 것 추가', onclick: () => {
+    const have = new Set(CF.rows.map(r => r[0].trim() + '|' + r[1].trim())); const add = V9_DATA.activities.filter(a => !have.has(a[0] + '|' + a[1]));
+    if (!add.length) { toast('기본 활동 30개가 이미 모두 있습니다.'); return; }
+    add.forEach(a => CF.rows.push(a.slice(0, 4).map(S))); cfTouch(); renderConfig(); toast(`기본 활동 ${add.length}개를 추가했습니다.`); } }));
+  if (kind === 'behavior') [['초등용', V9_DATA.behaviorElementary], ['중·고등용', V9_DATA.behaviorSecondary]].forEach(([nm, set]) => quick.append(el('button', { class: 'btn line sm', type: 'button', text: `${nm} 기본 문구로 교체`, onclick: () => {
+    if (!confirm(`행동특성 문구를 ${nm} 기본 세트(${set.length}개)로 바꿉니다.\n직접 추가·수정한 문구는 사라집니다. 계속할까요?\n([저장]을 눌러야 실제로 반영됩니다)`)) return;
+    CF.rows = set.map(a => a.slice(0, 3).map(S)); CF.grp = ''; cfTouch(); renderConfig(); } })));
+  if (CF.rows.length) quick.append(el('button', { class: 'btn danger sm', type: 'button', text: '전체 비우기', onclick: () => { if (!confirm(`${names[kind]} ${CF.rows.length}개를 모두 지울까요?\n([저장]을 눌러야 실제로 반영됩니다)`)) return; CF.rows = []; CF.grp = ''; cfTouch(); renderConfig(); } }));
+  if (quick.childElementCount) tools.append(quick);
+
+  // ── ② 묶음(과목 · 유형 · 영역)별로 골라 보기 ──
+  const gi = 0, groups = uniq(CF.rows.map(r => r[gi].trim()).filter(Boolean));
+  if (CF.grp && groups.indexOf(CF.grp) === -1) CF.grp = '';
+  if (groups.length > 1) {
+    const bar = el('div', { class: 'chipbar', style: 'margin:14px 0 4px' }, [el('button', { type: 'button', class: !CF.grp ? 'on' : '', onclick: () => { CF.grp = ''; renderConfig(); } }, ['전체', el('small', { text: String(CF.rows.length) })])]);
+    groups.forEach(g => bar.append(el('button', { type: 'button', class: CF.grp === g ? 'on' : '', onclick: () => { CF.grp = g; renderConfig(); } }, [g, el('small', { text: String(CF.rows.filter(r => r[gi].trim() === g).length) })])));
+    body.append(bar);
   }
+  const regroup = () => { if (CF.grp) { CF.grp = ''; } renderConfig(); };      // 묶음 이름을 고치면 전체 보기로 (고친 줄이 사라져 보이지 않게)
+  const shown = CF.rows.filter(r => !CF.grp || r[gi].trim() === CF.grp);
+  // ── ③ 항목 ──
+  if (kind === 'subject') shown.forEach(row => body.append(el('div', { class: 'cfcard' }, [
+    el('div', { class: 'cfline' }, [el('label', null, ['과목', text(row, 0, '과목', regroup)]), el('label', null, ['영역', text(row, 1, '영역')]), del(row)]),
+    el('label', { class: 'cfl' }, ['성취기준', area(row, 2, '성취기준')]),
+    el('label', { class: 'cfl lv0' }, [el('span', { class: 'bd', text: '상' }), area(row, 3, '상 수준 설명 (비우면 성취기준 문장을 그대로 씀)')]),
+    el('label', { class: 'cfl lv1' }, [el('span', { class: 'bd', text: '중' }), area(row, 4, '중 수준 설명')]),
+    el('label', { class: 'cfl lv2' }, [el('span', { class: 'bd', text: '하' }), area(row, 5, '하 수준 설명')])])));
+  else {
+    if (shown.length) body.append(el('div', { class: 'cfrow head k-' + kind }, (kind === 'activity' ? ['유형', '활동명', '활동 공통 내용 (반 전체 공통)', '', ''] : ['영역', '예시 문구', '', '']).map(h => el('div', { text: h }))));
+    shown.forEach(row => {
+      const line = el('div', { class: 'cfrow k-' + kind });
+      if (kind === 'activity') {
+        const sel = el('select', { 'aria-label': '유형', onchange: e => { row[0] = e.target.value; cfTouch(); regroup(); } }, uniq(ACT_TYPES.concat(row[0] ? [row[0]] : [])).map(t => el('option', { value: t, text: t })));
+        if (!row[0]) row[0] = CF.grp || ACT_TYPES[0]; sel.value = row[0];
+        line.append(sel, text(row, 1, '활동명'), area(row, 2, '활동 공통 내용'), use(row, 3), del(row));
+      } else line.append(text(row, 0, '영역', regroup), area(row, 1, '예시 문구'), use(row, 2), del(row));
+      body.append(line);
+    });
+  }
+  if (!CF.rows.length) body.append(el('p', { class: 'muted', style: 'margin-top:14px', text: '아직 항목이 없습니다. 위의 "표에서 한꺼번에 붙여넣기"를 쓰거나, 아래 [+ 한 줄 추가]로 하나씩 넣으세요.' }));
+  body.append(el('p', { style: 'margin:14px 0 0' }, [el('button', { class: 'btn line', type: 'button', text: '+ 한 줄 추가' + (CF.grp ? ` (${CF.grp})` : ''), onclick: () => {
+    const a = blank(); a[0] = CF.grp || ''; CF.rows.push(a); cfTouch(); renderConfig();
+    const all = document.querySelectorAll('#cfBody .cfcard, #cfBody .cfrow:not(.head)'), last = all[all.length - 1];
+    if (last) { last.scrollIntoView({ block: 'center' }); const f = last.querySelector(a[0] ? 'input[type=text]:not([value]), textarea, input[type=text]' : 'input[type=text], select'); if (f) f.focus(); } } })]));
+  setTimeout(() => grown.forEach(autoGrow), 0);
 }
 async function saveConfig() {
   const kind = CF.kind, K = CHK[kind], w = CFW[kind], m = State.sheet.map;

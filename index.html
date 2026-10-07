@@ -179,6 +179,13 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 .sb .bg{flex:none;font-size:12px;font-weight:800;color:var(--navy)}
 .sb.on{border-color:var(--navy);background:#e6eaff}
 .sb.on.l0{background:#d5f5e3}.sb.on.l1{background:#fef9e7}.sb.on.l2{background:#fde8e8}
+.bar{height:8px;border-radius:99px;background:#e4e7f3;overflow:hidden;margin:10px 0 4px}
+.bar>div{height:100%;width:0;background:var(--navy);transition:width .3s}
+.gres{border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-top:8px;background:#fff}
+.gres summary{cursor:pointer;font-size:14.5px}
+.gres p{margin:8px 0 2px;font-size:14.5px;white-space:pre-wrap;line-height:1.7}
+.bchip{display:inline-block;font-size:12px;font-weight:700;padding:1px 9px;border-radius:99px;margin-left:8px}
+.bchip.good{background:#e8f8f0;color:#14603d}.bchip.short{background:#fff3cd;color:#7a5b00}.bchip.long{background:#fdebd0;color:#8a4b00}.bchip.bad{background:#fadbd8;color:#8c241a}
 .notice{text-align:center;padding:26px 16px}
 .notice p{margin:0 0 14px}
 </style>
@@ -202,7 +209,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
   <button type="button" data-view="settings">⚙️ 설정</button>
   <button type="button" data-view="roster">👥 학생명단</button>
   <button type="button" data-view="check">✅ 체크</button>
-  <button type="button" disabled title="3단계에서 열립니다">✨ 생성</button>
+  <button type="button" data-view="gen">✨ 생성</button>
   <button type="button" disabled title="4단계에서 열립니다">📈 결과</button>
   <button type="button" disabled title="5단계에서 열립니다">📑 NEIS 입력</button>
 </nav>
@@ -276,11 +283,11 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
     </div>
     <div class="card">
       <h2>진행 단계</h2>
-      <p class="muted">지금은 2단계(학생명단·체크 입력)까지 열려 있습니다.</p>
+      <p class="muted">지금은 3단계(AI 생성)까지 열려 있습니다.</p>
       <div class="steps">
         <div class="step done"><b>① 로그인 · 시트 연결 · 설정</b>지금 쓸 수 있어요</div>
         <div class="step done"><b>② 학생명단 · 체크 입력</b>지금 쓸 수 있어요</div>
-        <div class="step"><b>③ AI 생성</b>준비 중</div>
+        <div class="step done"><b>③ AI 생성</b>지금 쓸 수 있어요</div>
         <div class="step"><b>④ 결과 검토 · 수정 · 재생성</b>준비 중</div>
         <div class="step"><b>⑤ NEIS 입력 스테이션 · 새 학기 · 백업</b>준비 중</div>
       </div>
@@ -384,6 +391,35 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
     </div>
     <div class="card" id="checkBody"></div>
   </section>
+
+  <!-- AI 생성 -->
+  <section id="v-gen" hidden>
+    <div class="card">
+      <h2>✨ AI 생성</h2>
+      <p class="muted">체크한 내용으로 문장 초안을 만들어 결과 시트에 저장합니다. 이미 완료된 항목은 건너뛰고, 오류가 났던 항목만 다시 만듭니다.</p>
+      <div id="genReady" class="msg info"></div>
+      <div class="tabs" id="genTabs" style="margin:12px 0"></div>
+      <div id="genOpts"></div>
+      <p id="genSummary" style="font-weight:700;margin:14px 0 10px"></p>
+      <p class="row" style="margin:0">
+        <button id="btnGenStart" class="btn" type="button">생성 시작</button>
+        <button id="btnGenStop" class="btn danger" type="button" hidden>중지</button>
+        <span class="muted">생성 중에는 이 탭을 닫거나 다른 탭 뒤로 보내지 마세요. (브라우저가 숨은 탭의 작업을 늦춥니다)</span>
+      </p>
+    </div>
+    <div class="card" id="genRun" hidden>
+      <p id="genMsg" style="font-weight:700;margin:0" role="status"></p>
+      <p id="genMsg2" class="muted" style="margin:4px 0 0;min-height:1.4em"></p>
+      <div id="genBarWrap" class="bar" hidden><div id="genBar"></div></div>
+      <div id="genLog"></div>
+    </div>
+    <div class="card">
+      <h3>🔍 결과 유사도 검사</h3>
+      <p class="muted">같은 과목·영역 안에서 학생끼리 문장이 지나치게 비슷한지 확인합니다.</p>
+      <p><button id="btnSim" class="btn line sm" type="button">유사도 검사하기</button></p>
+      <div id="simBox"></div>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -402,7 +438,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 
 /* ───────── 1. 앱 설정 ───────── */
 const CONFIG = {
-  VERSION: 'web 0.2 · 2단계',
+  VERSION: 'web 0.3 · 3단계',
   CLIENT_ID: '522445423766-m3cop5vh489598e0hkefumd0r202tncp.apps.googleusercontent.com',
   PICKER_KEY: 'AIzaSyDuMaSWfi7yfybCUJnUvghOcirBA5JzXoE',
   APP_ID: '522445423766',                                   // Cloud 프로젝트 번호 (Picker가 고른 파일에 drive.file 권한을 붙이는 데 필요)
@@ -2765,16 +2801,684 @@ function itemBehavior(body, c) {
   draw();
 }
 
+/* ───────── 8-3. 생성 엔진 (v9 Code.gs 이식) ─────────
+   아래 "v9 원문" 블록은 빌드할 때 v9 파일에서 글자 그대로 옮겨 온 함수·프롬프트다.
+   v9 함수는 설정을 읽을 때 ss(스프레드시트)를 받았는데, 웹앱에서는 아래 도우미가 화면의 설정값을 돌려준다. */
+function _getLengthLevel() { return State.settings.length; }
+function _getSchoolLevel() { return State.settings.level; }
+function _getApiTier() { return State.settings.tier; }
+function _getGeminiModel() { return resolveModel(State.settings.model); }
+const ACTIVITY_AREAS = ['자율활동', '동아리활동', '진로활동'];
+const DONE = '✅ 완료', FAIL = '❌ 오류';
+
+// ══ v9 원문 (함수) ══
+function _getLengthSpec(ss, area) {
+  const level = _getLengthLevel(ss);
+  // [간략, 보통, 상세] 별 (최소자, 최대자, 절대상한자, 허용최소byte, 허용최대byte, 목표자)
+  const table = {
+    subject: {
+      '간략': [150, 180, 200,  400, 620, 165],
+      '보통': [220, 250, 270,  620, 820, 235],
+      '상세': [280, 320, 350,  820, 1080, 300]
+    },
+    activity: {
+      '간략': [300, 350, 380,  850, 1200, 325],
+      '보통': [430, 480, 520, 1200, 1600, 455],
+      '상세': [550, 600, 650, 1600, 2000, 575]
+    },
+    behavior: {
+      '간략': [300, 350, 380,  850, 1200, 325],
+      '보통': [430, 480, 520, 1200, 1600, 455],
+      '상세': [550, 600, 650, 1600, 2000, 575]
+    }
+  };
+  const s = (table[area] || table.subject)[level];
+  return {
+    minChars: s[0], maxChars: s[1], hardMax: s[2],
+    minByte: s[3], maxByte: s[4], targetChars: s[5],
+    rangeText: `공백 포함 ${s[0]}~${s[1]}자`,
+    hardMaxText: `절대 ${s[2]}자를 넘기지 마세요`
+  };
+}
+function _getCallInterval(ss) {
+  // 유료: RPM 1,000+ → 1초면 충분 (서버 부담 최소화용)
+  if (_getApiTier(ss) === '유료') return 1000;
+
+  const model = _getGeminiModel(ss);
+  // gemini-2.5-flash-lite: RPM 15 → 60/15=4초, 안전마진 +0.5초 = 4500ms
+  if (model.indexOf('flash-lite') !== -1) return 4500;
+  // gemini-2.5-flash: RPM 10 → 60/10=6초, 안전마진 +1초 = 7000ms
+  if (model.indexOf('flash') !== -1) return 7000;
+  // gemini-2.5-pro: RPM 5 → 60/5=12초, 안전마진 +1초 = 13000ms
+  if (model.indexOf('pro') !== -1) return 13000;
+  // 알 수 없는 모델은 보수적으로 7초
+  return 7000;
+}
+function _getSelectionGuide(itemCount) {
+  if (itemCount <= 3) {
+    return '[서술 전략] 제시된 항목을 모두 반영하되, 각 항목을 하나의 흐름(활동 → 과정에서 보인 태도 → 성장)으로 엮어 서술할 것. 항목을 나열하지 말고 인과·연결이 느껴지게 쓸 것.';
+  }
+  if (itemCount <= 5) {
+    return '[서술 전략] 항목이 여러 개이므로 가장 특징적인 3~4개를 중심으로 하나의 이야기처럼 엮고, 나머지는 한 구절로 녹이거나 생략해도 됨. "~하며, ~하고, ~하는 등"식의 단순 나열은 금지.';
+  }
+  return '[서술 전략] 항목이 많음(' + itemCount + '개). 전부 넣으면 나열식이 되어 부자연스러우므로, 학생의 특징을 가장 잘 보여주는 3~4개만 골라 유기적으로 서술하고 나머지는 과감히 생략할 것. 분량 안에서 깊이 있게 쓰는 것이 항목 수보다 중요함.';
+}
+function _getStyleExamples(area, schoolLevel) {
+  const isElem = (schoolLevel === '초등학교');
+  const ex = {
+    subject: isElem ? [
+      '이야기를 읽고 인물의 마음을 짐작하는 활동에서 등장인물이 처한 상황을 근거로 감정을 추론하며 자신의 경험과 연결 지어 발표함. 친구의 발표를 들은 뒤 다른 관점을 덧붙여 생각을 넓혀 가는 모습이 돋보임.',
+      '두 자리 수의 덧셈에서 받아올림의 원리를 수 모형으로 확인하며 이해하고, 여러 방법으로 계산한 뒤 결과를 비교하여 설명함. 실생활 문제를 식으로 나타내는 과정에서 조건을 꼼꼼히 살피는 태도가 인상적임.'
+    ] : [
+      '함수의 그래프를 해석하는 단원에서 기울기의 의미를 실생활 상황과 연결하여 설명하고, 조건이 바뀔 때 그래프가 어떻게 달라지는지 스스로 탐구하여 정리함. 문제 상황을 수학적으로 모델링하는 역량이 돋보임.',
+      '논설문 읽기 활동에서 글쓴이의 주장과 근거의 타당성을 비판적으로 검토하고, 반대 입장의 논거를 정리하여 토론에 참여함. 근거의 출처를 확인하려는 태도가 인상적임.'
+    ],
+    activity: [
+      '학급 자율활동에서 급식 잔반 줄이기 캠페인을 제안하고 포스터 제작과 결과 집계를 주도하며 학급 구성원의 참여를 이끌어 냄. 활동 과정에서 의견이 엇갈릴 때 각자의 생각을 정리해 절충안을 제시하는 모습이 돋보임.'
+    ],
+    behavior: [
+      '맡은 역할을 끝까지 책임지려는 태도가 몸에 배어 있어 학급 일을 믿고 맡길 수 있는 학생임. 친구가 어려움을 겪을 때 먼저 다가가 도움을 주며, 갈등 상황에서도 상대의 입장을 헤아려 말하려 노력함. 꾸준히 노력하는 성실함이 학습 태도 전반에 드러나 앞으로의 성장이 기대됨.'
+    ]
+  };
+  const list = ex[area] || ex.subject;
+  return '[문체 참고 예문 — 이런 톤과 종결로 작성할 것 (내용은 참고하지 말고 문체만)]\n' +
+    list.map(function(s, i){ return '예' + (i+1) + ') ' + s; }).join('\n') + '\n';
+}
+function _detectStyleIssues(text) {
+  const issues = [];
+  if (!text) return issues;
+  // 1) 문장 종결이 다/요/니다/네/죠/까 (명사형 ~함/~음/~됨/~임 은 정상)
+  //    "~한다." "~있다." "~합니다." "~해요." 등
+  if (/[가-힣](다|요|네|죠|까)\s*[.!?](\s|$)/.test(text) || /[가-힣](다|요|네|죠|까)\s*$/.test(text)) {
+    issues.push('서술형·경어체 종결');
+  }
+  // 2) 과거형 (후처리 후에도 남은 것)
+  if (/(았|었|였)(음|다|습니다)/.test(text)) issues.push('과거형');
+  // 3) 평가 등급·수준 언급
+  if (/성취\s*수준|도달도|(상|중|하)\s*(수준|등급)|수준\s*(상|중|하)/.test(text)) issues.push('성취수준 언급');
+  // 4) 학생 주어 노출
+  if (/(이 학생은|학생은|본 학생은)/.test(text)) issues.push('학생 주어');
+  return issues;
+}
+function _stripLevelMentions(text) {
+  var t = text || '';
+  var levelPatterns = [
+    // "성취수준 하에 머물렀다/머무름", "성취수준 상을 확인했다/보임" 등 문장 단위 변형 제거
+    [/[,\s]*성취\s*수준\s*(상|중|하)(에|을|를|의|으로|로)?\s*(머물렀|머무르|머묾|해당|도달|확인|보이|보임|나타|기록|판단|평가)[가-힣]*[.,]?\s*/g, ' '],
+    [/[,\s]*(상|중|하)\s*수준(에|을|를|의|으로|로)?\s*(머물렀|머무르|머묾|해당|도달|확인|보이|보임|나타|기록|판단|평가)[가-힣]*[.,]?\s*/g, ' '],
+    [/성취\s*수준\s*(상|중|하)에?\s*해당하는\s*/g, ''],
+    [/성취\s*수준\s*(상|중|하)\s*정도의\s*/g, ''],
+    [/성취\s*수준\s*(상|중|하)의?\s*/g, ''],
+    [/성취\s*수준\s*(상|중|하)\s*/g, ''],
+    [/(상|중|하)\s*수준에?\s*해당하는\s*/g, ''],
+    [/(상|중|하)\s*수준\s*정도의\s*/g, ''],
+    [/(상|중|하)\s*수준의\s*/g, ''],
+    [/도달도\s*(상|중|하)의?\s*/g, ''],
+    [/성취\s*수준\s*/g, ''],
+    [/도달도\s*/g, ''],
+    [/(상|중|하)\s*등급\s*/g, '']
+  ];
+  for (var p=0; p<levelPatterns.length; p++) {
+    t = t.replace(levelPatterns[p][0], levelPatterns[p][1]);
+  }
+  // 제거 후 남을 수 있는 어색한 이중 공백·조사 정리
+  t = t.replace(/\s{2,}/g, ' ').replace(/\s+\./g, '.').replace(/\.\s*,/g, ',');
+
+  return t.trim();
+}
+function _cleanOutput(text) {
+  if (!text) return '';
+  let t = text.trim();
+
+  // 1. 앞뒤를 감싸는 따옴표 제거 (",",'',「」,『』,“”,‘’)
+  //    여러 겹 감싸진 경우도 반복 제거
+  var changed = true;
+  while (changed) {
+    changed = false;
+    var pairs = [['"','"'], ["'","'"], ['“','”'], ['‘','’'],
+                 ['「','」'], ['『','』'], ['《','》'], ['〈','〉']];
+    for (var i=0; i<pairs.length; i++) {
+      var open = pairs[i][0], close = pairs[i][1];
+      if (t.length >= 2 && t.charAt(0) === open && t.charAt(t.length-1) === close) {
+        t = t.substring(1, t.length-1).trim();
+        changed = true;
+      }
+    }
+  }
+
+  // 2. 흔한 군더더기 머리말 제거
+  var prefixes = [
+    '다음은', '아래는', '작성한 내용은', '작성하겠습니다', '내용입니다',
+    '세부능력 및 특기사항:', '특기사항:', '결과:', '답변:'
+  ];
+  for (var j=0; j<prefixes.length; j++) {
+    if (t.indexOf(prefixes[j]) === 0) {
+      t = t.substring(prefixes[j].length).replace(/^[\s:：]+/, '').trim();
+    }
+  }
+
+  // 3. 마크다운 기호 제거 (**, ##, > 등)
+  t = t.replace(/\*\*/g, '').replace(/^#+\s*/gm, '').replace(/^>\s*/gm, '');
+
+  // 4. 경어체·서술형 종결어미 → 명사형(~함/~음) 변환
+  //    NEIS 생기부는 명사형 종결이 원칙. AI가 정성평가에서 "~합니다"로
+  //    끝맺는 경우가 잦아 후처리로 교정.
+  var endingMap = [
+    // 기대 계열
+    [/될 것으로 기대됩니다/g, '될 것으로 기대됨'],
+    [/것으로 기대됩니다/g, '것으로 기대됨'],
+    [/기대됩니다/g, '기대됨'],
+    [/기대합니다/g, '기대됨'],
+    [/기대된다/g, '기대됨'],
+    // 보입니다/됩니다/입니다 계열
+    [/보여집니다/g, '보임'],
+    [/보입니다/g, '보임'],
+    [/됩니다/g, '됨'],
+    [/입니다/g, '임'],
+    [/습니다/g, '음'],
+    [/하였습니다/g, '하였음'],
+    [/하고 있습니다/g, '하고 있음'],
+    [/있습니다/g, '있음'],
+    // 평가 동사 계열
+    [/예상됩니다/g, '예상됨'],
+    [/판단됩니다/g, '판단됨'],
+    [/요구됩니다/g, '요구됨'],
+    [/필요합니다/g, '필요함'],
+    [/돋보입니다/g, '돋보임'],
+    [/우수합니다/g, '우수함'],
+    [/뛰어납니다/g, '뛰어남'],
+    [/탁월합니다/g, '탁월함'],
+    // ── 과거형 명사형 → 현재형 명사형 (생기부는 관찰 시점 현재형) ──
+    //    구체형 먼저, 일반형 나중 (순서 중요)
+    [/하였음/g, '함'], [/했음/g, '함'],
+    [/되었음/g, '됨'], [/됐음/g, '됨'],
+    [/이었음/g, '임'],
+    [/있었음/g, '있음'], [/없었음/g, '없음'],
+    [/보였음/g, '보임'], [/보여줬음/g, '보여줌'], [/보여주었음/g, '보여줌'],
+    [/드러났음/g, '드러남'], [/나타났음/g, '나타남'], [/나타냈음/g, '나타냄'],
+    [/이끌어냈음/g, '이끌어냄'], [/냈음/g, '냄'],
+    [/주었음/g, '줌'], [/줬음/g, '줌'], [/받았음/g, '받음'],
+    [/갔음/g, '감'], [/왔음/g, '옴'], [/섰음/g, '섬'],
+    [/였음/g, '임'],
+    // 일반형: '~았음/~었음' → '~음' (예: 잡았음→잡음, 읽었음→읽음)
+    [/([가-힣])(았|었)음/g, '$1음'],
+    // 과거형 서술어(다 종결)도 명사형으로
+    [/하였다/g, '함'], [/했다/g, '함'], [/되었다/g, '됨'], [/됐다/g, '됨'],
+    [/보였다/g, '보임'], [/이었다/g, '임'], [/있었다/g, '있음'], [/없었다/g, '없음'],
+    [/였다/g, '임']
+  ];
+  for (var k=0; k<endingMap.length; k++) {
+    t = t.replace(endingMap[k][0], endingMap[k][1]);
+  }
+
+  // 5. 3개 이상 연속 줄바꿈 → 2개로 정리 (정성평가 분리는 유지)
+  t = t.replace(/\n{3,}/g, '\n\n');
+
+  return t.trim();
+}
+function _getByteSize(str) {
+  if (!str) return 0;
+  let size = 0;
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    if (code > 0x7F) {
+      size += 3;  // 한글 및 기타 멀티바이트 문자
+    } else {
+      size += 1;  // ASCII
+    }
+  }
+  return size;
+}
+function _getNeisByteLimit(ss, area) {
+  const level = _getSchoolLevel(ss);
+  // 초/중/고 공통 한도 (학교급별 큰 차이 없으나 보수적으로 설정)
+  const limits = {
+    subject:  level === '초등학교' ? 1500 : 1500,   // 세특: 500자 ≈ 1500byte
+    activity: level === '초등학교' ? 1500 : 3000,   // 창체 종합: 학교급에 따라
+    behavior: level === '초등학교' ? 1500 : 3000    // 행동특성: 초등 500자 / 중·고 1000자
+  };
+  return limits[area] || 1500;
+}
+function _getByteColor(ss, byteSize, area) {
+  const limit = _getNeisByteLimit(ss, area);
+  const spec = _getLengthSpec(ss, area);  // 현재 분량 설정 기준
+  if (byteSize > limit) return '#fadbd8';           // NEIS 한도 초과: 빨강
+  if (byteSize > spec.maxByte) return '#fdebd0';    // 목표보다 김: 주황
+  if (byteSize >= spec.minByte) return '#e8f8f0';   // 목표 범위: 초록
+  return '#fff3cd';                                 // 부족: 노랑
+}
+function _jaccardSimilarity(a, b) {
+  if (!a || !b) return 0;
+  // 의미 단어만 비교: 2글자 이상 한글/영문 단어 추출
+  const tokensA = _extractTokens(a);
+  const tokensB = _extractTokens(b);
+  if (tokensA.size === 0 || tokensB.size === 0) return 0;
+  let intersection = 0;
+  tokensA.forEach(function(t) {
+    if (tokensB.has(t)) intersection++;
+  });
+  const union = tokensA.size + tokensB.size - intersection;
+  return union === 0 ? 0 : intersection / union;
+}
+function _extractTokens(text) {
+  const set = new Set();
+  // 한글 2글자 이상 + 영문 2글자 이상 단어 추출
+  const matches = text.match(/[가-힣]{2,}|[A-Za-z]{2,}/g);
+  if (!matches) return set;
+  matches.forEach(function(t) { set.add(t); });
+  return set;
+}
+// ══ v9 원문 (프롬프트) ══
+function v9SubjectPrompt(basePrompt, schoolLevel, subject, criteriaText, traitBlock, trait, items, lenSpec) {
+  return `${basePrompt}
+
+${_getStyleExamples('subject', schoolLevel)}
+[교과 정보]
+- 과목: ${subject}
+
+[성취기준 목록]
+${criteriaText}
+${traitBlock}
+위 성취기준들을 종합하여 ${schoolLevel} 생활기록부 교과학습발달상황 세부능력 및 특기사항을 작성하세요.
+
+${_getSelectionGuide(items.length)}
+
+[성취 서술문 반영 방법 — 매우 중요]
+- 위 목록의 각 문장은 이 학생이 실제로 도달한 성취 모습을 그대로 적은 것임.
+- 각 문장이 나타내는 도달 정도를 정확히 그대로 반영하여 서술할 것. 문장에 적힌 것보다 더 높게 부풀리거나 더 낮게 깎아내리지 말 것.
+  · "스스로 ~할 수 있다"처럼 주도성이 담긴 문장 → 능동적·주도적 모습으로 서술
+  · "~할 수 있다"처럼 안정적 수행이 담긴 문장 → 안정적으로 수행하는 모습으로 서술
+  · "일부를 ~할 수 있다", "도움을 받아 ~한다"처럼 기초 단계 문장 → 기초를 익히며 노력하는 과정과 성장 가능성 중심으로 서술
+- 평가 등급·수준·단계·도달도 같은 말은 어떤 형태로도 쓰지 말 것. 활동 모습과 성장만 서술.
+- 첫 문장은 제시된 성취 서술문을 그대로 옮기지 말고, 이 학생이 실제로 한 활동 장면(무엇을 어떻게 했는지)으로 시작할 것. 성취 서술문의 표현("~을 이해하고 관련 문제를 능숙하게 풂")을 그대로 복사하지 말 것.${trait ? '\n- 학생의 개인 특성을 자연스럽게 녹여내되, 체크되지 않은 활동을 임의로 지어내지 마세요.' : ''}
+
+${lenSpec.rangeText}로 작성하세요. ${lenSpec.hardMaxText}. 이 글자 수 범위는 가장 중요한 규칙입니다.
+마지막에 한 줄 띄우고 종합 평가 1~2문장을 추가하되(글자 수에 포함), 모든 문장은 반드시 명사형(~함, ~음, ~보임, ~기대됨)으로 끝내고 '~입니다/합니다/됩니다' 같은 경어체는 절대 쓰지 마세요.`;
+}
+function v9ActivityPrompt(basePrompt, schoolLevel, g, activityText, traitBlock, areaGuide, lenSpec) {
+  return `${basePrompt}
+
+${_getStyleExamples('activity', schoolLevel)}
+[창의적 체험활동 — ${g.area}]
+이 학생의 ${g.area} 내역:
+${activityText}
+${traitBlock}
+${_getSelectionGuide(g.acts.length)}
+
+위 ${g.area} 내역을 종합하여 ${schoolLevel} 생활기록부 창의적 체험활동 ${g.area} 특기사항을 작성하세요.
+${areaGuide} 서술합니다. 다른 영역(자율/동아리/진로) 내용은 섞지 않습니다.
+활동이 자연스럽게 연결된 하나의 통합 문단으로 작성합니다.
+개인 특이사항이 있으면 반드시 반영합니다. 단, 체크되지 않은 활동이나 입력에 없는 사실을 임의로 지어내지 마세요.
+${lenSpec.rangeText}로 작성하세요. ${lenSpec.hardMaxText}. 이 글자 수 범위는 가장 중요한 규칙입니다.
+마지막에 빈 줄 하나를 두고 종합 평가 1~2문장을 추가하되(글자 수에 포함), 모든 문장은 반드시 명사형(~함, ~음, ~보임, ~기대됨)으로 끝내고 '~입니다/합니다/됩니다' 같은 경어체는 절대 쓰지 마세요.`;
+}
+function v9BehaviorPrompt(basePrompt, schoolLevel, phraseText, traitBlock, phrases, trait, lenSpec) {
+  return `${basePrompt}
+
+${_getStyleExamples('behavior', schoolLevel)}
+[행동특성 선택 항목]
+${phraseText}
+${traitBlock}
+${_getSelectionGuide(phrases.length)}
+
+위 항목들을 바탕으로 ${schoolLevel} 생활기록부 행동특성 및 종합의견을 작성하세요.
+모든 특성이 자연스럽게 연결된 하나의 통합 문단으로 작성하고
+${lenSpec.rangeText}로 작성하세요. ${lenSpec.hardMaxText}. 이 글자 수 범위는 가장 중요한 규칙입니다.${trait ? '\n학생의 개인 특성을 녹여내되, 체크되지 않은 내용을 임의로 지어내지 마세요.' : ''}
+마지막에 빈 줄 하나를 두고 종합 평가를 2~3문장 추가하되, 모든 문장은 반드시 명사형(~함, ~음, ~보임, ~기대됨)으로 끝내고 '~입니다/합니다/됩니다' 같은 경어체는 절대 쓰지 마세요.`;
+}
+
+const GEN = { running: false, stop: false, kind: 'subject', subject: '', all: true, picked: {}, log: [], total: 0, pos: 0, msg: '', usage: { date: '', count: 0 },
+  wait: ms => sleep(ms) };   // 테스트에서 기다림을 건너뛸 수 있게 분리
+
+/* ── Gemini 호출 (v9 _callGemini → _callGeminiWithRetry → _generateWithLengthControl 순서 그대로) ── */
+const todayStr = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`; };
+function countUsage() {                          // ⚙️설정 C21(날짜)·C22(오늘 사용량) — v9와 같은 칸
+  const t = todayStr(); if (GEN.usage.date !== t) { GEN.usage.date = t; GEN.usage.count = 0; }
+  GEN.usage.count++;
+  if (State.sheet) { Saver.put(a1('SETTINGS', 'C21'), t); Saver.put(a1('SETTINGS', 'C22'), GEN.usage.count); }
+}
+async function geminiOnce(prompt, tempOverride) {
+  const apiKey = LS.get('geminiKey') || '', model = _getGeminiModel();
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  try {
+    let code = 0, body = {}, raw = '';
+    for (let level = 0; level <= 2; level++) {
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: buildGenerationConfig(model, level, typeof tempOverride === 'number' ? tempOverride : 0.8, 8192) }) });
+      code = res.status; body = await res.json().catch(() => ({}));
+      raw = (body.error && body.error.message) || '';
+      if (isParamError(code, raw) && level < 2) continue;
+      break;
+    }
+    if (code !== 200) {
+      const rate = code === 429 || /quota|rate limit/i.test(raw), over = code === 503 || /high demand|overload/i.test(raw);
+      const error = code === 404 ? `모델 "${model}"을 찾을 수 없음 — 종료된 모델이거나 ID 오타입니다. ⚙️ 설정에서 다른 모델을 선택하세요.` : geminiErrorKo(withStatus(new Error(raw || 'HTTP ' + code), code));
+      return { success: false, error, rate, over };
+    }
+    if (!body.candidates || body.candidates.length === 0) {
+      const br = body.promptFeedback && body.promptFeedback.blockReason ? body.promptFeedback.blockReason : '';
+      return { success: false, error: 'AI가 응답을 생성하지 못함' + (br ? ` (사유: ${br})` : '') + ' — 입력 내용을 확인 후 다시 시도해주세요.' };
+    }
+    const cand = body.candidates[0];
+    if (cand.finishReason === 'SAFETY') return { success: false, error: 'AI 안전 정책으로 응답이 차단됨 — 입력 문구를 조금 바꿔서 다시 시도해주세요.' };
+    if (!cand.content || !cand.content.parts || cand.content.parts.length === 0 || !cand.content.parts[0].text)
+      return { success: false, error: `AI가 빈 응답을 반환함 (종료 사유: ${cand.finishReason || '알 수 없음'}) — 다시 시도해주세요.` };
+    countUsage();
+    let text = cand.content.parts[0].text.trim();
+    if (cand.finishReason === 'MAX_TOKENS') text += '\n(⚠️ 응답이 최대 길이에서 잘렸을 수 있음 — 필요 시 재생성하세요)';
+    return { success: true, text };
+  } catch (e) { return { success: false, error: '네트워크 오류 — 인터넷 연결을 확인해 주세요.', over: true }; }
+}
+// 한도(429)·혼잡(503)이면 기다렸다 재시도 — 대기 시간은 v9와 동일
+async function geminiRetry(prompt, maxRetries, tempOverride) {
+  maxRetries = maxRetries || 5;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const result = await geminiOnce(prompt, tempOverride);
+    if (result.success) return result;
+    if ((result.rate || result.over) && attempt < maxRetries && !GEN.stop) {
+      const isPaid = _getApiTier() === '유료';
+      const waitSec = result.rate ? (isPaid ? attempt * 5 : 35 + (attempt - 1) * 15) : attempt * (isPaid ? 5 : 12);
+      await genPause(waitSec, s => `${result.rate ? 'API 한도 도달' : 'AI 서버 혼잡'} (시도 ${attempt}/${maxRetries}) — ${s}초 뒤 자동 재시도`);
+    } else return result;
+  }
+  return { success: false, error: '여러 번 재시도했지만 API 한도로 실패 — 잠시 후 다시 실행하면 이어서 생성됩니다.' };
+}
+async function requestStyleFix(text, issues) {
+  const prompt =
+    '아래 글의 내용·정보·분량은 그대로 유지하면서, 다음 문체 문제만 고쳐 다시 쓰세요.\n' +
+    '[발견된 문제] ' + issues.join(', ') + '\n\n' +
+    '[교정 규칙]\n' +
+    '- 모든 문장은 명사형 종결(~함, ~음, ~됨, ~임, ~보임, ~기대됨)로 끝낼 것. "~다/~요/~니다"로 끝나는 문장 금지\n' +
+    '- 관찰 시점 현재형으로 쓸 것. "~하였음/~했음/~보였음" 같은 과거형은 "~함/~보임"으로\n' +
+    '- 성취수준·등급·도달도 등 평가 등급을 뜻하는 말은 완전히 삭제하고, 그 자리를 활동 모습 서술로 자연스럽게 채울 것\n' +
+    '- "학생은", "이 학생은" 같은 주어는 삭제\n' +
+    '- 교정된 전체 글만 출력 (설명·따옴표 금지)\n\n' +
+    '[원문]\n' + text;
+  const res = await geminiRetry(prompt, 3, 0.2);
+  return res.success ? _cleanOutput(res.text) : null;
+}
+// 1차 생성 → 후처리 → 문체 검사(문제 있으면 1회 교정) → 분량이 범위를 벗어나면 1회 길이 조정
+async function generateWithLengthControl(prompt, minByte, maxByte, targetChars) {
+  const first = await geminiRetry(prompt);
+  if (!first.success) return first;
+  let cleaned = _cleanOutput(first.text);
+  const issues = _detectStyleIssues(cleaned);
+  if (issues.length > 0) {
+    GEN.msg2 = '문체 교정 중 (' + issues.join(', ') + ')'; paintRun();
+    const fixed = await requestStyleFix(cleaned, issues);
+    if (fixed) cleaned = fixed;
+    if (_detectStyleIssues(cleaned).indexOf('성취수준 언급') !== -1) cleaned = _stripLevelMentions(cleaned);
+  }
+  const size = _getByteSize(cleaned);
+  if (size >= minByte && size <= maxByte) return { success: true, text: cleaned, adjusted: false };
+  const direction = size > maxByte ? '줄여서' : '늘려서';
+  const adjustPrompt =
+    `아래 글의 내용·문체·명사형 종결(~함, ~음)은 그대로 유지하면서, 전체 분량을 ${direction} 공백 포함 ${targetChars}자 내외로 조정하세요.\n` +
+    `- 핵심 내용과 학생의 특징은 반드시 보존\n` +
+    `- ${size > maxByte ? '덜 중요한 수식·반복 표현을 압축' : '활동 과정·태도 묘사를 조금 더 구체화'}\n` +
+    `- 조정된 전체 글만 출력 (설명·따옴표 금지)\n\n` +
+    `[원문]\n${cleaned}`;
+  GEN.msg2 = '분량 조정 중 (' + direction + ')'; paintRun();
+  const second = await geminiRetry(adjustPrompt, 5, 0.3);
+  if (second.success) {
+    const cleaned2 = _cleanOutput(second.text), size2 = _getByteSize(cleaned2), target = (minByte + maxByte) / 2;
+    if (Math.abs(size2 - target) < Math.abs(size - target)) return { success: true, text: cleaned2, adjusted: true };
+  }
+  return { success: true, text: cleaned, adjusted: false };
+}
+
+/* ── 무엇을 생성할지: 체크 시트 → 작업 목록 (v9 _run*Generation의 수집·정렬 규칙) ── */
+function collectJobs(kind, targets, targetSubject) {
+  const d = State.data, c = d.chk[kind], list = d.list, by = {}, K = CHK[kind];
+  const want = nm => !targets || targets.indexOf(nm) !== -1;
+  const trait = st => st.t[K.traitIdx].trim();
+  let skippedVolunteer = 0;
+  c.items.forEach(it => {
+    if (kind === 'subject') {
+      if (targetSubject && it.subject !== targetSubject) return;
+      list.forEach((st, si) => { if (!it.vals[si] || !want(st.name)) return;
+        const key = st.name + '||' + it.subject;
+        (by[key] = by[key] || { key, kind, name: st.name, si, group: it.subject, trait: trait(st), items: [] }).items.push({ domain: it.domain, criteria: it.text, level: it.level }); });
+    } else if (kind === 'activity') {
+      const area = activityArea(it.type);
+      if (!area) { skippedVolunteer += it.vals.filter(Boolean).length; return; }
+      list.forEach((st, si) => { if (!it.vals[si] || !want(st.name)) return;
+        const key = st.name + '||' + area;
+        (by[key] = by[key] || { key, kind, name: st.name, si, group: area, trait: trait(st), acts: [] }).acts.push({ actType: it.type, actName: it.name, actContent: it.content, memo: it.memos[si] }); });
+    } else list.forEach((st, si) => { if (!it.vals[si] || !want(st.name)) return;
+      (by[st.name] = by[st.name] || { key: st.name, kind, name: st.name, si, group: '', trait: trait(st), phrases: [] }).phrases.push(`[${it.area}] ${it.phrase}`); });
+  });
+  const jobs = Object.keys(by).map(k => by[k]).sort((a, b) => a.si !== b.si ? a.si - b.si
+    : kind === 'subject' ? a.group.localeCompare(b.group, 'ko') : kind === 'activity' ? ACTIVITY_AREAS.indexOf(a.group) - ACTIVITY_AREAS.indexOf(b.group) : 0);
+  return { jobs, skippedVolunteer };
+}
+function buildPrompt(job, basePrompt) {
+  const schoolLevel = _getSchoolLevel(), trait = job.trait, kind = job.kind, lenSpec = _getLengthSpec(null, kind);
+  if (kind === 'subject') {
+    const subject = job.group, items = job.items;
+    // 같은 체크 조합의 학생들이 같은 문장으로 시작하지 않도록 학생마다 순서를 섞어 전달 (수준 라벨은 AI에 보내지 않음)
+    const shuffled = items.slice();
+    for (let s = shuffled.length - 1; s > 0; s--) { const j = Math.floor(Math.random() * (s + 1)); [shuffled[s], shuffled[j]] = [shuffled[j], shuffled[s]]; }
+    const criteriaText = shuffled.map((it, i) => `  ${i + 1}. [${it.domain || subject}] ${it.criteria}`).join('\n');
+    const traitBlock = trait ? `\n[이 학생의 개인 특성]\n${trait}\n→ 위 특성을 반영해서 다른 학생과 차별화된 표현을 사용하세요.\n` : '';
+    return { prompt: v9SubjectPrompt(basePrompt, schoolLevel, subject, criteriaText, traitBlock, trait, items, lenSpec), lenSpec };
+  }
+  const traitBlock = trait ? `\n[이 학생의 개인 특성]\n${trait}\n→ 위 특성을 자연스럽게 반영하여 다른 학생과 차별화된 표현을 사용하세요.\n` : '';
+  if (kind === 'activity') {
+    const g = { area: job.group, acts: job.acts };
+    const activityText = g.acts.map((a, i) => { const memoLine = a.memo ? `\n   · 이 학생의 개인 특이사항: ${a.memo}` : ''; return `${i + 1}. ${a.actName}\n   · 활동 내용: ${a.actContent}${memoLine}`; }).join('\n\n');
+    const areaGuide = {
+      '자율활동': '학급·학교 공동체 활동에서의 참여 태도, 역할 수행, 협력과 소통, 공동체 의식의 성장을 중심으로',
+      '동아리활동': '동아리의 활동 내용에 대한 흥미·전문성, 탐구 과정, 구성원과의 협업, 개인의 성장을 중심으로',
+      '진로활동': '자기 이해, 진로 탐색 활동 참여 태도, 관심 분야에 대한 탐구, 진로 계획과 성장 방향을 중심으로'
+    }[g.area];
+    return { prompt: v9ActivityPrompt(basePrompt, schoolLevel, g, activityText, traitBlock, areaGuide, lenSpec), lenSpec };
+  }
+  const phrases = job.phrases, phraseText = phrases.join('\n');
+  return { prompt: v9BehaviorPrompt(basePrompt, schoolLevel, phraseText, traitBlock, phrases, trait, lenSpec), lenSpec };
+}
+
+/* ── 결과 시트 읽기·쓰기 (v9와 같은 열) ──
+   교과: 이름·과목·결과·byte·상태·일시·선택 / 창체: 이름·영역·선택된 활동·결과·byte·상태·선택 / 행동: 이름·선택 문구·추가 메모·결과·byte·상태·선택 */
+const RES = { subject: { text: 3, byte: 4, status: 5 }, activity: { text: 4, byte: 5, status: 6 }, behavior: { text: 4, byte: 5, status: 6 } };
+function parseResults(kind, values) {
+  const R = RES[kind];
+  return (values || []).slice(3).map((r, i) => { r = r || []; return { row: 4 + i, name: S(r[0]).trim(), group: kind === 'behavior' ? '' : S(r[1]).trim(),
+    text: S(r[R.text - 1]).trim(), byte: r[R.byte - 1], status: S(r[R.status - 1]).trim() }; });
+}
+const resKey = (kind, r) => kind === 'behavior' ? r.name : r.name + '||' + r.group;
+async function loadResults() {
+  const m = State.sheet.map, p = new URLSearchParams(), have = KINDS.filter(k => m[CHK[k].result]);
+  p.append('ranges', a1('SETTINGS', 'A29')); p.append('ranges', a1('SETTINGS', 'C21:C22'));
+  have.forEach(k => p.append('ranges', qn(CHK[k].result)));
+  p.set('valueRenderOption', 'UNFORMATTED_VALUE');
+  const res = await gfetch(`${SHEETS_API}/${encodeURIComponent(State.sheet.id)}/values:batchGet?${p.toString()}`), vr = res.valueRanges || [];
+  const v = i => (vr[i] || {}).values || [];
+  State.basePrompt = S((v(0)[0] || [])[0]).trim() || V9_DATA.basePrompt;
+  let date = (v(1)[0] || [])[0]; const count = parseInt((v(1)[1] || [])[0], 10) || 0;
+  if (typeof date === 'number') { const dt = new Date(Math.round((date - 25569) * 86400000)); date = dt.toISOString().slice(0, 10); }   // v9가 날짜 형식으로 써 둔 경우
+  GEN.usage = S(date).trim() === todayStr() ? { date: todayStr(), count } : { date: todayStr(), count: 0 };
+  State.results = {};
+  KINDS.forEach(k => { const i = have.indexOf(k); State.results[k] = i < 0 ? null : parseResults(k, v(2 + i)); });
+  State.resHead = {}; have.forEach((k, i) => { State.resHead[k] = S((v(2 + i)[2] || [])[1]).trim(); });
+}
+const doneKeys = kind => { const s = new Set(); (State.results[kind] || []).forEach(r => { if (r.name && (kind === 'behavior' || r.group) && r.status === DONE) s.add(resKey(kind, r)); }); return s; };
+const cellFmt = o => fmtR({}, o).repeatCell.cell.userEnteredFormat;
+function resultRow(job, out) {
+  const kind = job.kind, ok = out.success, text = ok ? out.text : '❌ ' + out.error, byte = ok ? _getByteSize(out.text) : '';
+  const bd = { style: 'SOLID', color: hexColor('#dddddd') }, borders = { top: bd, bottom: bd, left: bd, right: bd };
+  const C = (v, f) => { const c = cellV(v); c.userEnteredFormat = Object.assign(f ? cellFmt(f) : {}, { borders }); return c; };
+  const byteC = ok ? C(byte, { align: 'CENTER', fg: '#333333', bg: _getByteColor(null, byte, kind) }) : C('');
+  const statC = C(ok ? DONE : FAIL, { fg: ok ? '#27ae60' : '#e74c3c' });
+  const box = C(false, { align: 'CENTER' }); box.dataValidation = { condition: { type: 'BOOLEAN' }, strict: true };
+  if (kind === 'subject') {
+    const now = new Date(), when = ok ? C((now.getTime() - now.getTimezoneOffset() * 60000) / 86400000 + 25569) : C('');
+    if (ok) when.userEnteredFormat.numberFormat = { type: 'DATE_TIME', pattern: 'MM/dd HH:mm' };
+    return [C(job.name, { bold: true, bg: '#e9f7ef' }), C(job.group, { bg: '#f0fff4' }), C(text, ok ? { wrap: true, valign: 'TOP' } : null), byteC, statC, when, box];
+  }
+  if (kind === 'activity') {
+    const areaColor = { '자율활동': '#e8f4fd', '동아리활동': '#fdf2e9', '진로활동': '#eafaf1' }[job.group] || '#ffffff';
+    const summary = job.acts.map(a => `${a.actName}${a.memo ? ' (메모: ' + a.memo + ')' : ''}`).join('\n');
+    return [C(job.name, { bold: true, bg: '#f5eef8' }), C(job.group, { bold: true, bg: areaColor, align: 'CENTER' }), C(summary, { wrap: true, valign: 'TOP', bg: '#ffffff', size: 9 }),
+      C(text, ok ? { wrap: true, valign: 'TOP', bg: '#ffffff' } : null), byteC, statC, box];
+  }
+  return [C(job.name, { bold: true, bg: '#e8f8f5' }), C(job.phrases.map(p => p.replace(/^\[.*?\]\s*/, '')).join(' / '), { wrap: true, bg: '#ffffff' }), C('', { bg: '#fff9c4' }),
+    C(text, ok ? { wrap: true, valign: 'TOP', bg: '#f0fff0' } : null), byteC, statC, box];
+}
+
+/* ── 생성 실행 ── */
+function genScope() { return { kind: GEN.kind, subject: GEN.kind === 'subject' ? GEN.subject : '', names: GEN.all ? null : State.data.list.filter(s => GEN.picked[s.name]).map(s => s.name) }; }
+async function genPause(sec, label) {
+  for (let s = sec; s > 0 && !GEN.stop; s--) { GEN.msg2 = label(s); paintRun(); await GEN.wait(1000); }
+  GEN.msg2 = ''; paintRun();
+}
+async function runGeneration(scope) {
+  if (GEN.running) return;
+  const kind = scope.kind, K = CHK[kind];
+  if (!LS.get('geminiKey')) { toast('먼저 ⚙️ 설정에서 Gemini API 키를 입력해 주세요.', 5000); return; }
+  GEN.running = true; GEN.stop = false; GEN.log = []; GEN.pos = 0; GEN.total = 0; GEN.msg = '준비 중…'; GEN.msg2 = ''; GEN.kindRun = kind;
+  SS.set('genResume', JSON.stringify(scope));              // 로그인 갱신으로 끊기면 돌아와서 이어 생성
+  let wake = null; try { if (navigator.wakeLock) wake = await navigator.wakeLock.request('screen'); } catch (e) {}
+  paintRun();
+  try {
+    await Saver.drain(); await refreshAll();
+    if (!editable(kind)) throw new Error(`${K.label} 체크 시트를 먼저 준비해 주세요. ([✅ 체크] 화면)`);
+    const m = State.sheet.map;
+    if (!m[K.result]) { await sendBatch(resultRequests(kind, newSheetId())); Object.assign(State.sheet, await inspectSheet(State.sheet.id)); }
+    await loadResults();
+    const resId = State.sheet.map[K.result].sheetId;
+    if (kind === 'activity' && State.resHead.activity !== '영역')          // 아주 예전(영역 구분 없던) 결과 시트면 머리글만 새 구조로
+      await writeValues([{ range: a1(K.result, 'A3:G3'), values: [RESULT_STYLE.activity.heads] }]);
+    const { jobs, skippedVolunteer } = collectJobs(kind, scope.names, scope.subject);
+    if (!jobs.length) throw new Error('체크된 항목이 없습니다. [✅ 체크] 화면에서 먼저 체크해 주세요.' + (kind === 'activity' ? ' (봉사활동은 특기사항을 생성하지 않습니다)' : ''));
+    const done = doneKeys(kind), todo = jobs.filter(j => !done.has(j.key));
+    // 대상 범위의 오류·미완료 행 삭제 (✅ 완료는 유지) — v9 _delete*ResultRows와 같은 규칙
+    const del = State.results[kind].filter(r => (!scope.names || scope.names.indexOf(r.name) !== -1) && (kind !== 'subject' || !scope.subject || r.group === scope.subject) && r.status !== DONE).map(r => r.row);
+    if (del.length) await sendBatch(runs(del).reverse().map(([a, b]) => ({ deleteDimension: { range: { sheetId: resId, dimension: 'ROWS', startIndex: a - 1, endIndex: b } } })));
+    GEN.total = todo.length; GEN.skipped = jobs.length - todo.length; GEN.volunteer = skippedVolunteer;
+    const interval = _getCallInterval();
+    for (let i = 0; i < todo.length && !GEN.stop; i++) {
+      if (Auth.exp - Date.now() < 3 * 60000) { GEN.msg = '로그인을 갱신하고 이어서 생성합니다…'; paintRun(); await Saver.drain(); Auth.begin(true); return; }
+      const job = todo[i]; GEN.pos = i + 1; GEN.msg = `${job.name}${job.group ? ' · ' + job.group : ''} 생성 중…`; GEN.msg2 = ''; paintRun();
+      const bp = buildPrompt(job, State.basePrompt);
+      const out = await generateWithLengthControl(bp.prompt, bp.lenSpec.minByte, bp.lenSpec.maxByte, bp.lenSpec.targetChars);
+      if (!out.success && GEN.stop) break;                       // 중지로 끊긴 것은 오류로 기록하지 않음
+      await sendBatch([{ appendCells: { sheetId: resId, rows: [{ values: resultRow(job, out) }], fields: 'userEnteredValue,userEnteredFormat,dataValidation' } }]);
+      GEN.log.unshift({ name: job.name, group: job.group, ok: out.success, text: out.success ? out.text : out.error, byte: out.success ? _getByteSize(out.text) : 0, adjusted: out.adjusted });
+      GEN.msg2 = ''; paintRun();
+      if (i < todo.length - 1 && !GEN.stop) await GEN.wait(interval);
+    }
+    const ok = GEN.log.filter(x => x.ok).length, bad = GEN.log.length - ok;
+    GEN.msg = (GEN.stop ? '중지했습니다. ' : '생성을 마쳤습니다. ') + `새로 생성 ${ok}건` + (bad ? ` · 오류 ${bad}건` : '') + (GEN.skipped ? ` · 이미 완료(건너뜀) ${GEN.skipped}건` : '')
+      + (GEN.volunteer ? ` · 봉사활동 체크 ${GEN.volunteer}건은 생성 대상이 아니라 제외` : '') + (GEN.stop && GEN.pos < GEN.total ? ' — 다시 [생성 시작]을 누르면 남은 항목부터 이어집니다.' : '');
+  } catch (e) {
+    if (e.status === 401) return;                                 // 로그인 갱신 화면으로 넘어가는 중
+    GEN.msg = '⚠ ' + e.message;
+  }
+  SS.del('genResume'); GEN.running = false; GEN.msg2 = '';
+  paintRun(); $('btnGenStart').hidden = false; $('btnGenStop').hidden = true;
+  try { if (wake) wake.release(); } catch (e) {}
+  try { await Saver.drain(); await loadResults(); } catch (e) {}
+  if (State.view === 'gen') renderGen(); else paintRun();
+}
+
+/* ── 유사도 검사 (v9 showSimilarityReport: 같은 과목·영역 안에서 단어 겹침 50% 이상) ── */
+function similarityFindings() {
+  const out = [], label = { subject: '📚 교과평가', activity: '🎯 창체활동', behavior: '💬 행동특성' };
+  KINDS.forEach(kind => {
+    const items = (State.results[kind] || []).filter(r => r.name && r.text && r.status === DONE && r.text.indexOf('❌') !== 0);
+    if (items.length < 2) return;
+    const groups = {}; items.forEach(it => { const k = it.group || '__all__'; (groups[k] = groups[k] || []).push(it); });
+    Object.keys(groups).forEach(g => { const arr = groups[g];
+      for (let i = 0; i < arr.length; i++) for (let j = i + 1; j < arr.length; j++) {
+        const sim = _jaccardSimilarity(arr[i].text, arr[j].text);
+        if (sim >= 0.5) out.push({ area: label[kind], group: g === '__all__' ? '' : g, a: arr[i].name, b: arr[j].name, sim, ta: arr[i].text, tb: arr[j].text });
+      } });
+  });
+  return out.sort((a, b) => b.sim - a.sim);
+}
+
+/* ── 생성 화면 ── */
+function renderGen() {
+  const d = State.data, hasKey = !!LS.get('geminiKey'), s = State.settings;
+  const ready = $('genReady'); ready.textContent = '';
+  ready.append(`모델 ${_getGeminiModel()} (${s.tier}) · 분량 ${s.length} · ${s.level} · 오늘 AI 호출 ${GEN.usage.count}회 `);
+  if (!hasKey) ready.append(el('b', { text: '— Gemini API 키가 없습니다. ' }), el('button', { class: 'btn sm', type: 'button', text: '⚙️ 설정으로', onclick: () => show('settings') }));
+  ready.className = 'msg ' + (hasKey ? 'info' : 'err');
+  const tabs = $('genTabs'); tabs.textContent = '';
+  KINDS.forEach(k => tabs.append(el('button', { type: 'button', class: GEN.kind === k ? 'on' : '', disabled: GEN.running, onclick: () => { GEN.kind = k; renderGen(); } }, [CHK[k].label])));
+  const opts = $('genOpts'), sum = $('genSummary'), kind = GEN.kind; opts.textContent = ''; sum.textContent = '';
+  $('btnGenStart').hidden = GEN.running; $('btnGenStop').hidden = !GEN.running; $('btnGenStop').disabled = GEN.stop;
+  $('btnGenStart').disabled = true;
+  paintRun(); renderSim();
+  if (!d.list.length) { sum.textContent = '학생명단이 비어 있습니다.'; return; }
+  if (!editable(kind)) { sum.textContent = `${CHK[kind].label} 체크 시트가 준비되지 않았습니다. [✅ 체크] 화면에서 먼저 확인해 주세요.`; return; }
+  if (kind === 'subject') {
+    const subjects = uniq(d.chk.subject.groups.map(g => g.subject)); if (GEN.subject && subjects.indexOf(GEN.subject) === -1) GEN.subject = '';
+    const bar = el('div', { class: 'chipbar' }, [el('button', { type: 'button', class: GEN.subject === '' ? 'on' : '', text: '전체 과목', disabled: GEN.running, onclick: () => { GEN.subject = ''; renderGen(); } })]);
+    subjects.forEach(sj => bar.append(el('button', { type: 'button', class: GEN.subject === sj ? 'on' : '', text: sj, disabled: GEN.running, onclick: () => { GEN.subject = sj; renderGen(); } })));
+    opts.append(bar);
+  }
+  opts.append(el('div', { class: 'seg', style: 'max-width:340px' }, [
+    el('button', { type: 'button', class: GEN.all ? 'on' : '', text: '전체 학생', disabled: GEN.running, onclick: () => { GEN.all = true; renderGen(); } }),
+    el('button', { type: 'button', class: GEN.all ? '' : 'on', text: '학생 선택', disabled: GEN.running, onclick: () => { GEN.all = false; renderGen(); } })]));
+  const scope = genScope(), all = collectJobs(kind, null, scope.subject).jobs, done = doneKeys(kind);
+  if (!GEN.all) {                                    // 학생 선택 판 — 버튼에 "완료/대상" 표시
+    const per = {}; all.forEach(j => { const p = per[j.name] = per[j.name] || [0, 0]; p[1]++; if (done.has(j.key)) p[0]++; });
+    opts.append(studentGrid(si => { const nm = d.list[si].name, p = per[nm]; return { cls: GEN.picked[nm] ? 'on' : '', badge: p ? `${p[0]}/${p[1]}` : '–' }; },
+      si => { if (GEN.running) return; const nm = d.list[si].name; GEN.picked[nm] = !GEN.picked[nm]; setTimeout(renderGen, 0); }).node);
+  }
+  const jobs = collectJobs(kind, scope.names, scope.subject).jobs, todo = jobs.filter(j => !done.has(j.key)).length;
+  const perCall = Math.ceil(_getCallInterval() / 1000) + 4, sec = todo * perCall;
+  sum.textContent = !jobs.length ? (scope.names && !scope.names.length ? '학생을 선택해 주세요.' : '체크된 항목이 없습니다.')
+    : `대상 ${jobs.length}건 중 이미 완료 ${jobs.length - todo}건 → 이번에 생성 ${todo}건` + (todo ? ` · 예상 ${sec >= 60 ? '약 ' + Math.floor(sec / 60) + '분 ' + (sec % 60) + '초' : '약 ' + sec + '초'}` : '');
+  $('btnGenStart').disabled = !todo || !hasKey;
+}
+function paintRun() {
+  const box = $('genRun'); if (!box) return;
+  box.hidden = !GEN.running && !GEN.msg;
+  if (box.hidden) return;
+  $('genMsg').textContent = GEN.msg + (GEN.running && GEN.total ? `  (${GEN.pos}/${GEN.total})` : '');
+  $('genMsg2').textContent = GEN.msg2 || '';
+  const done = GEN.log.length; $('genBar').style.width = (GEN.total ? Math.round(done / GEN.total * 100) : 0) + '%';
+  $('genBarWrap').hidden = !GEN.total;
+  const list = $('genLog');
+  if (list.childElementCount !== GEN.log.length) {
+    list.textContent = '';
+    const spec = GEN.kindRun ? _getLengthSpec(null, GEN.kindRun) : null;
+    GEN.log.forEach(x => {
+      const tone = !x.ok ? 'bad' : x.byte > _getNeisByteLimit(null, GEN.kindRun) ? 'bad' : x.byte > spec.maxByte ? 'long' : x.byte >= spec.minByte ? 'good' : 'short';
+      list.append(el('details', { class: 'gres' }, [el('summary', null, [el('b', { text: x.name }), x.group ? ' · ' + x.group : '', el('span', { class: 'bchip ' + tone, text: x.ok ? x.byte + ' byte' : '오류' }), x.adjusted ? el('span', { class: 'muted', text: ' 분량 조정됨' }) : null]),
+        el('p', { text: x.text })]));
+    });
+  }
+}
+function renderSim() {
+  const box = $('simBox'); box.textContent = '';
+  if (!State.simShown) return;
+  const f = similarityFindings();
+  if (!f.length) { box.append(el('div', { class: 'msg ok', text: '✅ 비슷하게 겹치는 결과가 없습니다. 학생별 결과가 충분히 다릅니다.' })); return; }
+  box.append(el('div', { class: 'msg info', text: `비슷한 결과 ${f.length}쌍 — 65% 이상은 검토, 75% 이상은 재생성을 권장합니다. 학생명단의 개인 특성을 적으면 결과가 더 달라집니다.` }));
+  f.forEach(x => { const pct = Math.round(x.sim * 100);
+    box.append(el('details', { class: 'gres' }, [el('summary', null, [el('b', { text: `${x.a} ↔ ${x.b}` }), ` · ${x.area}${x.group ? ' ' + x.group : ''}`, el('span', { class: 'bchip ' + (pct >= 75 ? 'bad' : pct >= 65 ? 'long' : 'short'), text: '유사도 ' + pct + '%' })]),
+      el('p', null, [el('b', { text: x.a + ': ' }), x.ta]), el('p', null, [el('b', { text: x.b + ': ' }), x.tb])])); });
+}
+
 /* ───────── 9. 화면 ───────── */
-const VIEWS = ['loading', 'login', 'connect', 'home', 'settings', 'roster', 'check'];
+const VIEWS = ['loading', 'login', 'connect', 'home', 'settings', 'roster', 'check', 'gen'];
 async function show(view) {
+  if (GEN.running && view !== 'gen') { toast('생성 중에는 다른 화면으로 갈 수 없습니다. 먼저 [중지]를 눌러 주세요.'); return; }
+  if (view === 'gen' && !GEN.running) {                               // 생성 화면: 체크·결과를 항상 새로 읽음
+    try { await Saver.drain(); busy('시트를 읽는 중…'); await refreshAll(); await loadResults(); busy(''); }
+    catch (e) { busy(''); if (e.status !== 401) toast('시트를 읽지 못했습니다 — ' + e.message, 7000); return; }
+  }
   if ((view === 'roster' || view === 'check') && !State.data) {      // 학생명단·체크 시트는 처음 열 때 읽음
     try { busy('시트를 읽는 중…'); await loadData(); busy(''); }
     catch (e) { busy(''); if (e.status !== 401) toast('시트를 읽지 못했습니다 — ' + e.message, 7000); return; }
   }
   State.view = view;
   VIEWS.forEach(v => { $('v-' + v).hidden = v !== view; });
-  const inApp = ['home', 'settings', 'roster', 'check'].indexOf(view) !== -1;
+  const inApp = ['home', 'settings', 'roster', 'check', 'gen'].indexOf(view) !== -1;
   $('nav').hidden = !inApp;
   document.querySelectorAll('#nav button[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
   $('userBox').hidden = !Auth.token;
@@ -2782,6 +3486,7 @@ async function show(view) {
   if (view === 'settings') renderSettings();
   if (view === 'roster') { showMsg('rosterMsg', ''); renderRoster(); }
   if (view === 'check') renderCheck();
+  if (view === 'gen') renderGen();
   window.scrollTo(0, 0);
 }
 function banner(msg, btnText, fn) {
@@ -2888,12 +3593,12 @@ async function onReload() {
 }
 function onDisconnect() {
   if (!confirm('이 시트와의 연결을 끊고 다른 시트를 고를까요?\n(시트 파일은 드라이브에 그대로 남습니다)')) return;
-  LS.del('sheetId'); LS.del('pending'); Saver.q.clear(); State.sheet = null; State.data = null; State.sheetKey = ''; show('connect');
+  LS.del('sheetId'); LS.del('pending'); SS.del('genResume'); Saver.q.clear(); State.sheet = null; State.data = null; State.sheetKey = ''; show('connect');
 }
 function onLogout() {
   if (!confirm('로그아웃할까요?')) return;
   if (LS.get('geminiKey') && confirm('이 브라우저에 저장된 Gemini API 키도 지울까요?\n(여럿이 쓰는 컴퓨터라면 [확인]을 누르세요)')) LS.del('geminiKey');
-  Auth.clear(); LS.del('wasIn'); LS.del('email'); LS.del('userName');
+  Auth.clear(); LS.del('wasIn'); LS.del('email'); LS.del('userName'); SS.del('genResume'); SS.del('resume');
   State.sheet = null; State.data = null; banner(''); show('login');
 }
 
@@ -2916,7 +3621,12 @@ async function afterLogin() {
       await Saver.restore();                              // 로그인 갱신 직전에 못 보낸 저장이 있으면 먼저 보냄
       let resume = null; try { resume = JSON.parse(SS.get('resume') || 'null'); } catch (e) {}
       SS.del('resume');
-      if (resume && (resume.view === 'roster' || resume.view === 'check' || resume.view === 'settings')) { Object.assign(Cur, resume.cur || {}); await show(resume.view); }
+      let genResume = null; try { genResume = JSON.parse(SS.get('genResume') || 'null'); } catch (e) {}
+      if (genResume && genResume.kind) {                // 생성 도중 로그인이 갱신된 경우 → 같은 범위로 이어서 생성
+        GEN.kind = genResume.kind; GEN.subject = genResume.subject || ''; GEN.all = !genResume.names; GEN.picked = {}; (genResume.names || []).forEach(n => { GEN.picked[n] = true; });
+        await show('gen'); runGeneration(genResume);
+      }
+      else if (resume && ['roster', 'check', 'settings', 'gen'].indexOf(resume.view) !== -1) { Object.assign(Cur, resume.cur || {}); await show(resume.view); }
       else show('home');
       return;
     }
@@ -2960,12 +3670,15 @@ async function boot() {
     catch (e) { busy(''); if (e.status !== 401) showMsg('rosterMsg', e.message, 'err'); }
   };
   $('stuSel').onchange = e => gotoStudent(Number(e.target.value));
+  $('btnGenStart').onclick = () => { State.simShown = false; runGeneration(genScope()); renderGen(); };
+  $('btnGenStop').onclick = () => { GEN.stop = true; $('btnGenStop').disabled = true; GEN.msg2 = '지금 만들던 항목까지만 처리하고 멈춥니다…'; paintRun(); };
+  $('btnSim').onclick = async () => { try { busy('결과를 읽는 중…'); await loadResults(); busy(''); State.simShown = true; renderSim(); } catch (e) { busy(''); if (e.status !== 401) toast(e.message, 6000); } };
   $('modeStudent').onclick = () => setMode('student');
   $('modeItem').onclick = () => setMode('item');
   $('btnPrev').onclick = () => { if (Cur.stu > 0) gotoStudent(Cur.stu - 1); };
   $('btnNext').onclick = () => { if (Cur.stu < State.data.list.length - 1) gotoStudent(Cur.stu + 1); };
   $('saveState').onclick = () => { if (Saver.failed) { Saver.failed = false; Saver.flush(); } };
-  window.addEventListener('beforeunload', e => { if (Saver.q.size && !SS.get('state')) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', e => { if ((Saver.q.size || GEN.running) && !SS.get('state')) { e.preventDefault(); e.returnValue = ''; } });
   window.addEventListener('online', () => { if (Saver.failed) { Saver.failed = false; Saver.flush(); } });
 
   const r = Auth.handleRedirect();

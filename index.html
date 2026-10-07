@@ -110,6 +110,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 .xbtn{border:1px solid #e2b4ae;background:#fff;color:var(--bad);border-radius:8px;min-height:40px;cursor:pointer;font-size:15px}
 @media(max-width:760px){
   #userName,.brand small{display:none}
+  .seg button small{display:none}
   .brand b{font-size:15px}
   #btnLogout{white-space:nowrap}
   .srow{grid-template-columns:58px 1fr 40px}
@@ -156,6 +157,28 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 .trait{background:#f7f8fc;border-radius:10px;padding:10px 12px;margin-bottom:14px}
 .trait label{display:block;font-size:13px;font-weight:700;margin-bottom:4px}
 .trait small{font-weight:400;color:var(--sub)}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-bottom:10px;border:1.5px solid var(--navy);border-radius:10px;overflow:hidden}
+.seg button{font:inherit;font-weight:700;font-size:14.5px;border:0;background:#fff;color:var(--navy);padding:9px 6px;cursor:pointer}
+.seg button.on{background:var(--navy);color:#fff}
+.seg button small{font-weight:400;opacity:.8;margin-left:4px}
+.acc{border:1.5px solid #dfe2ee;border-radius:10px;margin-top:6px;background:#fff}
+.acc.open{border-color:var(--navy)}
+.acc.pos:not(.open){background:#f6fcf8}.acc.grow:not(.open){background:#fffaf1}
+.acch{display:flex;gap:10px;align-items:center;width:100%;text-align:left;font:inherit;font-size:14.5px;line-height:1.5;border:0;background:none;color:var(--ink);padding:10px 12px;cursor:pointer}
+.acct{flex:1;min-width:0}
+.acc:not(.open) .clip{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.accs{flex:none;font-size:12.5px;font-weight:700;color:var(--navy2);white-space:nowrap}
+.arr{flex:none;font-size:10px;color:var(--sub)}
+.accb{padding:0 12px 12px}
+.accb .ct{font-size:13px;color:var(--sub);margin-bottom:6px}
+.gridhd{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0 8px}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.sb{display:flex;align-items:center;gap:5px;font:inherit;font-size:14px;min-height:42px;border:1.5px solid #d5d9e8;background:#fff;color:var(--ink);border-radius:9px;padding:6px 8px;cursor:pointer;text-align:left}
+.sb .n{flex:none;font-size:11.5px;color:var(--sub);min-width:14px}
+.sb .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.sb .bg{flex:none;font-size:12px;font-weight:800;color:var(--navy)}
+.sb.on{border-color:var(--navy);background:#e6eaff}
+.sb.on.l0{background:#d5f5e3}.sb.on.l1{background:#fef9e7}.sb.on.l2{background:#fde8e8}
 .notice{text-align:center;padding:26px 16px}
 .notice p{margin:0 0 14px}
 </style>
@@ -348,7 +371,11 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
   <!-- 체크 입력 -->
   <section id="v-check" hidden>
     <div class="card stickybar" id="checkBar">
-      <div class="sturow">
+      <div class="seg" role="group" aria-label="보기 방식">
+        <button id="modeStudent" type="button">👤 학생별</button>
+        <button id="modeItem" type="button">👥 항목별 <small>여러 명 한 번에</small></button>
+      </div>
+      <div class="sturow" id="stuRow">
         <button id="btnPrev" class="navbtn" type="button" aria-label="이전 학생">◀</button>
         <select id="stuSel" aria-label="학생 선택"></select>
         <button id="btnNext" class="navbtn" type="button" aria-label="다음 학생">▶</button>
@@ -2064,7 +2091,7 @@ const KINDS = ['subject', 'activity', 'behavior'];
 const LEVELS = ['상', '중', '하'];
 const MAX_STUDENTS = 50;
 const S = v => v == null ? '' : String(v);
-const Cur = { stu: 0, area: 'subject', subj: '', q: '', only: false };
+const Cur = { stu: 0, area: 'subject', subj: '', q: '', only: false, mode: 'student', open: '', brush: '상', atype: '', barea: '' };
 
 function colLetter(col) { let s = ''; while (col > 0) { const m = (col - 1) % 26; s = String.fromCharCode(65 + m) + s; col = Math.floor((col - 1) / 26); } return s; }
 const RG = (sheetId, r1, c1, r2, c2) => ({ sheetId, startRowIndex: r1 - 1, endRowIndex: r2, startColumnIndex: c1 - 1, endColumnIndex: c2 });
@@ -2501,20 +2528,29 @@ function renderRoster() {
   });
 }
 
-/* ── 체크 화면 (학생 1명씩 세로형) ── */
+/* ── 체크 화면 ── 두 가지 보기
+   · 학생별: 학생 1명을 놓고 항목을 체크 (개인 메모·특성 입력)
+   · 항목별: 항목 1개를 놓고 여러 학생을 한 번에 체크 */
 const editable = k => { const c = State.data.chk[k]; return !!(c && c.aligned); };
 const countFor = (k, si) => editable(k) ? State.data.chk[k].items.filter(it => it.vals[si]).length : 0;
 const cellRef = (k, row, si) => a1(CHK[k].check, colLetter(CHK[k].firstCol + si) + row);
+const stuLabel = st => (S(st.num) !== '' ? st.num + '. ' : '') + st.name;
+const uniq = arr => arr.filter((v, i) => arr.indexOf(v) === i);
+function setBool(kind, it, si, v) { if (it.vals[si] !== v) { it.vals[si] = v; Saver.put(cellRef(kind, it.row, si), v); } }
+// 교과: 한 성취기준에 수준 하나만 (lv = '상'|'중'|'하'|null)
+function setLevel(g, si, lv) { g.items.forEach(x => setBool('subject', x, si, x.level === lv)); }
+const levelOf = (g, si) => { const x = g.items.find(it => it.vals[si]); return x ? x.level : null; };
+
 function renderCheck() {
   const d = State.data, list = d.list, body = $('checkBody');
   $('checkBar').hidden = !list.length;
   if (!list.length) { body.textContent = ''; body.append(notice('학생명단이 비어 있습니다. 먼저 학생을 추가해 주세요.', '학생명단으로 가기', () => show('roster'))); return; }
   if (Cur.stu >= list.length || Cur.stu < 0) Cur.stu = 0;
+  if (Cur.mode !== 'item') Cur.mode = 'student';
+  $('modeStudent').classList.toggle('on', Cur.mode === 'student'); $('modeItem').classList.toggle('on', Cur.mode === 'item');
+  $('stuRow').hidden = Cur.mode === 'item';
   const sel = $('stuSel'); sel.textContent = '';
-  list.forEach((st, i) => {
-    const total = KINDS.reduce((a, k) => a + countFor(k, i), 0);
-    sel.append(el('option', { value: i, text: `${S(st.num) !== '' ? st.num + '. ' : ''}${st.name}${total ? '  ✓' + total : ''}` }));
-  });
+  list.forEach((st, i) => { const total = KINDS.reduce((a, k) => a + countFor(k, i), 0); sel.append(el('option', { value: i, text: stuLabel(st) + (total ? '  ✓' + total : '') })); });
   sel.value = Cur.stu;
   $('btnPrev').disabled = Cur.stu === 0; $('btnNext').disabled = Cur.stu === list.length - 1;
   paintTabs(); renderArea();
@@ -2522,11 +2558,12 @@ function renderCheck() {
 function paintTabs() {
   const box = $('areaTabs'); box.textContent = '';
   KINDS.forEach(k => box.append(el('button', { type: 'button', role: 'tab', class: Cur.area === k ? 'on' : '', 'aria-selected': Cur.area === k ? 'true' : 'false',
-    onclick: () => { Cur.area = k; paintTabs(); renderArea(); } }, [CHK[k].label, el('b', { text: countFor(k, Cur.stu) || '' })])));
+    onclick: () => { Cur.area = k; Cur.open = ''; paintTabs(); renderArea(); } }, [CHK[k].label, Cur.mode === 'student' ? el('b', { text: countFor(k, Cur.stu) || '' }) : null])));
   const o = $('stuSel').options[Cur.stu];
-  if (o) { const st = State.data.list[Cur.stu], total = KINDS.reduce((a, k) => a + countFor(k, Cur.stu), 0); o.textContent = `${S(st.num) !== '' ? st.num + '. ' : ''}${st.name}${total ? '  ✓' + total : ''}`; }
+  if (o) { const st = State.data.list[Cur.stu], total = KINDS.reduce((a, k) => a + countFor(k, Cur.stu), 0); o.textContent = stuLabel(st) + (total ? '  ✓' + total : ''); }
 }
 function gotoStudent(i) { Cur.stu = i; renderCheck(); window.scrollTo(0, 0); }
+function setMode(m) { Cur.mode = m; Cur.open = ''; renderCheck(); }
 
 async function runRebuild(kind, byName, okMsg) {
   const d = State.data, names = d.list.map(s => s.name), old = d.chk[kind];
@@ -2556,61 +2593,79 @@ function renderArea() {
   }
   if (c.stale) body.append(el('div', { class: 'msg info' }, [`${cfgName} 내용이 체크 시트를 만든 뒤에 바뀌었습니다. `,
     el('button', { class: 'btn sm', type: 'button', text: '체크 시트에 반영', style: 'margin-left:6px', onclick: () => runRebuild(k, false, '설정을 반영했습니다.') })]));
-  body.append(el('div', { class: 'trait' }, [el('label', { for: 'traitBox' }, [`${st.name} · ${K.label} 개인 특성 `, el('small', { text: '(선택 · 문장에 반영됩니다)' })]),
+  if (Cur.mode === 'student') body.append(el('div', { class: 'trait' }, [el('label', { for: 'traitBox' }, [`${st.name} · ${K.label} 개인 특성 `, el('small', { text: '(선택 · 문장에 반영됩니다)' })]),
     el('textarea', { id: 'traitBox', rows: 2, value: st.t[K.traitIdx], onchange: e => { st.t[K.traitIdx] = e.target.value; Saver.put(a1('STUDENTS', K.traitCol + st.row), e.target.value); } })]));
   if (!c.items.length) { body.append(el('p', { class: 'muted', text: '체크할 항목이 없습니다.' })); return; }
-  if (k === 'subject') areaSubject(body, c, si); else if (k === 'activity') areaActivity(body, c, si); else areaBehavior(body, c, si);
+  if (Cur.mode === 'item') { if (k === 'subject') itemSubject(body, c); else if (k === 'activity') itemActivity(body, c); else itemBehavior(body, c); }
+  else if (k === 'subject') areaSubject(body, c, si); else if (k === 'activity') areaActivity(body, c, si); else areaBehavior(body, c, si);
 }
+// 고르기 칩 줄 — values 중 하나(또는 '' = 전체)를 Cur[field]에 넣고 다시 그림
+function chipBar(field, values, labelFn, withAll) {
+  const bar = el('div', { class: 'chipbar' });
+  if (withAll) bar.append(el('button', { type: 'button', class: Cur[field] === '' ? 'on' : '', text: '전체', onclick: () => { Cur[field] = ''; Cur.open = ''; renderArea(); } }));
+  values.forEach(v => bar.append(el('button', { type: 'button', class: v === Cur[field] ? 'on' : '', onclick: () => { Cur[field] = v; Cur.open = ''; renderArea(); } }, labelFn(v))));
+  return bar;
+}
+
+/* ── 학생별 보기 ── */
 function areaSubject(body, c, si) {
-  const subjects = []; c.groups.forEach(g => { if (subjects.indexOf(g.subject) === -1) subjects.push(g.subject); });
+  const subjects = uniq(c.groups.map(g => g.subject));
   if (subjects.indexOf(Cur.subj) === -1) Cur.subj = subjects[0];
-  const done = s => c.groups.filter(g => g.subject === s && g.items.some(it => it.vals[si])).length;
-  const bar = el('div', { class: 'chipbar' }), chips = {};
-  subjects.forEach(s => { chips[s] = el('small'); bar.append(el('button', { type: 'button', class: s === Cur.subj ? 'on' : '', onclick: () => { Cur.subj = s; renderArea(); } }, [s, chips[s]])); });
-  const paintChips = () => subjects.forEach(s => { chips[s].textContent = `${done(s)}/${c.groups.filter(g => g.subject === s).length}`; });
+  const chips = {};
+  const bar = chipBar('subj', subjects, s => [s, chips[s] = el('small')]);
+  const paintChips = () => subjects.forEach(s => { chips[s].textContent = `${c.groups.filter(g => g.subject === s && levelOf(g, si)).length}/${c.groups.filter(g => g.subject === s).length}`; });
   paintChips(); body.append(bar);
   c.groups.filter(g => g.subject === Cur.subj).forEach(g => {
     const card = el('div', { class: 'crit' }, [g.domain ? el('div', { class: 'dom', text: g.domain }) : null]), btns = [];
     const paint = () => g.items.forEach((it, i) => { btns[i].classList.toggle('on', it.vals[si]); btns[i].setAttribute('aria-pressed', it.vals[si] ? 'true' : 'false'); });
     g.items.forEach(it => {
-      const b = el('button', { type: 'button', class: 'lv l' + Math.max(0, LEVELS.indexOf(it.level)), onclick: () => {
-        const on = !it.vals[si];                                   // 한 성취기준에 하나만 — 다시 누르면 해제
-        g.items.forEach(x => { const nv = x === it ? on : false; if (x.vals[si] !== nv) { x.vals[si] = nv; Saver.put(cellRef('subject', x.row, si), nv); } });
-        paint(); paintChips(); paintTabs();
-      } }, [el('span', { class: 'bd', text: it.level }), el('span', { text: it.text })]);
+      const b = el('button', { type: 'button', class: 'lv l' + Math.max(0, LEVELS.indexOf(it.level)),
+        onclick: () => { setLevel(g, si, it.vals[si] ? null : it.level); paint(); paintChips(); paintTabs(); } },   // 다시 누르면 해제
+        [el('span', { class: 'bd', text: it.level }), el('span', { text: it.text })]);
       btns.push(b); card.append(b);
     });
     paint(); body.append(card);
   });
 }
 function areaActivity(body, c, si) {
-  const types = []; c.items.forEach(it => { if (types.indexOf(it.type) === -1) types.push(it.type); });
-  types.forEach(t => {
+  const types = uniq(c.items.map(it => it.type));
+  if (Cur.atype && types.indexOf(Cur.atype) === -1) Cur.atype = '';
+  const chips = {};
+  body.append(chipBar('atype', types, t => [t, chips[t] = el('small')], true));
+  const paintChips = () => types.forEach(t => { chips[t].textContent = String(c.items.filter(it => it.type === t && it.vals[si]).length || ''); });
+  paintChips();
+  types.filter(t => !Cur.atype || t === Cur.atype).forEach(t => {
     body.append(el('div', { class: 'grp' }, [t, activityArea(t) ? null : el('small', { text: '특기사항 문장은 생성하지 않는 영역' })]));
     c.items.filter(it => it.type === t).forEach(it => {
       const memo = el('div', { class: 'memo', hidden: !it.vals[si] }, [el('input', { type: 'text', value: it.memos[si], maxlength: 300, placeholder: '이 학생만의 개인 메모 (선택)', 'aria-label': it.name + ' 개인 메모',
         onchange: e => { it.memos[si] = e.target.value.trim(); Saver.put(cellRef('activity', it.memoRow, si), it.memos[si]); } })]);
       const box = el('div', { class: 'item' + (it.vals[si] ? ' on' : '') });
       box.append(el('label', null, [el('input', { type: 'checkbox', checked: it.vals[si], onchange: e => {
-        it.vals[si] = e.target.checked; Saver.put(cellRef('activity', it.row, si), it.vals[si]);
-        box.classList.toggle('on', it.vals[si]); memo.hidden = !it.vals[si]; paintTabs();
+        setBool('activity', it, si, e.target.checked);
+        box.classList.toggle('on', it.vals[si]); memo.hidden = !it.vals[si]; paintChips(); paintTabs();
       } }), el('div', null, [el('div', { class: 'nm', text: it.name }), it.content ? el('div', { class: 'ct', text: it.content }) : null])]), memo);
       body.append(box);
     });
   });
 }
+// 행동특성 영역 칩 — 영역이 너무 잘게 나뉜 세트(중·고등용: 문구마다 영역이 다름)에서는 생략
+function behaviorAreas(c) { const a = uniq(c.items.map(it => it.area)); return a.length >= 2 && a.length <= 30 ? a : []; }
+function behaviorFilter(c, extra) {
+  const q = Cur.q.trim();
+  return c.items.filter(it => (!Cur.barea || it.area === Cur.barea) && (!q || it.phrase.indexOf(q) !== -1 || it.area.indexOf(q) !== -1) && (!extra || extra(it)));
+}
 function areaBehavior(body, c, si) {
-  const list = el('div'), cnt = el('span', { class: 'muted' });
+  const areas = behaviorAreas(c); if (areas.indexOf(Cur.barea) === -1) Cur.barea = '';
+  const list = el('div'), cnt = el('span', { class: 'muted' }), chips = {};
+  const paintCnt = () => { cnt.textContent = `선택 ${c.items.filter(x => x.vals[si]).length}개`; areas.forEach(a => { chips[a].textContent = String(c.items.filter(it => it.area === a && it.vals[si]).length || ''); }); };
   const draw = () => {
-    list.textContent = ''; const q = Cur.q.trim();
-    const shown = c.items.filter(it => (!Cur.only || it.vals[si]) && (!q || it.phrase.indexOf(q) !== -1 || it.area.indexOf(q) !== -1));
-    cnt.textContent = `선택 ${c.items.filter(it => it.vals[si]).length}개`;
-    if (!shown.length) list.append(el('p', { class: 'muted', text: Cur.only ? '체크한 문구가 없습니다.' : '검색 결과가 없습니다.' }));
+    list.textContent = '';
+    const shown = behaviorFilter(c, it => !Cur.only || it.vals[si]);
+    if (!shown.length) list.append(el('p', { class: 'muted', text: Cur.only ? '체크한 문구가 없습니다.' : '해당하는 문구가 없습니다.' }));
     shown.forEach(it => {
       const box = el('div', { class: 'item ' + (isGrowthPhrase(it.phrase) ? 'grow' : 'pos') + (it.vals[si] ? ' on' : '') });
       box.append(el('label', null, [el('input', { type: 'checkbox', checked: it.vals[si], onchange: e => {
-        it.vals[si] = e.target.checked; Saver.put(cellRef('behavior', it.row, si), it.vals[si]);
-        box.classList.toggle('on', it.vals[si]); cnt.textContent = `선택 ${c.items.filter(x => x.vals[si]).length}개`; paintTabs();
+        setBool('behavior', it, si, e.target.checked); box.classList.toggle('on', it.vals[si]); paintCnt(); paintTabs();
       } }), el('div', null, [el('span', { class: 'tag', text: it.area }), it.phrase])]));
       list.append(box);
     });
@@ -2618,7 +2673,95 @@ function areaBehavior(body, c, si) {
   body.append(el('div', { class: 'toolbar' }, [
     el('input', { type: 'text', value: Cur.q, placeholder: '문구 검색 (예: 배려, 책임)', 'aria-label': '문구 검색', oninput: e => { Cur.q = e.target.value; draw(); } }),
     el('label', null, [el('input', { type: 'checkbox', checked: Cur.only, onchange: e => { Cur.only = e.target.checked; draw(); } }), '체크한 것만']), cnt]));
+  if (areas.length) body.append(chipBar('barea', areas, a => [a, chips[a] = el('small')], true));
   body.append(el('p', { class: 'muted', style: 'margin:0 0 6px', text: '연녹색은 긍정 문구, 연주황은 개선·성장 지원 문구입니다. 많이 골라도 AI는 특징적인 3~4개를 중심으로 씁니다.' }), list);
+  paintCnt(); draw();
+}
+
+/* ── 항목별 보기 (여러 명 한 번에) ── */
+// 학생 버튼 판 — stateOf(si) → { cls, badge } / onTap(si)
+function studentGrid(stateOf, onTap) {
+  const grid = el('div', { class: 'sgrid' }), btns = [];
+  const paint = () => State.data.list.forEach((st, si) => { const s = stateOf(si); btns[si].className = 'sb ' + (s.cls || ''); btns[si].setAttribute('aria-pressed', s.cls ? 'true' : 'false'); btns[si].lastChild.textContent = s.badge || ''; });
+  State.data.list.forEach((st, si) => { const b = el('button', { type: 'button', onclick: () => { onTap(si); paint(); } }, [el('span', { class: 'n', text: S(st.num) }), el('span', { class: 'nm', text: st.name }), el('span', { class: 'bg' })]); btns.push(b); grid.append(b); });
+  paint();
+  return { node: grid, paint };
+}
+// 접었다 펴는 카드 — 열린 카드 하나만 학생 판을 그림
+function accCard(key, headKids, sumEl, bodyFn, cls) {
+  const open = Cur.open === key, card = el('div', { class: 'acc' + (open ? ' open' : '') + (cls ? ' ' + cls : '') });
+  card.append(el('button', { type: 'button', class: 'acch', 'aria-expanded': open ? 'true' : 'false', onclick: () => { Cur.open = open ? '' : key; renderArea(); } },
+    [el('span', { class: 'acct' }, headKids), sumEl, el('span', { class: 'arr', text: open ? '▲' : '▼' })]));
+  if (open) { const b = el('div', { class: 'accb' }); bodyFn(b); card.append(b); }
+  return card;
+}
+function itemSubject(body, c) {
+  const subjects = uniq(c.groups.map(g => g.subject)), n = State.data.list.length;
+  if (subjects.indexOf(Cur.subj) === -1) Cur.subj = subjects[0];
+  if (LEVELS.indexOf(Cur.brush) === -1 && Cur.brush !== 'clear') Cur.brush = '상';
+  body.append(chipBar('subj', subjects, s => [s]));
+  body.append(el('p', { class: 'muted', style: 'margin:0 0 8px', text: '성취기준을 펼친 뒤 수준(상·중·하)을 고르고, 해당하는 학생을 차례로 누르세요.' }));
+  const groups = c.groups.filter(g => g.subject === Cur.subj);
+  if (groups.length && !groups.some((g, i) => Cur.open === 'g' + i)) Cur.open = 'g0';
+  groups.forEach((g, gi) => {
+    const sum = el('span', { class: 'accs' });
+    const paintSum = () => { const cnt = { '상': 0, '중': 0, '하': 0 }; let none = 0; for (let si = 0; si < n; si++) { const lv = levelOf(g, si); if (lv && lv in cnt) cnt[lv]++; else if (!lv) none++; }
+      sum.textContent = `상 ${cnt['상']} · 중 ${cnt['중']} · 하 ${cnt['하']}` + (none ? ` · 미체크 ${none}` : ''); };
+    paintSum();
+    const first = g.items[0] ? g.items[0].text : '';
+    body.append(accCard('g' + gi, [g.domain ? el('b', { text: g.domain + ' ' }) : null, el('span', { class: 'clip', text: first })], sum, b => {
+      const brushBtns = [], brush = el('div');
+      const paintBrush = () => brushBtns.forEach(x => x.b.classList.toggle('on', x.v === Cur.brush));
+      g.items.forEach(it => { const bt = el('button', { type: 'button', class: 'lv l' + Math.max(0, LEVELS.indexOf(it.level)), onclick: () => { Cur.brush = it.level; paintBrush(); } }, [el('span', { class: 'bd', text: it.level }), el('span', { text: it.text })]); brushBtns.push({ v: it.level, b: bt }); brush.append(bt); });
+      const eraser = el('button', { type: 'button', class: 'lv', onclick: () => { Cur.brush = 'clear'; paintBrush(); } }, [el('span', { class: 'bd', text: '✕' }), el('span', { text: '체크 지우기' })]);
+      brushBtns.push({ v: 'clear', b: eraser }); brush.append(eraser); paintBrush();
+      const grid = studentGrid(si => { const lv = levelOf(g, si); return lv ? { cls: 'on l' + Math.max(0, LEVELS.indexOf(lv)), badge: lv } : {}; },
+        si => { const cur = levelOf(g, si); setLevel(g, si, Cur.brush === 'clear' || cur === Cur.brush ? null : Cur.brush); paintSum(); });   // 같은 수준을 다시 누르면 해제
+      const fillRest = el('button', { type: 'button', class: 'btn line sm', text: '미체크 학생 모두 선택한 수준으로', onclick: () => {
+        if (Cur.brush === 'clear') { toast('먼저 상·중·하 중 하나를 고르세요.'); return; }
+        for (let si = 0; si < n; si++) if (!levelOf(g, si)) setLevel(g, si, Cur.brush); grid.paint(); paintSum(); } });
+      const clearAll = el('button', { type: 'button', class: 'btn danger sm', text: '이 기준 전체 해제', onclick: () => {
+        if (!confirm('이 성취기준의 체크를 모든 학생에게서 지울까요?')) return;
+        for (let si = 0; si < n; si++) setLevel(g, si, null); grid.paint(); paintSum(); } });
+      b.append(brush, el('div', { class: 'gridhd' }, [el('span', { class: 'muted', text: '학생을 눌러 체크' }), el('span', { class: 'row' }, [fillRest, clearAll])]), grid.node);
+    }));
+  });
+}
+function boolBody(kind, it, sum, b, extra) {
+  const n = State.data.list.length, paintSum = () => { const k = it.vals.filter(Boolean).length; sum.textContent = k ? k + '명' : ''; };
+  const grid = studentGrid(si => it.vals[si] ? { cls: 'on', badge: '✓' } : {}, si => { setBool(kind, it, si, !it.vals[si]); paintSum(); });
+  const all = el('button', { type: 'button', class: 'btn line sm', text: '전체 선택', onclick: () => { for (let si = 0; si < n; si++) setBool(kind, it, si, true); grid.paint(); paintSum(); } });
+  const none = el('button', { type: 'button', class: 'btn danger sm', text: '전체 해제', onclick: () => { for (let si = 0; si < n; si++) setBool(kind, it, si, false); grid.paint(); paintSum(); } });
+  if (extra) b.append(extra);
+  b.append(el('div', { class: 'gridhd' }, [el('span', { class: 'muted', text: '학생을 눌러 체크' }), el('span', { class: 'row' }, [all, none])]), grid.node);
+}
+const cntEl = it => { const k = it.vals.filter(Boolean).length; return el('span', { class: 'accs', text: k ? k + '명' : '' }); };
+function itemActivity(body, c) {
+  const types = uniq(c.items.map(it => it.type));
+  if (Cur.atype && types.indexOf(Cur.atype) === -1) Cur.atype = '';
+  body.append(chipBar('atype', types, t => [t], true));
+  body.append(el('p', { class: 'muted', style: 'margin:0 0 8px', text: '활동을 펼쳐 참여한 학생을 누르세요. 학생마다 다른 개인 메모는 [학생별] 보기에서 적습니다.' }));
+  types.filter(t => !Cur.atype || t === Cur.atype).forEach(t => {
+    body.append(el('div', { class: 'grp' }, [t, activityArea(t) ? null : el('small', { text: '특기사항 문장은 생성하지 않는 영역' })]));
+    c.items.filter(it => it.type === t).forEach(it => { const sum = cntEl(it);
+      body.append(accCard('a' + it.row, [el('b', { text: it.name })], sum, b => boolBody('activity', it, sum, b, it.content ? el('div', { class: 'ct', text: it.content }) : null))); });
+  });
+}
+function itemBehavior(body, c) {
+  const areas = behaviorAreas(c); if (areas.indexOf(Cur.barea) === -1) Cur.barea = '';
+  const list = el('div');
+  const draw = () => {
+    list.textContent = '';
+    const shown = behaviorFilter(c, it => !Cur.only || it.vals.some(Boolean));
+    if (!shown.length) list.append(el('p', { class: 'muted', text: '해당하는 문구가 없습니다.' }));
+    shown.forEach(it => { const sum = cntEl(it);
+      list.append(accCard('b' + it.row, [el('span', { class: 'tag', text: it.area }), it.phrase], sum, b => boolBody('behavior', it, sum, b), isGrowthPhrase(it.phrase) ? 'grow' : 'pos')); });
+  };
+  body.append(el('div', { class: 'toolbar' }, [
+    el('input', { type: 'text', value: Cur.q, placeholder: '문구 검색 (예: 배려, 책임)', 'aria-label': '문구 검색', oninput: e => { Cur.q = e.target.value; draw(); } }),
+    el('label', null, [el('input', { type: 'checkbox', checked: Cur.only, onchange: e => { Cur.only = e.target.checked; draw(); } }), '체크된 문구만'])]));
+  if (areas.length) body.append(chipBar('barea', areas, a => [a], true));
+  body.append(el('p', { class: 'muted', style: 'margin:0 0 6px', text: '문구를 펼쳐 해당하는 학생을 누르세요. 연녹색은 긍정, 연주황은 개선·성장 지원 문구입니다.' }), list);
   draw();
 }
 
@@ -2817,6 +2960,8 @@ async function boot() {
     catch (e) { busy(''); if (e.status !== 401) showMsg('rosterMsg', e.message, 'err'); }
   };
   $('stuSel').onchange = e => gotoStudent(Number(e.target.value));
+  $('modeStudent').onclick = () => setMode('student');
+  $('modeItem').onclick = () => setMode('item');
   $('btnPrev').onclick = () => { if (Cur.stu > 0) gotoStudent(Cur.stu - 1); };
   $('btnNext').onclick = () => { if (Cur.stu < State.data.list.length - 1) gotoStudent(Cur.stu + 1); };
   $('saveState').onclick = () => { if (Saver.failed) { Saver.failed = false; Saver.flush(); } };

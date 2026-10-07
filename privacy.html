@@ -39,7 +39,7 @@ footer{text-align:center;font-size:12.5px;color:#5d6480;padding:20px 16px}
     <table>
       <tr><th>정보</th><th>저장 위치</th><th>설명</th></tr>
       <tr><td>학생명단, 체크 내용, 생성된 문장</td><td>선생님 본인의 Google Drive 스프레드시트</td><td>브라우저가 Google Sheets에 직접 읽고 씁니다. 제작자를 거치지 않습니다.</td></tr>
-      <tr><td>Gemini API 키</td><td>지금 쓰는 브라우저(localStorage)</td><td>이 기기의 이 브라우저에만 저장됩니다. 시트나 다른 곳으로 보내지 않습니다.</td></tr>
+      <tr><td>Gemini API 키</td><td>지금 쓰는 브라우저(localStorage)</td><td>기본은 이 기기의 이 브라우저에만 저장됩니다. 설정에서 "다른 기기에서도 이 키 쓰기"를 켠 경우에만, 선생님 본인 드라이브에 있는 연결된 시트 파일의 숨은 속성에도 저장됩니다(끄면 지워집니다).</td></tr>
       <tr><td>Google 로그인 토큰, 계정 이메일·이름</td><td>지금 쓰는 브라우저(localStorage)</td><td>로그인 유지와 화면 표시에만 씁니다. 토큰은 약 1시간 뒤 만료됩니다.</td></tr>
       <tr><td>아직 시트에 저장되지 못한 체크·메모</td><td>지금 쓰는 브라우저(localStorage)</td><td>인터넷이 끊기거나 로그인이 만료된 순간의 입력을 잃지 않기 위한 임시 보관입니다. 시트에 저장되는 즉시 지워집니다.</td></tr>
       <tr><td>NEIS "복사함" 표시, 백업 사본 목록</td><td>지금 쓰는 브라우저(localStorage)</td><td>어디까지 입력했는지와 만든 백업의 이름·링크를 기억하기 위한 값입니다. 문장 내용은 저장하지 않습니다.</td></tr>

@@ -369,6 +369,8 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
         <button id="btnKeyTest" class="btn line sm" type="button">연결 테스트</button>
       </div>
       <div id="keyResult" class="msg" hidden></div>
+      <p style="margin:14px 0 0"><label><input type="checkbox" id="fKeySync"> <b>다른 기기에서도 이 키 쓰기</b> — 내 구글 계정(연결된 시트 파일의 숨은 속성)에 키를 함께 저장</label></p>
+      <p class="muted" style="margin:4px 0 0">켜면 다른 컴퓨터·태블릿에서 로그인했을 때 키를 다시 넣지 않아도 됩니다. 시트 내용에는 보이지 않지만, 이 시트 파일을 다른 사람과 <b>공유</b>하면 그 사람이 이 앱에서 내 키를 쓰게 될 수 있으니 공유할 시트라면 끄세요.</p>
     </div>
 
     <div class="card">
@@ -1991,6 +1993,20 @@ const DRIVE_FILES = 'https://www.googleapis.com/drive/v3/files';
 function markSheet(id) {
   gfetch(`${DRIVE_FILES}/${encodeURIComponent(id)}?fields=id`, { method: 'PATCH', body: JSON.stringify({ appProperties: { sgb: '1', sgbLast: new Date().toISOString() } }) }).catch(() => {});
 }
+// API 키를 계정에 함께 저장(선택) — 시트 "파일의 숨은 속성"에 넣으므로 시트 내용에는 보이지 않고, 같은 계정의 다른 기기에서 자동으로 불러온다
+async function pullSyncedKey() {
+  State.keySynced = false;
+  try {
+    const r = await gfetch(`${DRIVE_FILES}/${encodeURIComponent(State.sheet.id)}?fields=appProperties`), k = (r.appProperties && r.appProperties.sgbKey) || '';
+    State.keySynced = !!k;
+    if (k && !LS.get('geminiKey')) { LS.set('geminiKey', k); return true; }
+  } catch (e) { if (e.status === 401) throw e; }
+  return false;
+}
+async function pushSyncedKey(key) {       // key가 빈 문자열이면 계정에 저장해 둔 키를 지움
+  await gfetch(`${DRIVE_FILES}/${encodeURIComponent(State.sheet.id)}?fields=id`, { method: 'PATCH', body: JSON.stringify({ appProperties: { sgbKey: key || null } }) });
+  State.keySynced = !!key;
+}
 async function listMySheets() {
   const q = encodeURIComponent("mimeType='application/vnd.google-apps.spreadsheet' and trashed=false");
   const r = await gfetch(`${DRIVE_FILES}?q=${q}&pageSize=50&orderBy=modifiedTime%20desc&fields=files(id,name,modifiedTime,appProperties)`);
@@ -2025,6 +2041,7 @@ async function loadSheet(id) {
   LS.set('sheetId', id);
   markSheet(id);
   await readSettings();
+  if (await pullSyncedKey()) toast('계정에 저장해 둔 Gemini API 키를 불러왔습니다.', 5000);
 }
 
 // ⚙️설정: C14 키 · C18 학년반 · C19 학교급 · C20 모델 · C23 요금제 · F23 분량 / 👥학생명단: B4:B53
@@ -3995,7 +4012,7 @@ const backupList = () => { try { return JSON.parse(LS.get('backups_' + State.she
 async function makeBackup() {
   await Saver.drain();
   const name = `${State.sheet.title} (백업 ${stamp()})`;
-  const res = await gfetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(State.sheet.id)}/copy?fields=id,name,webViewLink`, { method: 'POST', body: JSON.stringify({ name, appProperties: { sgb: 'backup' } }) });      // 백업 사본은 '쓰던 시트' 자동 연결 대상에서 제외
+  const res = await gfetch(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(State.sheet.id)}/copy?fields=id,name,webViewLink`, { method: 'POST', body: JSON.stringify({ name, appProperties: { sgb: 'backup', sgbKey: null } }) });      // 백업 사본은 '쓰던 시트' 자동 연결 대상에서 제외
   const list = backupList(); list.unshift({ id: res.id, name: res.name || name, url: res.webViewLink || ('https://docs.google.com/spreadsheets/d/' + res.id), at: stamp() });
   LS.set('backups_' + State.sheet.id, JSON.stringify(list.slice(0, 20)));
   return list[0];
@@ -4358,6 +4375,7 @@ function renderSettings() {
   $('fKey').type = 'password'; $('btnKeyShow').textContent = '보기'; $('btnKeyShow').setAttribute('aria-pressed', 'false');
   showMsg('keyResult', '');
   $('keyImport').hidden = !(State.sheetKey && !LS.get('geminiKey'));
+  $('fKeySync').checked = !!State.keySynced;
   const inList = MODELS.list.some(m => m.id === s.model);
   $('fModel').value = inList ? s.model : '__custom__';
   $('fModelCustom').hidden = inList; $('fModelCustom').value = inList ? '' : s.model;
@@ -4401,6 +4419,8 @@ async function onSave() {
     busy('저장하는 중…');
     await saveSettingsToSheet(next);
     if (key) LS.set('geminiKey', key); else LS.del('geminiKey');
+    const wantSync = $('fKeySync').checked && !!key;
+    if (wantSync || State.keySynced) { try { await pushSyncedKey(wantSync ? key : ''); } catch (e) { if (e.status === 401) throw e; toast('키를 계정에 저장하지 못했습니다 — ' + e.message, 7000); } }
     Object.assign(State.settings, next);
     busy(''); renderSettings();
     toast(next.model !== model ? `저장했습니다. (${model} → ${next.model} 자동 교체)` : '설정을 저장했습니다.');

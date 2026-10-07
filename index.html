@@ -186,6 +186,18 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 .gres p{margin:8px 0 2px;font-size:14.5px;white-space:pre-wrap;line-height:1.7}
 .bchip{display:inline-block;font-size:12px;font-weight:700;padding:1px 9px;border-radius:99px;margin-left:8px}
 .bchip.good{background:#e8f8f0;color:#14603d}.bchip.short{background:#fff3cd;color:#7a5b00}.bchip.long{background:#fdebd0;color:#8a4b00}.bchip.bad{background:#fadbd8;color:#8c241a}
+.rcard{border:1.5px solid #dfe2ee;border-radius:12px;padding:12px 14px;margin-bottom:12px;background:#fff}
+.rcard.dirty{border-color:var(--accent)}
+.rcard.err{background:#fff8f7;border-color:#f3c2bc}
+.rcard.busy{opacity:.6}
+.rhead{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px;font-size:15.5px}
+.rhead input{width:20px;height:20px;accent-color:var(--navy);margin:0 4px 0 0}
+.rcard textarea{font-size:15px;line-height:1.75;min-height:90px;resize:none;overflow:hidden}
+.rfoot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:13px}
+.rerr{margin:0;color:#8c241a;font-size:14.5px}
+.rsrc{margin-top:8px;font-size:13.5px;color:var(--sub)}
+.rsrc summary{cursor:pointer}
+.rsrc p{margin:4px 0 0}
 .notice{text-align:center;padding:26px 16px}
 .notice p{margin:0 0 14px}
 </style>
@@ -210,7 +222,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
   <button type="button" data-view="roster">👥 학생명단</button>
   <button type="button" data-view="check">✅ 체크</button>
   <button type="button" data-view="gen">✨ 생성</button>
-  <button type="button" disabled title="4단계에서 열립니다">📈 결과</button>
+  <button type="button" data-view="result">📈 결과</button>
   <button type="button" disabled title="5단계에서 열립니다">📑 NEIS 입력</button>
 </nav>
 
@@ -283,12 +295,12 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
     </div>
     <div class="card">
       <h2>진행 단계</h2>
-      <p class="muted">지금은 3단계(AI 생성)까지 열려 있습니다.</p>
+      <p class="muted">지금은 4단계(결과 검토·수정·재생성)까지 열려 있습니다.</p>
       <div class="steps">
         <div class="step done"><b>① 로그인 · 시트 연결 · 설정</b>지금 쓸 수 있어요</div>
         <div class="step done"><b>② 학생명단 · 체크 입력</b>지금 쓸 수 있어요</div>
         <div class="step done"><b>③ AI 생성</b>지금 쓸 수 있어요</div>
-        <div class="step"><b>④ 결과 검토 · 수정 · 재생성</b>준비 중</div>
+        <div class="step done"><b>④ 결과 검토 · 수정 · 재생성</b>지금 쓸 수 있어요</div>
         <div class="step"><b>⑤ NEIS 입력 스테이션 · 새 학기 · 백업</b>준비 중</div>
       </div>
     </div>
@@ -414,11 +426,25 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
       <div id="genLog"></div>
     </div>
     <div class="card">
+      <h3>📈 결과 확인 · 수정</h3>
+      <p class="muted">생성된 문장을 읽고, 직접 고치거나 다시 만들 수 있습니다.</p>
+      <p><button id="btnToResult" class="btn line sm" type="button">결과 화면으로</button></p>
+    </div>
+    <div class="card">
       <h3>🔍 결과 유사도 검사</h3>
       <p class="muted">같은 과목·영역 안에서 학생끼리 문장이 지나치게 비슷한지 확인합니다.</p>
       <p><button id="btnSim" class="btn line sm" type="button">유사도 검사하기</button></p>
       <div id="simBox"></div>
     </div>
+  </section>
+
+  <!-- 결과 -->
+  <section id="v-result" hidden>
+    <div class="card stickybar">
+      <div class="tabs" id="resTabs" style="margin-top:0"></div>
+      <div id="resFilters"></div>
+    </div>
+    <div class="card" id="resBody"></div>
   </section>
 </main>
 
@@ -438,7 +464,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 
 /* ───────── 1. 앱 설정 ───────── */
 const CONFIG = {
-  VERSION: 'web 0.3 · 3단계',
+  VERSION: 'web 0.4 · 4단계',
   CLIENT_ID: '522445423766-m3cop5vh489598e0hkefumd0r202tncp.apps.googleusercontent.com',
   PICKER_KEY: 'AIzaSyDuMaSWfi7yfybCUJnUvghOcirBA5JzXoE',
   APP_ID: '522445423766',                                   // Cloud 프로젝트 번호 (Picker가 고른 파일에 drive.file 권한을 붙이는 데 필요)
@@ -3284,7 +3310,7 @@ const RES = { subject: { text: 3, byte: 4, status: 5 }, activity: { text: 4, byt
 function parseResults(kind, values) {
   const R = RES[kind];
   return (values || []).slice(3).map((r, i) => { r = r || []; return { row: 4 + i, name: S(r[0]).trim(), group: kind === 'behavior' ? '' : S(r[1]).trim(),
-    text: S(r[R.text - 1]).trim(), byte: r[R.byte - 1], status: S(r[R.status - 1]).trim() }; });
+    text: S(r[R.text - 1]).trim(), byte: r[R.byte - 1], status: S(r[R.status - 1]).trim(), info: kind === 'activity' ? S(r[2]) : kind === 'behavior' ? S(r[1]) : '' }; });
 }
 const resKey = (kind, r) => kind === 'behavior' ? r.name : r.name + '||' + r.group;
 async function loadResults() {
@@ -3464,11 +3490,188 @@ function renderSim() {
       el('p', null, [el('b', { text: x.a + ': ' }), x.ta]), el('p', null, [el('b', { text: x.b + ': ' }), x.tb])])); });
 }
 
+/* ───────── 8-4. 결과 화면 (검토 · 수정 · 재생성) ─────────
+   결과 시트의 문장을 앱에서 바로 읽고 고친다. 수정·재생성은 같은 행에 덮어쓴다(행 순서 유지). */
+const RV = { kind: 'subject', group: '', stu: '', only: false, sel: {}, draft: {}, running: false, busyKey: '' };   // draft: 저장 전 수정 중인 글
+const toPlain = t => S(t).replace(/\r/g, '').replace(/\n+/g, ' ').replace(/\s{2,}/g, ' ').trim();     // v9 _toPlainText (NEIS 붙여넣기용)
+function byteTone(kind, byte) {
+  const spec = _getLengthSpec(null, kind);
+  return byte > _getNeisByteLimit(null, kind) ? 'bad' : byte > spec.maxByte ? 'long' : byte >= spec.minByte ? 'good' : 'short';
+}
+const TONE_LABEL = { bad: 'NEIS 한도 초과', long: '목표보다 김', good: '', short: '목표보다 짧음' };
+// 지금의 체크로 만들 수 있는 작업 (재생성·근거 보기·체크 변경 감지에 사용)
+function currentJobs(kind) { const m = {}; if (editable(kind)) collectJobs(kind, null, '').jobs.forEach(j => { m[j.key] = j; }); return m; }
+function jobInfo(job) {       // 결과 시트에 함께 적히는 "선택된 활동 / 선택 문구" 문자열 (v9와 같은 형식)
+  return job.kind === 'activity' ? job.acts.map(a => `${a.actName}${a.memo ? ' (메모: ' + a.memo + ')' : ''}`).join('\n')
+    : job.kind === 'behavior' ? job.phrases.map(p => p.replace(/^\[.*?\]\s*/, '')).join(' / ') : '';
+}
+function resultNotes(kind, r, job) {
+  const notes = [];
+  if (r.status !== DONE) return notes;
+  if (!job) notes.push('체크가 지워짐');
+  else if (kind !== 'subject' && jobInfo(job).trim() !== r.info.trim()) notes.push('생성 후 체크가 바뀜');
+  _detectStyleIssues(r.text).forEach(x => notes.push(x));
+  const tone = byteTone(kind, _getByteSize(r.text)); if (TONE_LABEL[tone]) notes.push(TONE_LABEL[tone]);
+  return notes;
+}
+// 쓰기 직전에 그 행이 여전히 같은 학생·과목인지 확인 (시트에서 행이 지워지거나 밀린 경우 대비)
+async function verifyRow(kind, r) {
+  const got = await gfetch(`${SHEETS_API}/${encodeURIComponent(State.sheet.id)}/values/${encodeURIComponent(a1(CHK[kind].result, 'A' + r.row + ':B' + r.row))}?valueRenderOption=UNFORMATTED_VALUE`);
+  const v = (got.values || [[]])[0] || [];
+  if (S(v[0]).trim() !== r.name || (kind !== 'behavior' && S(v[1]).trim() !== r.group)) throw new Error('결과 시트의 행이 바뀌었습니다. 화면을 새로 읽은 뒤 다시 시도해 주세요.');
+}
+function textByteCells(kind, text) {
+  const bd = { style: 'SOLID', color: hexColor('#dddddd') }, borders = { top: bd, bottom: bd, left: bd, right: bd }, byte = _getByteSize(text);
+  const tf = Object.assign({ wrap: true, valign: 'TOP' }, kind === 'activity' ? { bg: '#ffffff' } : kind === 'behavior' ? { bg: '#f0fff0' } : {});
+  const a = cellV(text), b = cellV(byte);
+  a.userEnteredFormat = Object.assign(cellFmt(tf), { borders });
+  b.userEnteredFormat = Object.assign(cellFmt({ align: 'CENTER', fg: '#333333', bg: _getByteColor(null, byte, kind) }), { borders });
+  return [a, b];
+}
+async function saveEdit(kind, r, text) {
+  text = text.replace(/\r/g, '').trim();
+  if (!text) throw new Error('내용이 비어 있습니다.');
+  await verifyRow(kind, r);
+  await sendBatch([{ updateCells: { start: { sheetId: State.sheet.map[CHK[kind].result].sheetId, rowIndex: r.row - 1, columnIndex: RES[kind].text - 1 },
+    rows: [{ values: textByteCells(kind, text) }], fields: 'userEnteredValue,userEnteredFormat' } }]);
+  r.text = text; r.byte = _getByteSize(text);
+}
+// 한 건 재생성 — 지금의 체크로 새 문장을 만들어 같은 행에 덮어씀. 실패하면 기존 문장은 그대로 둠
+async function regenOne(kind, r, job) {
+  GEN.stop = false; GEN.kindRun = kind;
+  const bp = buildPrompt(job, State.basePrompt);
+  const out = await generateWithLengthControl(bp.prompt, bp.lenSpec.minByte, bp.lenSpec.maxByte, bp.lenSpec.targetChars);
+  if (!out.success) throw new Error(out.error);
+  await verifyRow(kind, r);
+  await sendBatch([{ updateCells: { start: { sheetId: State.sheet.map[CHK[kind].result].sheetId, rowIndex: r.row - 1, columnIndex: 0 },
+    rows: [{ values: resultRow(job, out) }], fields: 'userEnteredValue,userEnteredFormat,dataValidation' } }]);
+  r.text = out.text; r.byte = _getByteSize(out.text); r.status = DONE; r.info = jobInfo(job);
+}
+async function copyText(text) {
+  const t = toPlain(text);
+  try { await navigator.clipboard.writeText(t); }
+  catch (e) { const ta = el('textarea', { value: t, style: 'position:fixed;opacity:0' }); document.body.append(ta); ta.select(); try { document.execCommand('copy'); } catch (x) {} ta.remove(); }
+  toast('복사했습니다. (줄바꿈은 한 칸 띄어쓰기로 바꿈)');
+}
+
+function resultRows(kind) {
+  const d = State.data, order = {}; d.list.forEach((s, i) => { order[s.name] = i; });
+  const gi = g => kind === 'activity' ? ACTIVITY_AREAS.indexOf(g) : 0;
+  return (State.results[kind] || []).filter(r => r.name && (r.text || r.status))
+    .sort((a, b) => ((a.name in order ? order[a.name] : 999) - (b.name in order ? order[b.name] : 999)) || (kind === 'subject' ? a.group.localeCompare(b.group, 'ko') : gi(a.group) - gi(b.group)) || a.row - b.row);
+}
+const rvKey = r => r.row + '|' + r.name + '|' + r.group;
+function renderResults() {
+  const d = State.data, kind = RV.kind, tabs = $('resTabs'), flt = $('resFilters'), body = $('resBody');
+  tabs.textContent = ''; flt.textContent = ''; body.textContent = '';
+  KINDS.forEach(k => tabs.append(el('button', { type: 'button', class: kind === k ? 'on' : '', disabled: RV.running, onclick: () => { RV.kind = k; RV.group = ''; RV.sel = {}; renderResults(); } },
+    [CHK[k].label, el('b', { text: String((State.results[k] || []).filter(r => r.name && r.status === DONE).length || '') })])));
+  if (!State.results[kind]) { body.append(notice(`${CHK[kind].label} 결과가 아직 없습니다.`, '✨ 생성 화면으로', () => show('gen'))); return; }
+  const jobs = currentJobs(kind), all = resultRows(kind), doneSet = doneKeys(kind);
+  const groups = kind === 'behavior' ? [] : uniq(all.map(r => r.group)).filter(Boolean);
+  if (RV.group && groups.indexOf(RV.group) === -1) RV.group = '';
+  if (RV.stu && !all.some(r => r.name === RV.stu)) RV.stu = '';
+  const rows = all.filter(r => (!RV.group || r.group === RV.group) && (!RV.stu || r.name === RV.stu));
+  const noted = rows.map(r => ({ r, job: jobs[resKey(kind, r)], notes: resultNotes(kind, r, jobs[resKey(kind, r)]) }));
+  const shown = noted.filter(x => !RV.only || x.r.status !== DONE || x.notes.length);
+  const missing = Object.keys(jobs).filter(k => !doneSet.has(k)).length;
+  // ── 걸러 보기 ──
+  if (groups.length) { const bar = el('div', { class: 'chipbar', style: 'margin:10px 0 8px' }, [el('button', { type: 'button', class: RV.group === '' ? 'on' : '', text: kind === 'subject' ? '전체 과목' : '전체 영역', onclick: () => { RV.group = ''; renderResults(); } })]);
+    groups.forEach(g => bar.append(el('button', { type: 'button', class: RV.group === g ? 'on' : '', text: g, onclick: () => { RV.group = g; renderResults(); } }))); flt.append(bar); }
+  const sel = el('select', { 'aria-label': '학생 고르기', style: 'max-width:220px;min-height:40px;padding:6px 10px', onchange: e => { RV.stu = e.target.value; renderResults(); } }, [el('option', { value: '', text: '전체 학생' })]);
+  uniq(all.map(r => r.name)).forEach(nm => sel.append(el('option', { value: nm, text: nm }))); sel.value = RV.stu;
+  const picked = shown.filter(x => RV.sel[rvKey(x.r)] && x.job);
+  flt.append(el('div', { class: 'toolbar', style: 'margin:' + (groups.length ? '0' : '10px') + ' 0 0' }, [sel,
+    el('label', null, [el('input', { type: 'checkbox', checked: RV.only, onchange: e => { RV.only = e.target.checked; renderResults(); } }), '확인 필요만']),
+    el('span', { class: 'muted', text: `${shown.length}건` }),
+    el('span', { class: 'row', style: 'margin-left:auto' }, RV.running
+      ? [el('button', { class: 'btn danger sm', type: 'button', text: '중지', onclick: () => { GEN.stop = true; RV.stopAsked = true; } })]
+      : [el('button', { class: 'btn line sm', type: 'button', text: '보이는 것 모두 선택', onclick: () => { shown.forEach(x => { if (x.job) RV.sel[rvKey(x.r)] = true; }); renderResults(); } }),
+         picked.length ? el('button', { class: 'btn line sm', type: 'button', text: '선택 해제', onclick: () => { RV.sel = {}; renderResults(); } }) : null,
+         el('button', { class: 'btn sm', type: 'button', text: `선택 ${picked.length}건 재생성`, disabled: !picked.length, onclick: () => regenMany(picked) })])]));
+  // ── 목록 ──
+  if (missing) body.append(el('div', { class: 'msg info' }, [`체크는 했지만 아직 문장이 없는 항목이 ${missing}건 있습니다. `, el('button', { class: 'btn sm', type: 'button', text: '✨ 생성 화면으로', style: 'margin-left:6px', onclick: () => show('gen') })]));
+  if (!shown.length) { body.append(el('p', { class: 'muted', text: all.length ? '조건에 맞는 결과가 없습니다.' : '아직 생성된 결과가 없습니다.' })); return; }
+  shown.forEach(x => body.append(resultCard(kind, x.r, x.job, x.notes)));
+}
+function resultCard(kind, r, job, notes) {
+  const key = rvKey(r), ok = r.status === DONE, busyNow = RV.busyKey === key;
+  const card = el('div', { class: 'rcard' + (ok ? '' : ' err') + (busyNow ? ' busy' : '') });
+  const chip = el('span', { class: 'bchip' }), noteBox = el('span'), count = el('span', { class: 'muted' });
+  const head = el('div', { class: 'rhead' }, [
+    el('input', { type: 'checkbox', checked: !!RV.sel[key], disabled: !job || RV.running, 'aria-label': r.name + ' 선택', title: job ? '선택해서 한꺼번에 재생성' : '체크가 없어 재생성할 수 없음', onchange: e => { RV.sel[key] = e.target.checked; renderResults(); } }),
+    el('b', { text: r.name }), r.group ? el('span', { class: 'muted', text: ' · ' + r.group }) : null, chip, noteBox]);
+  card.append(head);
+  if (!ok) {
+    card.append(el('p', { class: 'rerr', text: r.text || '생성되지 않음' }),
+      el('p', { class: 'row', style: 'margin:8px 0 0' }, [el('button', { class: 'btn sm', type: 'button', text: busyNow ? '생성 중…' : '다시 생성', disabled: !job || RV.running || !!RV.busyKey, onclick: () => regenMany([{ r, job }]) }),
+        job ? null : el('span', { class: 'muted', text: '이 학생·항목의 체크가 없어 생성할 수 없습니다.' })]));
+    chip.className = 'bchip bad'; chip.textContent = '오류';
+    return card;
+  }
+  const ta = el('textarea', { value: key in RV.draft ? RV.draft[key] : r.text, 'aria-label': r.name + ' 결과 문장', disabled: busyNow });
+  const btnSave = el('button', { class: 'btn sm', type: 'button', text: '저장', hidden: true }), btnUndo = el('button', { class: 'btn line sm', type: 'button', text: '되돌리기', hidden: true });
+  const paint = () => {
+    const t = ta.value, byte = _getByteSize(t), tone = byteTone(kind, byte), dirty = t.replace(/\r/g, '').trim() !== r.text;
+    chip.className = 'bchip ' + tone; chip.textContent = byte + ' byte';
+    count.textContent = `공백 포함 ${t.length}자 · ${byte} byte` + (dirty ? ' · 저장 안 됨' : '');
+    noteBox.textContent = ''; (dirty ? resultNotes(kind, Object.assign({}, r, { text: t }), job) : notes).forEach(n => noteBox.append(el('span', { class: 'tag', text: n, style: 'margin-left:8px;margin-right:0' })));
+    btnSave.hidden = btnUndo.hidden = !dirty; card.classList.toggle('dirty', dirty);
+    if (dirty) RV.draft[key] = t; else delete RV.draft[key];
+    ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px';
+  };
+  ta.addEventListener('input', paint);
+  btnUndo.onclick = () => { ta.value = r.text; paint(); };
+  btnSave.onclick = async () => {
+    btnSave.disabled = true;
+    try { await saveEdit(kind, r, ta.value); ta.value = r.text; notes = resultNotes(kind, r, job); paint(); toast('저장했습니다.'); }
+    catch (e) { if (e.status !== 401) toast('저장 실패 — ' + e.message, 7000); }
+    btnSave.disabled = false;
+  };
+  card.append(ta, el('div', { class: 'rfoot' }, [count, el('span', { class: 'row' }, [btnSave, btnUndo,
+    el('button', { class: 'btn line sm', type: 'button', text: '복사', onclick: () => copyText(ta.value) }),
+    el('button', { class: 'btn line sm', type: 'button', text: busyNow ? '생성 중…' : '재생성', disabled: !job || RV.running || !!RV.busyKey, title: job ? '지금의 체크로 새 문장을 만들어 이 문장을 바꿉니다' : '체크가 없어 재생성할 수 없음',
+      onclick: () => { if (ta.value.trim() !== r.text && !confirm('저장하지 않은 수정이 있습니다. 재생성하면 사라집니다. 계속할까요?')) return; delete RV.draft[key]; if (confirm(`${r.name}${r.group ? ' · ' + r.group : ''} 문장을 새로 만들어 지금 문장과 바꿀까요?`)) regenMany([{ r, job }]); } })])]));
+  if (job) card.append(el('details', { class: 'rsrc' }, [el('summary', { text: '체크한 내용 보기' }), el('div', null, (
+    kind === 'subject' ? job.items.map(it => `[${it.level}] ${it.domain ? it.domain + ' — ' : ''}${it.criteria}`)
+    : kind === 'activity' ? job.acts.map(a => a.actName + (a.memo ? ` (메모: ${a.memo})` : ''))
+    : job.phrases).concat(job.trait ? ['개인 특성: ' + job.trait] : []).map(t => el('p', { text: t })))]));
+  setTimeout(paint, 0);
+  return card;
+}
+// 선택한 결과를 차례로 재생성 (1건이면 그 카드만)
+async function regenMany(list) {
+  if (RV.running || RV.busyKey || !list.length) return;
+  if (!LS.get('geminiKey')) { toast('먼저 ⚙️ 설정에서 Gemini API 키를 입력해 주세요.', 5000); return; }
+  if (list.length > 1 && !confirm(`선택한 ${list.length}건의 문장을 새로 만들어 지금 문장과 바꿉니다. 계속할까요?`)) return;
+  const kind = RV.kind, interval = _getCallInterval(); let okN = 0, lastErr = '';
+  RV.running = list.length > 1; RV.stopAsked = false; GEN.stop = false;
+  for (let i = 0; i < list.length && !RV.stopAsked; i++) {
+    const { r, job } = list[i];
+    if (Auth.exp - Date.now() < 2 * 60000) { lastErr = '로그인 유지 시간이 얼마 남지 않아 멈췄습니다. 위쪽 [로그인 연장]을 누른 뒤 다시 해 주세요.'; break; }
+    RV.busyKey = rvKey(r); renderResults();
+    const card = document.querySelector('.rcard.busy'); if (card) card.scrollIntoView({ block: 'nearest' });
+    try { await regenOne(kind, r, job); okN++; delete RV.sel[rvKey(r)]; delete RV.draft[rvKey(r)]; }
+    catch (e) { if (e.status === 401) return; lastErr = e.message; if (RV.stopAsked) break; }
+    RV.busyKey = '';
+    if (i < list.length - 1 && !RV.stopAsked) { renderResults(); await GEN.wait(interval); }
+  }
+  RV.running = false; RV.busyKey = ''; GEN.stop = false;
+  try { await Saver.drain(); } catch (e) {}
+  renderResults();
+  toast((RV.stopAsked ? '중지했습니다. ' : '') + `재생성 ${okN}건 완료` + (lastErr ? ` · 실패: ${lastErr}` : ''), lastErr ? 8000 : 3500);
+}
+
 /* ───────── 9. 화면 ───────── */
-const VIEWS = ['loading', 'login', 'connect', 'home', 'settings', 'roster', 'check', 'gen'];
+const VIEWS = ['loading', 'login', 'connect', 'home', 'settings', 'roster', 'check', 'gen', 'result'];
 async function show(view) {
   if (GEN.running && view !== 'gen') { toast('생성 중에는 다른 화면으로 갈 수 없습니다. 먼저 [중지]를 눌러 주세요.'); return; }
-  if (view === 'gen' && !GEN.running) {                               // 생성 화면: 체크·결과를 항상 새로 읽음
+  if ((RV.running || RV.busyKey) && view !== 'result') { toast('재생성 중에는 다른 화면으로 갈 수 없습니다.'); return; }
+  if (State.view === 'result' && Object.keys(RV.draft).length) {
+    if (!confirm('저장하지 않은 수정이 있습니다. 버리고 이동할까요?')) return;
+    RV.draft = {};
+  }
+  if ((view === 'gen' && !GEN.running) || (view === 'result' && !RV.running && !RV.busyKey)) {                               // 생성 화면: 체크·결과를 항상 새로 읽음
     try { await Saver.drain(); busy('시트를 읽는 중…'); await refreshAll(); await loadResults(); busy(''); }
     catch (e) { busy(''); if (e.status !== 401) toast('시트를 읽지 못했습니다 — ' + e.message, 7000); return; }
   }
@@ -3478,7 +3681,7 @@ async function show(view) {
   }
   State.view = view;
   VIEWS.forEach(v => { $('v-' + v).hidden = v !== view; });
-  const inApp = ['home', 'settings', 'roster', 'check', 'gen'].indexOf(view) !== -1;
+  const inApp = ['home', 'settings', 'roster', 'check', 'gen', 'result'].indexOf(view) !== -1;
   $('nav').hidden = !inApp;
   document.querySelectorAll('#nav button[data-view]').forEach(b => b.classList.toggle('on', b.dataset.view === view));
   $('userBox').hidden = !Auth.token;
@@ -3487,6 +3690,7 @@ async function show(view) {
   if (view === 'roster') { showMsg('rosterMsg', ''); renderRoster(); }
   if (view === 'check') renderCheck();
   if (view === 'gen') renderGen();
+  if (view === 'result') renderResults();
   window.scrollTo(0, 0);
 }
 function banner(msg, btnText, fn) {
@@ -3626,7 +3830,7 @@ async function afterLogin() {
         GEN.kind = genResume.kind; GEN.subject = genResume.subject || ''; GEN.all = !genResume.names; GEN.picked = {}; (genResume.names || []).forEach(n => { GEN.picked[n] = true; });
         await show('gen'); runGeneration(genResume);
       }
-      else if (resume && ['roster', 'check', 'settings', 'gen'].indexOf(resume.view) !== -1) { Object.assign(Cur, resume.cur || {}); await show(resume.view); }
+      else if (resume && ['roster', 'check', 'settings', 'gen', 'result'].indexOf(resume.view) !== -1) { Object.assign(Cur, resume.cur || {}); await show(resume.view); }
       else show('home');
       return;
     }
@@ -3672,13 +3876,14 @@ async function boot() {
   $('stuSel').onchange = e => gotoStudent(Number(e.target.value));
   $('btnGenStart').onclick = () => { State.simShown = false; runGeneration(genScope()); renderGen(); };
   $('btnGenStop').onclick = () => { GEN.stop = true; $('btnGenStop').disabled = true; GEN.msg2 = '지금 만들던 항목까지만 처리하고 멈춥니다…'; paintRun(); };
+  $('btnToResult').onclick = () => { RV.kind = GEN.kind; show('result'); };
   $('btnSim').onclick = async () => { try { busy('결과를 읽는 중…'); await loadResults(); busy(''); State.simShown = true; renderSim(); } catch (e) { busy(''); if (e.status !== 401) toast(e.message, 6000); } };
   $('modeStudent').onclick = () => setMode('student');
   $('modeItem').onclick = () => setMode('item');
   $('btnPrev').onclick = () => { if (Cur.stu > 0) gotoStudent(Cur.stu - 1); };
   $('btnNext').onclick = () => { if (Cur.stu < State.data.list.length - 1) gotoStudent(Cur.stu + 1); };
   $('saveState').onclick = () => { if (Saver.failed) { Saver.failed = false; Saver.flush(); } };
-  window.addEventListener('beforeunload', e => { if ((Saver.q.size || GEN.running) && !SS.get('state')) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', e => { if ((Saver.q.size || GEN.running || RV.running || RV.busyKey || Object.keys(RV.draft).length) && !SS.get('state')) { e.preventDefault(); e.returnValue = ''; } });
   window.addEventListener('online', () => { if (Saver.failed) { Saver.failed = false; Saver.flush(); } });
 
   const r = Auth.handleRedirect();

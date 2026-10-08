@@ -313,7 +313,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
           <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.2C12.4 13.7 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.200 6.900-10.300 6.900-17.700z"/><path fill="#FBBC05" d="M10.500 28.600c-.5-1.400-.8-3-.8-4.600s.3-3.200.8-4.600l-7.900-6.200C1 16.500 0 20.100 0 24s1 7.500 2.600 10.800l7.900-6.200z"/><path fill="#34A853" d="M24 48c6.500 0 11.900-2.100 15.900-5.800l-7.700-6c-2.200 1.500-5 2.300-8.200 2.300-6.300 0-11.600-4.200-13.500-9.900l-7.900 6.200C6.500 42.600 14.600 48 24 48z"/></svg>
           Google 계정으로 로그인
         </button>
-        <p class="login-hint">기존 v9 시트도 그대로 이어서 사용할 수 있어요.</p>
+        <p class="login-hint">처음이어도 괜찮아요. 로그인하면 내 드라이브에 새 시트를 만들어 바로 시작합니다.</p>
       </div>
       <div class="record-scene" aria-label="관찰 체크가 문장 초안으로 정리되는 예시">
         <div class="sample-record">
@@ -341,7 +341,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
       <ul class="points">
         <li>이 앱은 <b>앱이 만든 시트</b>와 <b>선생님이 직접 고른 시트</b>에만 접근합니다. 드라이브의 다른 파일은 볼 수 없습니다.</li>
         <li>학생 데이터는 선생님 본인의 Google Drive 스프레드시트에만 저장됩니다. 별도 서버가 없습니다.</li>
-        <li>기존 구글시트 버전(v9)과 같은 시트를 그대로 씁니다. 시트에서 체크한 내용이 여기서도 보입니다.</li>
+        <li>자료는 내 드라이브의 구글 스프레드시트 한 개에 정리됩니다. 시트를 직접 열어 보거나 고쳐도 앱에 그대로 반영됩니다.</li>
       </ul>
     </details>
     <p class="welcome-privacy">선생님의 Google Drive에서 이어가는 기록 · <a href="privacy.html">개인정보 처리방침</a></p>
@@ -360,18 +360,18 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
     </div>
     <div class="grid2">
       <div class="card">
-        <h3>📂 쓰던 v9 시트가 있어요</h3>
-        <p class="muted">구글시트 버전(v9)으로 쓰던 스프레드시트를 고르면 학생명단·체크·결과가 그대로 이어집니다.</p>
-        <p><button id="btnPick" class="btn" type="button">내 드라이브에서 시트 고르기</button></p>
-      </div>
-      <div class="card">
-        <h3>🆕 처음이에요</h3>
-        <p class="muted">v9와 같은 구조의 새 스프레드시트를 내 드라이브에 만듭니다.</p>
+        <h3>🆕 처음 사용해요 — 새 시트 만들기</h3>
+        <p class="muted">내 구글 드라이브에 이 앱 전용 스프레드시트를 새로 만듭니다. 학생명단·체크·생성 결과가 모두 여기에 저장됩니다.</p>
         <label class="f" for="newTitle">시트 이름</label>
         <input type="text" id="newTitle" maxlength="80">
         <label class="f" for="newLevel">학교급 <small>(행동특성 예시문구 세트가 달라집니다)</small></label>
         <select id="newLevel"><option>초등학교</option><option>중학교</option><option>고등학교</option></select>
-        <p style="margin-top:16px"><button id="btnCreate" class="btn line" type="button">새 시트 만들기</button></p>
+        <p style="margin-top:16px"><button id="btnCreate" class="btn" type="button">새 시트 만들기</button></p>
+      </div>
+      <div class="card">
+        <h3>📂 예전 구글시트 버전을 쓰던 분만</h3>
+        <p class="muted">예전에 「생활기록부 작성 도우미」 구글시트(v9)를 받아 쓰던 분은, 그 스프레드시트를 골라 학생명단·체크·결과를 그대로 이어서 쓸 수 있습니다. 해당하지 않으면 왼쪽의 [새 시트 만들기]를 누르세요.</p>
+        <p><button id="btnPick" class="btn line" type="button">내 드라이브에서 시트 고르기</button></p>
       </div>
     </div>
   </section>
@@ -474,7 +474,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
       </div>
       <p style="margin:22px 0 0" class="row">
         <button id="btnSave" class="btn" type="button">설정 저장</button>
-        <span class="muted">이 설정들은 시트(⚙️설정)에 저장됩니다. 마무리 문장 설정만 웹앱 전용이고 나머지는 v9와 공유됩니다.</span>
+        <span class="muted">이 설정들은 연결된 시트(⚙️설정 탭)에 저장되어, 다른 기기에서 로그인해도 그대로 적용됩니다.</span>
       </p>
     </div>
 
@@ -4473,7 +4473,7 @@ function importPreview() {
 /* ───────── 9. 화면 ───────── */
 const VIEWS = ['loading', 'login', 'connect', 'home', 'settings', 'roster', 'check', 'gen', 'result', 'neis', 'config'];
 const VIEW_HEADINGS = {
-  connect: ['GET STARTED', '우리 반 기록 공간 만들기', '기존 시트를 연결하거나 새 시트로 시작하세요.'],
+  connect: ['GET STARTED', '우리 반 기록 공간 만들기', '새 시트를 만들어 시작하세요. 예전 구글시트 버전을 쓰던 분은 그 시트를 이어서 쓸 수 있습니다.'],
   home: ['MY CLASSROOM', '우리 반 기록 대시보드', '준비부터 검토까지, 생활기록부 작성 과정을 한눈에 확인하세요.'],
   roster: ['STEP 01 · 준비', '학생명단', '우리 반 아이들과 각자의 고유한 특성을 담아 주세요.'],
   config: ['STEP 02 · 준비', '평가 항목 설정', '이번 학기에 관찰하고 기록할 성취기준과 활동을 준비하세요.'],

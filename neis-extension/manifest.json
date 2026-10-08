@@ -1,0 +1,8 @@
+{
+  "manifest_version": 3,
+  "name": "영쌤클래스 · 나이스 입력 도우미 (시험 버전)",
+  "version": "0.1.0",
+  "description": "검토된 파일을 불러와 학생 번호·이름이 일치하는 빈 입력란을 채웁니다. 저장 버튼은 누르지 않습니다.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "action": {"default_popup": "popup.html", "default_title": "나이스 입력 도우미"}
+}

@@ -1,0 +1,12 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><title>나이스 입력 도우미</title><link rel="stylesheet" href="popup.css">
+<body><header><span>영쌤클래스 · 시험 버전 0.1</span><h1>나이스 입력 도우미</h1><p>학생 대조 → 미리보기 → 빈칸 채우기</p></header>
+<main><label class="file">① 앱에서 받은 자동 입력 파일 <input id="file" type="file" accept=".json,application/json"></label>
+<p id="context">생기부 앱의 NEIS 입력 메뉴에서 파일을 받아 주세요.</p>
+<div class="actions"><button id="scan" disabled>② 현재 나이스 화면 대조</button><button id="clear" class="quiet">불러온 기록 지우기</button></div>
+<p class="note">기존 문장은 덮어쓰지 않습니다. 화면에 로드된 행만 인식하며, 학생 번호·이름이 둘 다 일치해야 합니다.</p>
+<div id="list"></div>
+<label class="confirm"><input id="confirm" type="checkbox"> 나이스 화면의 학년도·학년·반·학기·과목/영역이 위 파일 정보와 일치하며, 선택한 학생의 문장을 검토했습니다.</label>
+<div class="actions"><button id="test" disabled>③ 첫 선택 학생 1명 채우기</button><button id="fill" disabled>선택 학생 채우기</button><button id="stop" hidden class="quiet">중지</button></div>
+<p id="status" role="status" aria-live="polite">실제 나이스 화면 호환성 확인이 필요한 시험 버전입니다.</p>
+<p class="note">입력 후 나이스의 바이트 표시와 문장을 확인하고 직접 저장해 주세요. 창을 닫으면 진행이 멈춥니다. 파일은 브라우저 세션 메모리에만 보관하며 외부로 전송하지 않습니다.</p>
+</main><script src="core.js"></script><script src="popup.js"></script></body></html>

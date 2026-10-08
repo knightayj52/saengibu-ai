@@ -3948,6 +3948,7 @@ function renderNeis() {
     el('button', { type: 'button', class: NV.mode === 'student' ? 'on' : '', text: '👤 학생별', onclick: () => { NV.mode = 'student'; renderNeis(); } }),
     el('button', { type: 'button', class: NV.mode === 'cat' ? 'on' : '', onclick: () => { NV.mode = 'cat'; renderNeis(); } }, ['📚 과목·영역별 ', el('small', { text: 'NEIS 입력 화면 순서' })])]));
   if (!items.length) { body.append(notice('아직 완료된 결과가 없습니다.', '✨ 생성 화면으로', () => show('gen'))); return; }
+  bar.append(makeNeisTransferPanel(items, cats));
   const names = d.list.map(s => s.name).filter(nm => items.some(x => x.name === nm)).concat(uniq(items.map(x => x.name)).filter(nm => !d.list.some(s => s.name === nm)));
   let shown;
   if (NV.mode === 'student') {
@@ -4764,5 +4765,6 @@ async function boot() {
 
 if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', boot);
 </script>
+<script src="neis-transfer.js?v=1"></script>
 </body>
 </html>

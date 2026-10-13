@@ -17,3 +17,4 @@ function validatePackage(p) {
 function neisBytes(s) { return Array.from(s).reduce((n,c)=>n+(c==='\n'?2:c.charCodeAt(0)>127?3:1),0); }
 function isNeisUrl(url) {try {const u=new URL(url);return u.protocol==='https:'&&(u.hostname==='neis.go.kr'||u.hostname.endsWith('.neis.go.kr'));}catch{return false;}}
 if(typeof module!=='undefined') module.exports={validatePackage,neisBytes,isNeisUrl};
+

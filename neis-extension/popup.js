@@ -10,7 +10,7 @@ function buttons(){
   $('test').disabled=!enabled; $('fill').disabled=!enabled; $('stop').hidden=!busy;
 }
 function reset(){plan=[];target=null;$('list').replaceChildren();$('confirm').checked=false;buttons();}
-function showContext(){const c=pack?.context;$('context').textContent=c?`${c.year}학년도 · ${c.grade}학년 ${c.classNumber}반 · ${c.semester}학기 · ${c.label} · ${pack.records.length}명`:'자동 입력 파일을 선택해 주세요.';}
+function showContext(){const c=pack?.context;$('context').textContent=c?`${c.year}학년도 · ${c.grade}학년 ${c.classNumber}반 · ${c.semester}학기 · ${c.label} · ${pack.records.length}명`:'생기부 앱에서 나이스로 보내기를 누르거나 JSON 파일을 선택해 주세요.';}
 function render(){
   $('list').replaceChildren();
   for(const item of plan){
@@ -24,12 +24,12 @@ function render(){
 }
 $('confirm').onchange=buttons;
 $('file').onchange=async()=>{
-  reset();pack=null;await chrome.storage.session.remove('package');showContext();
+  reset();pack=null;await chrome.storage.session.remove(['package','pendingPackage']);showContext();
   try{const file=$('file').files[0];if(!file)return;if(file.size>2000000)throw Error('파일이 너무 큽니다. 앱에서 다시 내보내 주세요.');
     pack=validatePackage(JSON.parse(await file.text()));await chrome.storage.session.set({package:pack});showContext();status('나이스에서 해당 학급·과목을 조회한 뒤 화면 대조를 눌러 주세요.');
   }catch(e){pack=null;status(e.message);}buttons();
 };
-$('clear').onclick=async()=>{pack=null;reset();await chrome.storage.session.remove('package');$('file').value='';showContext();status('세션에서 기록을 지웠습니다. 다운로드한 파일은 별도로 삭제해 주세요.');};
+$('clear').onclick=async()=>{pack=null;reset();await chrome.storage.session.remove(['package','pendingPackage']);$('file').value='';showContext();status('세션에서 기록을 지웠습니다. 다운로드한 파일은 별도로 삭제해 주세요.');};
 $('scan').onclick=async()=>{
   reset();busy=true;buttons();
   try{
@@ -69,5 +69,5 @@ async function fill(firstOnly){
   finally{busy=false;$('confirm').checked=false;render();}
 }
 $('test').onclick=()=>fill(true);$('fill').onclick=()=>fill(false);$('stop').onclick=()=>{stopped=true;status('현재 학생의 탐색·입력 처리를 마친 뒤 멈춥니다. 최대 약 12초 걸릴 수 있습니다.');};
-(async()=>{try{const saved=await chrome.storage.session.get('package');if(saved.package)pack=validatePackage(saved.package);showContext();buttons();}catch{await chrome.storage.session.remove('package');}})();
+(async()=>{try{const saved=await chrome.storage.session.get(['package','pendingPackage']);if(saved.pendingPackage){pack=validatePackage(saved.pendingPackage);await chrome.storage.session.set({package:pack});await chrome.storage.session.remove('pendingPackage');status('생기부 앱에서 보낸 '+pack.records.length+'명 기록을 불러왔습니다. 학급·과목을 확인하고 화면 대조를 눌러 주세요.');}else if(saved.package)pack=validatePackage(saved.package);showContext();buttons();}catch{await chrome.storage.session.remove(['package','pendingPackage']);}})();
 

@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "영쌤클래스 · 나이스 입력 도우미 (시험 버전)",
-  "version": "0.3.0",
-  "description": "검토된 파일을 불러와 학생 번호·이름이 일치하는 빈 입력란을 채웁니다. 저장 버튼은 누르지 않습니다.",
+  "name": "영쌤클래스 · 나이스 입력 도우미 BETA",
+  "version": "0.3.1",
+  "description": "교사가 검토한 평가 문장을 학생 번호·이름으로 대조하여 나이스의 빈 입력칸에 채웁니다. 최종 저장은 교사가 직접 합니다.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -10,7 +10,11 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "나이스 입력 도우미"
+    "default_title": "나이스 입력 도우미",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png"
+    }
   },
   "background": {
     "service_worker": "background.js"
@@ -25,5 +29,12 @@
       ],
       "run_at": "document_idle"
     }
-  ]
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "homepage_url": "https://knightayj52.github.io/saengibu-ai/neis-guide.html"
 }

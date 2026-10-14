@@ -1,0 +1,44 @@
+상세 설명
+[비공개 베타 테스트용 / THIS EXTENSION IS FOR BETA TESTING]
+교사가 검토한 평가 문장을 학생 번호와 이름으로 대조하여 나이스의 빈 입력칸에 채우는 보조 도구입니다. 교육부·교육청·나이스의 공식 제품이 아닙니다.
+
+• 생기부 앱의 ‘나이스로 보내기’로 같은 크롬에서 기록을 전달합니다.
+• 외부 접속 환경에서는 미리 준비한 JSON 파일도 불러올 수 있습니다.
+• 학생 번호와 이름이 모두 일치하는 빈칸만 입력하며 기존 문장은 덮어쓰지 않습니다.
+• 평가 대상에서 제외된 번호는 다시 매기지 않고 건너뜁니다.
+• 이름 뒤 ‘(전입학)’ 표시를 구분합니다.
+• 일치 학생이나 입력칸을 찾지 못하면 중단합니다.
+• 최종 확인과 나이스 저장은 교사가 직접 합니다.
+
+사용 순서: 문장 검토·전달 → 나이스에서 학생 한 명의 입력칸 클릭 → 확장프로그램 열기 → 화면 대조 → 검토 확인 → 입력 → 나이스에서 직접 저장.
+
+기록은 브라우저 세션 메모리에 보관하며 확장프로그램에서 개발자 서버나 AI 서버로 전송하지 않습니다. ‘불러온 기록 지우기’로 보관 기록을 삭제할 수 있습니다. JSON 파일과 나이스 저장 기록은 별도로 관리합니다.
+
+일반 HTML 표 및 지원되는 편집기에서 작동하는 시험 버전입니다. 학교·화면 구조·보안 환경에 따라 작동하지 않을 수 있습니다. 가상학생 연습 기능을 제공하며 실제 나이스에서는 1명 입력을 먼저 확인하세요.
+
+단일 목적
+교사가 검토한 평가 문장을 학생 번호·이름으로 대조하여 나이스의 빈 입력란에 채우는 일을 돕습니다. 최종 저장은 교사가 직접 합니다.
+
+activeTab 사용 이유
+사용자가 나이스 탭에서 확장프로그램을 직접 연 경우에만 현재 탭 주소와 화면에 일시적으로 접근하여 학생과 입력칸을 대조합니다. 전체 탭이나 방문 기록에 상시 접근하지 않습니다.
+
+scripting 사용 이유
+사용자가 화면 대조 또는 입력을 실행할 때 패키지에 포함된 engine.js와 동봉 함수를 현재 나이스 탭에 실행하여 번호·이름·빈칸을 확인하고 문장을 채웁니다. 원격 코드를 내려받아 실행하지 않습니다.
+
+storage 사용 이유
+사용자가 JSON 또는 생기부 앱에서 전달한 기록을 chrome.storage.session에 보관하고 팝업을 다시 열 때 불러옵니다. 브라우저 세션 종료 또는 사용자의 기록 지우기로 삭제하며 storage.sync는 사용하지 않습니다.
+
+호스트 접근 사용 이유
+https://knightayj52.github.io/saengibu-ai/* 경로에만 bridge.js를 삽입하여 설치 연결 확인 및 사용자가 나이스로 보내기를 눌러 전달한 기록을 받습니다. 브리지에서 임의 페이지 내용이나 전체 방문 기록을 수집하지 않습니다.
+
+원격 코드 설명
+원격 코드를 사용하지 않습니다. 확장프로그램이 실행하는 JavaScript는 모두 ZIP에 포함되어 있습니다. 생기부 앱에서 전달받는 것은 검증된 JSON 데이터이며 실행하지 않습니다.
+
+심사 테스트 안내
+This is a beta tool for authorized Korean school teachers. NEIS is an authenticated school system; no real teacher credentials or student records are provided.
+1. Install the extension and open its popup. Click “가상학생으로 연습” (Practice with fictional students). This opens the packaged demo.html without login or network access.
+2. Click “① 화면 대조”, then “② 빈칸 채우기”. The demo uses the same packaged engine.js. Rows 7, 9 and 24 are filled. Row 8 is not in the source records; row 23 has existing text and is preserved. Row 24 has a trailing transfer annotation. These are entirely fictional records.
+3. The popup also accepts the fictional sample JSON at https://knightayj52.github.io/saengibu-ai/store-assets/sample-records.json . The NEIS comparison button deliberately refuses non-NEIS websites.
+4. The optional app bridge is restricted to https://knightayj52.github.io/saengibu-ai/* . It receives reviewed JSON through a packaged content script and stores it in chrome.storage.session, not on a developer server. It does not execute received data.
+5. Actual production use requires a teacher to log into NEIS independently, select the proper class and subject, click one editable student cell, then open the extension, compare, review and fill. The extension does not handle login, bypass access restrictions or click Save.
+The packaged demo demonstrates matching and editing logic only; it does not claim live NEIS compatibility or server-save verification.

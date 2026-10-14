@@ -28,7 +28,7 @@ function makeNeisTransferPanel(items, cats) {
   const cat = field('과목·영역',el('select',{}));
   cats.forEach(c=>cat.append(el('option',{value:c,text:c})));
   const reviewed=el('input',{type:'checkbox',required:true});
-  form.append(el('label',{},[reviewed,' 문장과 학급 정보를 검토했습니다.']));
+  form.append(el('label',{},[reviewed,' 문장과 학급 정보를 검토했으며, 학생 이름·번호·문장을 이 크롬의 확장프로그램 세션 메모리에 전달하여 나이스 입력에 사용하는 데 동의합니다.']));
   const send=el('button',{type:'submit',class:'btn',text:'나이스로 보내기'});
   const download=el('button',{type:'submit',class:'btn',text:'JSON 파일 받기 (외부 접속용)'});
   form.append(send,download);
@@ -65,7 +65,7 @@ function makeNeisTransferPanel(items, cats) {
       status.textContent=records.length+'명 파일을 만들었습니다. 학생 기록이 포함되므로 사용 후 파일을 정리해 주세요. 나이스 입력·저장 완료 표시는 변경하지 않았습니다.';
     } catch(err) { status.textContent=err.message; } finally {send.disabled=false;download.disabled=false;}
   };
-  box.append(form,status,el('a',{href:'neis-guide.html',target:'_blank',rel:'noopener',text:'설치 및 사용 안내',style:'margin-right:16px'}),el('a',{href:'neis-extension.zip',download:'neis-extension.zip',text:'시험 버전 설치 파일 받기'}));
+  box.append(form,status,el('a',{href:'neis-privacy.html',target:'_blank',rel:'noopener',text:'개인정보 처리 안내',style:'margin-right:16px'}),el('a',{href:'neis-guide.html',target:'_blank',rel:'noopener',text:'설치 및 사용 안내',style:'margin-right:16px'}),el('a',{href:'neis-extension.zip',download:'neis-extension.zip',text:'시험 버전 설치 파일 받기'}));
   return box;
 }
 

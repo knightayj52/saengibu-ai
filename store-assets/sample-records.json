@@ -1,0 +1,39 @@
+{
+  "format": "saengibu-neis",
+  "version": 1,
+  "context": {
+    "year": 2026,
+    "grade": 3,
+    "classNumber": 1,
+    "semester": 2,
+    "kind": "subject",
+    "group": "국어",
+    "label": "국어"
+  },
+  "records": [
+    {
+      "number": 7,
+      "name": "예시학생7",
+      "text": "친구의 의견을 경청하며 함께 과제를 해결함. (7번 연습 문장)",
+      "limit": 1500
+    },
+    {
+      "number": 9,
+      "name": "예시학생9",
+      "text": "친구의 의견을 경청하며 함께 과제를 해결함. (9번 연습 문장)",
+      "limit": 1500
+    },
+    {
+      "number": 23,
+      "name": "예시학생23",
+      "text": "친구의 의견을 경청하며 함께 과제를 해결함. (23번 연습 문장)",
+      "limit": 1500
+    },
+    {
+      "number": 24,
+      "name": "예시학생24",
+      "text": "친구의 의견을 경청하며 함께 과제를 해결함. (24번 연습 문장)",
+      "limit": 1500
+    }
+  ]
+}

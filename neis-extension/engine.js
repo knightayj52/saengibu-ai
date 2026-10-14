@@ -1,6 +1,6 @@
 /* 0.2: learn an editable column from a real student cell, then activate it row by row. */
 (() => {
-  if(globalThis.__ysNeis?.version==='0.2.1') return;
+  if(globalThis.__ysNeis?.version==='0.3.1') return;
   const tickets=new Map();let calibration=null, writing=false;
   const ROW='tr,[role="row"]', CELL='td,[role="gridcell"],[role="cell"]';
   const norm=s=>String(s||'').replace(/\s/g,'');
@@ -19,7 +19,7 @@
     return visible(row)&&cs.length===c.count&&plain(cs[c.nameCol])&&plain(cs[c.numCol])&&sameName(cs[c.nameCol].textContent,r.name)&&/^\d+$/.test(norm(cs[c.numCol].textContent))&&Number(norm(cs[c.numCol].textContent))===r.number;
   }
   const fingerprint=()=>JSON.stringify([location.href,
-    Array.from(document.querySelectorAll('select,input:not([type="checkbox"]):not([type="radio"]),input[type="radio"]:checked,[role="combobox"],.w2selectbox')).filter(e=>visible(e)&&!e.closest(ROW)).map(e=>[e.id,e.value??e.textContent]),
+    Array.from(document.querySelectorAll('select,input:not([type="checkbox"]):not([type="radio"]):not([type="password"]):not([type="hidden"]),input[type="radio"]:checked,[role="combobox"],.w2selectbox')).filter(e=>visible(e)&&!e.closest(ROW)).map(e=>[e.id,e.value??e.textContent]),
     Array.from(document.querySelectorAll('h1,h2,[role="tab"][aria-selected="true"]')).filter(visible).map(e=>e.textContent)]);
   const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
   function learn(records){
@@ -98,7 +98,7 @@
     const check=state(cell,r);if(check!=='ready')return {status:check};
     return {cell,e:ed[0],row:rows[0]};
   }
-  globalThis.__ysNeis={version:'0.2.1',
+  globalThis.__ysNeis={version:'0.3.1',
     scan(records){
       if(writing)return {rows:[],diagnostic:{busy:true}};
       tickets.clear();calibration=learn(records);

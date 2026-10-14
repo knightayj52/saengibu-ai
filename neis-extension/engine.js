@@ -1,9 +1,12 @@
 /* 0.2: learn an editable column from a real student cell, then activate it row by row. */
 (() => {
-  if(globalThis.__ysNeis?.version==='0.2.0') return;
+  if(globalThis.__ysNeis?.version==='0.2.1') return;
   const tickets=new Map();let calibration=null, writing=false;
   const ROW='tr,[role="row"]', CELL='td,[role="gridcell"],[role="cell"]';
   const norm=s=>String(s||'').replace(/\s/g,'');
+  // Only the confirmed trailing transfer annotation is ignored; never use partial names.
+  const studentName=s=>norm(s).replace(/(?:\(전입학\)|（전입학）)$/, '');
+  const sameName=(actual,expected)=>!!studentName(expected)&&studentName(actual)===studentName(expected);
   const visible=e=>!!e?.isConnected&&e.getClientRects().length>0&&getComputedStyle(e).visibility!=='hidden'&&getComputedStyle(e).display!=='none';
   const editable=e=>e instanceof HTMLTextAreaElement&&visible(e)&&!e.disabled&&!e.readOnly;
   const cells=row=>Array.from(row.querySelectorAll(CELL)).filter(c=>c.closest(ROW)===row);
@@ -13,7 +16,7 @@
   const editors=cell=>Array.from(cell.querySelectorAll('textarea')).filter(editable);
   function identity(row,r,c){
     const cs=cells(row);
-    return visible(row)&&cs.length===c.count&&plain(cs[c.nameCol])&&plain(cs[c.numCol])&&norm(cs[c.nameCol].textContent)===norm(r.name)&&/^\d+$/.test(norm(cs[c.numCol].textContent))&&Number(norm(cs[c.numCol].textContent))===r.number;
+    return visible(row)&&cs.length===c.count&&plain(cs[c.nameCol])&&plain(cs[c.numCol])&&sameName(cs[c.nameCol].textContent,r.name)&&/^\d+$/.test(norm(cs[c.numCol].textContent))&&Number(norm(cs[c.numCol].textContent))===r.number;
   }
   const fingerprint=()=>JSON.stringify([location.href,
     Array.from(document.querySelectorAll('select,input:not([type="checkbox"]):not([type="radio"]),input[type="radio"]:checked,[role="combobox"],.w2selectbox')).filter(e=>visible(e)&&!e.closest(ROW)).map(e=>[e.id,e.value??e.textContent]),
@@ -25,7 +28,7 @@
       const row=e.closest(ROW), cell=e.closest(CELL);if(!row||!cell)continue;
       const table=tableOf(row), cs=cells(row);if(!table||!cs.includes(cell))continue;
       for(const r of records){
-        const nameCols=cs.map((x,i)=>plain(x)&&norm(x.textContent)===norm(r.name)?i:-1).filter(i=>i>=0);
+        const nameCols=cs.map((x,i)=>plain(x)&&sameName(x.textContent,r.name)?i:-1).filter(i=>i>=0);
         const numCols=cs.map((x,i)=>plain(x)&&/^\d+$/.test(norm(x.textContent))&&Number(norm(x.textContent))===r.number?i:-1).filter(i=>i>=0);
         if(nameCols.length!==1||numCols.length!==1||nameCols[0]===numCols[0])continue;
         const col=cs.indexOf(cell);if(col===nameCols[0]||col===numCols[0])continue;
@@ -95,7 +98,7 @@
     const check=state(cell,r);if(check!=='ready')return {status:check};
     return {cell,e:ed[0],row:rows[0]};
   }
-  globalThis.__ysNeis={version:'0.2.0',
+  globalThis.__ysNeis={version:'0.2.1',
     scan(records){
       if(writing)return {rows:[],diagnostic:{busy:true}};
       tickets.clear();calibration=learn(records);

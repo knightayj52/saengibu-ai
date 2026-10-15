@@ -287,6 +287,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
   <button type="button" data-view="result"><span class="nav-icon" aria-hidden="true">05</span>결과 검토</button>
   <button type="button" data-view="neis"><span class="nav-icon" aria-hidden="true">06</span>NEIS 입력</button>
   <button type="button" data-view="settings"><span class="nav-icon" aria-hidden="true">⚙</span>설정</button>
+  <button type="button" data-view="quality"><span class="nav-icon" aria-hidden="true">✦</span>AI 품질 테스트</button>
   <div class="nav-foot">작은 관찰이 모여<br>아이의 성장이 됩니다.<br><b>영쌤클래스</b></div>
 </nav>
 
@@ -346,6 +347,8 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
     </details>
     <p class="welcome-privacy">선생님의 Google Drive에서 이어가는 기록 · <a href="privacy.html">개인정보 처리방침</a></p>
   </section>
+
+  <section id="v-quality" hidden></section>
 
   <!-- 시트 연결 -->
   <section id="v-connect" hidden>
@@ -475,6 +478,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
       </p>
     </div>
 
+    <div class="card"><h2>실제 AI 결과 품질 테스트</h2><p class="muted">가상 사례 12개로 실제 Gemini 생성 결과를 확인합니다. 학급 시트에는 기록하지 않으며, API 사용량이 발생합니다.</p><button id="btnQualityTest" class="btn line" type="button">AI 품질 테스트 열기</button></div>
     <div class="card appearance-settings-row">
       <div><h2>나만의 작업 공간</h2><p class="muted" id="appearanceSummary">라벤더 스튜디오 · 라이트</p><p class="muted">색상과 배경, 화면 밝기를 내 취향에 맞게 바꿔 보세요.</p></div>
       <button type="button" class="btn line" data-open-appearance aria-haspopup="dialog" aria-controls="appearanceDialog">화면 꾸미기</button>
@@ -638,7 +642,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 
 /* ───────── 1. 앱 설정 ───────── */
 const CONFIG = {
-  VERSION: 'web 0.7.1 · 베타',
+  VERSION: 'web 0.8 · 베타',
   CLIENT_ID: '522445423766-m3cop5vh489598e0hkefumd0r202tncp.apps.googleusercontent.com',
   PICKER_KEY: 'AIzaSyDuMaSWfi7yfybCUJnUvghOcirBA5JzXoE',
   APP_ID: '522445423766',                                   // Cloud 프로젝트 번호 (Picker가 고른 파일에 drive.file 권한을 붙이는 데 필요)
@@ -3067,8 +3071,8 @@ const ACTIVITY_AREAS = ['자율활동', '동아리활동', '진로활동'];
 const DONE = '✅ 완료', FAIL = '❌ 오류';
 
 // ══ v9 원문 (함수) ══
-function _getLengthSpec(ss, area) {
-  const level = _getLengthLevel(ss);
+function _getLengthSpec(ss, area, lengthOverride) {
+  const level = lengthOverride || _getLengthLevel(ss);
   // [간략, 보통, 상세] 별 (최소자, 최대자, 절대상한자, 허용최소byte, 허용최대byte, 목표자)
   const table = {
     subject: {
@@ -3392,13 +3396,13 @@ function countUsage() {                          // ⚙️설정 C21(날짜)·C2
   GEN.usage.count++;
   if (State.sheet) { Saver.put(a1('SETTINGS', 'C21'), t); Saver.put(a1('SETTINGS', 'C22'), GEN.usage.count); }
 }
-async function geminiOnce(prompt, tempOverride) {
-  const apiKey = LS.get('geminiKey') || '', model = _getGeminiModel();
+async function geminiOnce(prompt, tempOverride, options = {}) {
+  const apiKey = options.apiKey ?? (LS.get('geminiKey') || ''), model = options.model || _getGeminiModel();
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
   try {
     let code = 0, body = {}, raw = '';
     for (let level = 0; level <= 2; level++) {
-      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(url, { method: 'POST', signal: options.signal, headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: buildGenerationConfig(model, level, typeof tempOverride === 'number' ? tempOverride : 0.8, 8192) }) });
       code = res.status; body = await res.json().catch(() => ({}));
       raw = (body.error && body.error.message) || '';
@@ -3418,7 +3422,7 @@ async function geminiOnce(prompt, tempOverride) {
     if (cand.finishReason === 'SAFETY') return { success: false, error: 'AI 안전 정책으로 응답이 차단됨 — 입력 문구를 조금 바꿔서 다시 시도해주세요.' };
     if (!cand.content || !cand.content.parts || cand.content.parts.length === 0 || !cand.content.parts[0].text)
       return { success: false, error: `AI가 빈 응답을 반환함 (종료 사유: ${cand.finishReason || '알 수 없음'}) — 다시 시도해주세요.` };
-    countUsage();
+    if (!options.noUsageWrite) countUsage();
     let text = cand.content.parts[0].text.trim();
     if (cand.finishReason === 'MAX_TOKENS') text += '\n(⚠️ 응답이 최대 길이에서 잘렸을 수 있음 — 필요 시 재생성하세요)';
     return { success: true, text };
@@ -3438,7 +3442,7 @@ async function geminiRetry(prompt, maxRetries, tempOverride) {
   }
   return { success: false, error: '여러 번 재시도했지만 API 한도로 실패 — 잠시 후 다시 실행하면 이어서 생성됩니다.' };
 }
-async function requestStyleFix(text, issues) {
+async function requestStyleFix(text, issues, retry = geminiRetry) {
   const prompt =
     '아래 글의 내용·정보·분량은 그대로 유지하면서, 다음 문체 문제만 고쳐 다시 쓰세요.\n' +
     '[발견된 문제] ' + issues.join(', ') + '\n\n' +
@@ -3449,26 +3453,28 @@ async function requestStyleFix(text, issues) {
     '- "학생은", "이 학생은" 같은 주어는 삭제\n' +
     '- 교정된 전체 글만 출력 (설명·따옴표 금지)\n\n' +
     '[원문]\n' + text;
-  const res = await geminiRetry(prompt, 3, 0.2);
+  const res = await retry(prompt, 3, 0.2);
   return res.success ? _cleanOutput(res.text) : null;
 }
 // 1차 생성 → 후처리 → 문체 검사(문제 있으면 1회 교정) → 분량이 범위를 벗어나면 1회 길이 조정
-async function generateWithLengthControl(prompt, minByte, maxByte, targetChars, guard) {
-  const first = await geminiRetry(prompt);
+async function generateWithLengthControl(prompt, minByte, maxByte, targetChars, guard, runtime = {}) {
+  const retry = runtime.retry || geminiRetry;
+  const report = runtime.report || (msg => { GEN.msg2 = msg; paintRun(); });
+  const first = await retry(prompt);
   if (!first.success) return first;
   let cleaned = _cleanOutput(first.text);
   const issues = _detectStyleIssues(cleaned);
   if (issues.length > 0) {
-    GEN.msg2 = '문체 교정 중 (' + issues.join(', ') + ')'; paintRun();
-    const fixed = await requestStyleFix(cleaned, issues);
+    report('문체 교정 중 (' + issues.join(', ') + ')');
+    const fixed = await requestStyleFix(cleaned, issues, retry);
     if (fixed) cleaned = fixed;
     if (_detectStyleIssues(cleaned).indexOf('성취수준 언급') !== -1) cleaned = _stripLevelMentions(cleaned);
   }
   // [웹앱 추가] 체크한 수준이 모두 하(또는 중 이하)인데 높게 읽히는 표현이 있으면 1회 교정, 남으면 결과에 표시
   let levelWords = findLevelWords(cleaned, guard);
   if (levelWords.length) {
-    GEN.msg2 = '수준에 맞게 다듬는 중 (' + levelWords.join(', ') + ')'; paintRun();
-    const fixed = await requestLevelFix(cleaned, levelWords, guard);
+    report('수준에 맞게 다듬는 중 (' + levelWords.join(', ') + ')');
+    const fixed = await requestLevelFix(cleaned, levelWords, guard, retry);
     if (fixed && !_detectStyleIssues(fixed).length && findLevelWords(fixed, guard).length < levelWords.length) cleaned = fixed;
     levelWords = findLevelWords(cleaned, guard);
   }
@@ -3483,8 +3489,8 @@ async function generateWithLengthControl(prompt, minByte, maxByte, targetChars, 
     `- ${size > maxByte ? '덜 중요한 수식·반복 표현을 압축' : guard ? '적힌 활동의 과정을 차분히 풀어 쓰되, 능력이나 완성도를 높이는 표현(구체적·다양한·성실히·꼼꼼 등)과 적히지 않은 활동은 덧붙이지 말 것' : '활동 과정·태도 묘사를 조금 더 구체화'}\n` +
     `- 조정된 전체 글만 출력 (설명·따옴표 금지)\n\n` +
     `[원문]\n${cleaned}`;
-  GEN.msg2 = '분량 조정 중 (' + direction + ')'; paintRun();
-  const second = await geminiRetry(adjustPrompt, 5, 0.3);
+  report('분량 조정 중 (' + direction + ')');
+  const second = await retry(adjustPrompt, 5, 0.3);
   if (second.success) {
     const cleaned2 = _cleanOutput(second.text), size2 = _getByteSize(cleaned2), target = (minByte + maxByte) / 2;
     // 분량을 맞추면서 문체가 다시 무너지거나 수준 표현이 늘어난 결과는 채택하지 않음.
@@ -3519,8 +3525,8 @@ function collectJobs(kind, targets, targetSubject) {
   return { jobs, skippedVolunteer };
 }
 // 마무리(종합 평가) 문장을 끈 영역은 v9 프롬프트 끝의 "종합 평가 n문장을 추가" 지시를 "덧붙이지 말 것"으로 바꿈
-function applyClosing(prompt, kind) {
-  if (State.settings.closing[kind]) return prompt;                       // 켬 = v9 프롬프트 그대로
+function applyClosing(prompt, kind, closing = State.settings.closing) {
+  if (closing[kind]) return prompt;                       // 켬 = v9 프롬프트 그대로
   const re = /마지막에 (?:한 줄 띄우고|빈 줄 하나를 두고) 종합 평가[^,\n]*추가하되(?:\(글자 수에 포함\))?, 모든 문장은/;
   if (!re.test(prompt)) throw new Error('프롬프트에서 마무리 문장 지시를 찾지 못했습니다.');
   return prompt.replace(re, '종합 평가·기대·당부 같은 마무리 문장은 따로 덧붙이지 말고, 활동 모습 서술로 글을 끝내세요(맨 끝을 "~기대됨", "~바람"으로 맺지 말 것). 줄바꿈 없이 한 문단으로 쓰고, 모든 문장은');
@@ -3544,7 +3550,7 @@ function levelGuardOf(job) {
   return { key, words: LEVEL_WORDS[key], criteria: job.items.map(it => it.criteria) };
 }
 const findLevelWords = (text, guard) => guard ? guard.words.filter(w => text.indexOf(w) !== -1) : [];
-async function requestLevelFix(text, found, guard) {
+async function requestLevelFix(text, found, guard, retry = geminiRetry) {
   const prompt =
     '아래 글은 이 학생이 실제로 도달한 모습보다 높게 읽히는 표현이 있습니다. 아래 성취 서술문의 범위 안에서만 서술하도록 고쳐 다시 쓰세요.\n' +
     '[이 학생이 도달한 성취 서술문]\n' + guard.criteria.map(c => '- ' + c).join('\n') + '\n\n' +
@@ -3556,7 +3562,7 @@ async function requestLevelFix(text, found, guard) {
     '- 문체(관찰자 시점·명사형 종결)는 그대로. 등급·수준을 뜻하는 말은 쓰지 말 것\n' +
     '- 교정된 전체 글만 출력 (설명·따옴표 금지)\n\n' +
     '[원문]\n' + text;
-  const res = await geminiRetry(prompt, 3, 0.2);
+  const res = await retry(prompt, 3, 0.2);
   return res.success ? _cleanOutput(res.text) : null;
 }
 // [웹앱 추가] 수준별 서술 강도 안내. v9는 체크한 수준의 문장만 보내서, 문장에 "일부·도움을 받아" 같은 말이 없으면 낮은 수준도 높은 수준처럼 쓰였음.
@@ -3574,9 +3580,9 @@ function applyLevelGuard(prompt, job) {
     '\n- 성취 서술문에 없는 구체적인 소재·사건(조사 주제, 설문, 발표, 게시, 대회 등)을 지어내지 말 것. 분량이 모자라면 서술문에 적힌 활동의 과정과 태도를 풀어서 채울 것.\n\n';
   return prompt.replace(mark, block + mark);
 }
-function buildPrompt(job, basePrompt) { const b = buildPromptV9(job, basePrompt); b.prompt = applyClosing(applyLevelGuard(b.prompt, job), job.kind); b.guard = levelGuardOf(job); return b; }
-function buildPromptV9(job, basePrompt) {
-  const schoolLevel = _getSchoolLevel(), trait = job.trait, kind = job.kind, lenSpec = _getLengthSpec(null, kind);
+function buildPrompt(job, basePrompt, settings = State.settings) { const b = buildPromptV9(job, basePrompt, settings); b.prompt = applyClosing(applyLevelGuard(b.prompt, job), job.kind, settings.closing); b.guard = levelGuardOf(job); return b; }
+function buildPromptV9(job, basePrompt, settings = State.settings) {
+  const schoolLevel = settings.level, trait = job.trait, kind = job.kind, lenSpec = _getLengthSpec(null, kind, settings.length);
   if (kind === 'subject') {
     const subject = job.group, items = job.items;
     // 같은 체크 조합의 학생들이 같은 문장으로 시작하지 않도록 학생마다 순서를 섞어 전달 (수준 라벨은 AI에 보내지 않음)
@@ -4517,8 +4523,9 @@ function importPreview() {
 }
 
 /* ───────── 9. 화면 ───────── */
-const VIEWS = ['loading', 'login', 'connect', 'home', 'settings', 'roster', 'check', 'gen', 'result', 'neis', 'config'];
+const VIEWS = ['quality', 'loading', 'login', 'connect', 'home', 'settings', 'roster', 'check', 'gen', 'result', 'neis', 'config'];
 const VIEW_HEADINGS = {
+  quality: ['AI QUALITY TEST', '실제 AI 결과 품질 테스트', '가상 사례로 생성한 결과를 내려받아 생활기록부 활용 가능성을 검토하세요.'],
   connect: ['GET STARTED', '우리 반 기록 공간 만들기', '새 시트를 만들어 시작하세요. 예전 구글시트 버전을 쓰던 분은 그 시트를 이어서 쓸 수 있습니다.'],
   home: ['MY CLASSROOM', '우리 반 기록 대시보드', '준비부터 검토까지, 생활기록부 작성 과정을 한눈에 확인하세요.'],
   roster: ['STEP 01 · 준비', '학생명단', '우리 반 아이들과 각자의 고유한 특성을 담아 주세요.'],
@@ -4542,6 +4549,7 @@ function updateViewHeading(view, inApp) {
 }
 
 async function show(view) {
+  if (typeof QualityTest !== 'undefined' && QualityTest.running && view !== 'quality') { toast('품질 테스트를 중지한 뒤 이동해 주세요.'); return; }
   if (GEN.running && view !== 'gen') { toast('생성 중에는 다른 화면으로 갈 수 없습니다. 먼저 [중지]를 눌러 주세요.'); return; }
   if ((RV.running || RV.busyKey) && view !== 'result') { toast('재생성 중에는 다른 화면으로 갈 수 없습니다.'); return; }
   if (State.view === 'result' && Object.keys(RV.draft).length) {
@@ -4562,7 +4570,7 @@ async function show(view) {
   }
   State.view = view;
   VIEWS.forEach(v => { $('v-' + v).hidden = v !== view; });
-  const inApp = ['home', 'settings', 'roster', 'check', 'gen', 'result', 'neis', 'config'].indexOf(view) !== -1;
+  const inApp = ['quality', 'home', 'settings', 'roster', 'check', 'gen', 'result', 'neis', 'config'].indexOf(view) !== -1;
   $('nav').hidden = !inApp;
   updateViewHeading(view, inApp);
   document.querySelectorAll('#nav button[data-view]').forEach(b => {
@@ -4571,6 +4579,7 @@ async function show(view) {
     if (active) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
   });
   $('userBox').hidden = !Auth.token;
+  if (view === 'quality') QualityTest.render();
   if (view === 'home') renderHome();
   if (view === 'settings') renderSettings();
   if (view === 'roster') { showMsg('rosterMsg', ''); renderRoster(); }
@@ -4763,6 +4772,7 @@ async function boot() {
   $('btnReload').onclick = onReload;
   $('btnSave').onclick = onSave;
   $('btnKeySave').onclick = onSave;
+  $('btnQualityTest').onclick = () => show('quality');
   $('btnReviewedToNeis').onclick = () => {
     if (Object.keys(RV.draft).length) { toast('저장하지 않은 문장이 있습니다. 각 문장의 [저장]을 누른 뒤 이동해 주세요.', 6000); return; }
     show('neis');
@@ -4795,7 +4805,7 @@ async function boot() {
   $('btnPrev').onclick = () => { if (Cur.stu > 0) gotoStudent(Cur.stu - 1); };
   $('btnNext').onclick = () => { if (Cur.stu < State.data.list.length - 1) gotoStudent(Cur.stu + 1); };
   $('saveState').onclick = () => { if (Saver.failed) { Saver.failed = false; Saver.flush(); } };
-  window.addEventListener('beforeunload', e => { if ((Saver.q.size || GEN.running || RV.running || RV.busyKey || Object.keys(RV.draft).length || CF.dirty) && !SS.get('state')) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', e => { if (((typeof QualityTest !== 'undefined' && QualityTest.running) || Saver.q.size || GEN.running || RV.running || RV.busyKey || Object.keys(RV.draft).length || CF.dirty) && !SS.get('state')) { e.preventDefault(); e.returnValue = ''; } });
   window.addEventListener('online', () => { if (Saver.failed) { Saver.failed = false; Saver.flush(); } });
 
   const r = Auth.handleRedirect();
@@ -4816,5 +4826,6 @@ async function boot() {
 if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', boot);
 </script>
 <script src="neis-transfer.js?v=20261015-1"></script>
+<script src="quality-test.js?v=20261015-1"></script>
 </body>
 </html>

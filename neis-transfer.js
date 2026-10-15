@@ -13,22 +13,46 @@ function neisExtensionRequest(type, data) {
     window.postMessage({source:'ys-neis-app',requestId,type,package:data},location.origin);
   });
 }
+/* 학급 설정만 브라우저 세션에 유지. 학생 이름·문장은 저장하지 않음. */
+function neisTransferDefaults(now = new Date()) {
+  const month = now.getMonth(), year = now.getFullYear() - (month < 2 ? 1 : 0);
+  const semester = month < 2 || month >= 8 ? '2' : '1';
+  const classInfo = State.settings.classInfo || '';
+  const match = classInfo.match(/(\d+)\s*학년\s*(\d+)\s*반/);
+  const scope = [State.sheet.id, year, semester, classInfo].join('|');
+  let saved = null;
+  try { saved = JSON.parse(SS.get('neisTransferContext') || 'null'); } catch (_) {}
+  return Object.assign({ scope, year: String(year), grade: match ? match[1] : '', classNumber: match ? match[2] : '', semester, category: '' }, saved && saved.scope === scope ? saved : {});
+}
 /* NEIS transfer v1. No credentials or spreadsheet IDs leave the app. */
 function makeNeisTransferPanel(items, cats) {
-  const box = el('details', {style:'margin:16px 0;padding:16px;border:1px solid var(--line,#ddd);border-radius:16px'});
-  box.append(el('summary', {text:'크롬 자동 입력 · 시험 버전',style:'cursor:pointer;font-weight:700'}));
+  const defaults = neisTransferDefaults();
+  const box = el('details', {open:true,style:'margin:16px 0;padding:16px;border:1px solid var(--line,#ddd);border-radius:16px'});
+  box.append(el('summary', {text:'나이스 자동 입력 준비 · 시험 버전',style:'cursor:pointer;font-weight:700'}));
   box.append(el('p',{text:'한 과목·영역씩 검토한 결과를 확장프로그램으로 바로 보낼 수 있습니다. JSON 파일 없이 같은 크롬에서 이어서 입력하세요. 확장 프로그램이 번호·이름을 대조한 뒤 빈 입력란을 채웁니다. 나이스 최종 저장은 직접 해 주세요. 실제 나이스 호환성 확인이 필요한 시험 버전입니다.'}));
   box.append(el('p',{text:'현재는 시험용 수동 설치입니다. 간편 설치와 자동 업데이트는 Chrome 웹 스토어 등록 후 제공할 예정입니다.'}));
   const form = el('form',{style:'display:flex;gap:12px;flex-wrap:wrap;align-items:end'});
   function field(label, input) { form.append(el('label',{},[el('span',{text:label,style:'display:block;margin-bottom:6px'}),input])); return input; }
-  const year = field('학년도',el('input',{type:'number',min:2000,max:2100,required:true,value:new Date().getFullYear(),style:'width:100px'}));
-  const grade = field('학년',el('input',{type:'number',min:1,max:12,required:true,style:'width:75px'}));
-  const cls = field('반',el('input',{type:'number',min:1,max:99,required:true,style:'width:75px'}));
+  const year = field('학년도',el('input',{type:'number',min:2000,max:2100,required:true,value:defaults.year,style:'width:100px'}));
+  const grade = field('학년',el('input',{type:'number',min:1,max:12,required:true,value:defaults.grade,style:'width:75px'}));
+  const cls = field('반',el('input',{type:'number',min:1,max:99,required:true,value:defaults.classNumber,style:'width:75px'}));
   const semester = field('학기',el('select',{},[el('option',{value:'1',text:'1학기'}),el('option',{value:'2',text:'2학기'})]));
   const cat = field('과목·영역',el('select',{}));
   cats.forEach(c=>cat.append(el('option',{value:c,text:c})));
+  semester.value = defaults.semester;
+  if (cats.includes(defaults.category)) cat.value = defaults.category;
+  box.append(el('p',{text:'학년·반은 앱 설정에서, 학년도·학기는 현재 날짜를 기준으로 채웠습니다. 이전 학기 작업이라면 바꿔 주세요. 이 브라우저 세션에서는 직접 바꾼 값을 유지합니다.'}));
+  const count = el('p', {'aria-live':'polite'});
+  const paintCount = () => { count.textContent = cat.value + ' · 전송 대상 ' + items.filter(it=>it.cat===cat.value).length + '명'; };
+  paintCount(); box.append(count);
   const reviewed=el('input',{type:'checkbox',required:true});
   form.append(el('label',{},[reviewed,' 문장과 학급 정보를 검토했으며, 학생 이름·번호·문장을 이 크롬의 확장프로그램 세션 메모리에 전달하여 나이스 입력에 사용하는 데 동의합니다.']));
+  const remember = () => {
+    SS.set('neisTransferContext',JSON.stringify({scope:defaults.scope,year:year.value,grade:grade.value,classNumber:cls.value,semester:semester.value,category:cat.value}));
+    reviewed.checked=false; paintCount();
+  };
+  [year,grade,cls,semester,cat].forEach(input=>input.addEventListener('input',remember));
+  [semester,cat].forEach(input=>input.addEventListener('change',remember));
   const send=el('button',{type:'submit',class:'btn',text:'나이스로 보내기'});
   const download=el('button',{type:'submit',class:'btn',text:'JSON 파일 받기 (외부 접속용)'});
   form.append(send,download);

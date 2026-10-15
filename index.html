@@ -400,13 +400,9 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 
   <!-- 설정 -->
   <section id="v-settings" hidden>
-    <div class="card appearance-settings-row">
-      <div><h2>나만의 작업 공간</h2><p class="muted" id="appearanceSummary">라벤더 스튜디오 · 라이트</p><p class="muted">색상과 배경, 화면 밝기를 내 취향에 맞게 바꿔 보세요.</p></div>
-      <button type="button" class="btn line" data-open-appearance aria-haspopup="dialog" aria-controls="appearanceDialog">화면 꾸미기</button>
-    </div>
     <div class="card">
       <h2>🔑 Gemini API 키</h2>
-      <p class="muted">키는 <b>이 브라우저에만</b> 저장되고 시트나 다른 곳으로 보내지 않습니다. 발급: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> (무료)</p>
+      <p class="muted">키는 기본적으로 <b>이 브라우저에</b> 저장됩니다. 아래 ‘다른 기기에서도 이 키 쓰기’를 켜면 연결된 시트 파일의 숨은 속성에도 저장됩니다. 발급: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> (무료)</p>
       <details class="keyguide" id="keyGuide">
         <summary>처음이신가요? 키 받는 방법 (3분)</summary>
         <ol>
@@ -431,6 +427,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
         <button id="btnKeyTest" class="btn line sm" type="button">연결 테스트</button>
       </div>
       <div id="keyResult" class="msg" hidden></div>
+      <p class="row"><button id="btnKeySave" class="btn" type="button">키·설정 저장</button><span class="muted">연결 테스트는 저장하지 않습니다. 키와 아래 설정을 함께 저장하세요.</span></p>
       <p style="margin:14px 0 0"><label><input type="checkbox" id="fKeySync"> <b>다른 기기에서도 이 키 쓰기</b> — 내 구글 계정(연결된 시트 파일의 숨은 속성)에 키를 함께 저장</label></p>
       <p class="muted" style="margin:4px 0 0">켜면 다른 컴퓨터·태블릿에서 로그인했을 때 키를 다시 넣지 않아도 됩니다. 시트 내용에는 보이지 않지만, 이 시트 파일을 다른 사람과 <b>공유</b>하면 그 사람이 이 앱에서 내 키를 쓰게 될 수 있으니 공유할 시트라면 끄세요.</p>
     </div>
@@ -478,6 +475,10 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
       </p>
     </div>
 
+    <div class="card appearance-settings-row">
+      <div><h2>나만의 작업 공간</h2><p class="muted" id="appearanceSummary">라벤더 스튜디오 · 라이트</p><p class="muted">색상과 배경, 화면 밝기를 내 취향에 맞게 바꿔 보세요.</p></div>
+      <button type="button" class="btn line" data-open-appearance aria-haspopup="dialog" aria-controls="appearanceDialog">화면 꾸미기</button>
+    </div>
     <div class="card">
       <h2>💾 백업</h2>
       <p class="muted">스프레드시트 파일 전체를 내 드라이브에 사본으로 저장합니다. 되돌리려면 아래 [다른 시트로 바꾸기]에서 그 사본을 고르면 됩니다.</p>
@@ -571,7 +572,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 
   <!-- NEIS 입력 스테이션 -->
   <section id="v-neis" hidden>
-    <div class="card stickybar" id="neisBar"></div>
+    <div class="card" id="neisBar"></div>
     <p class="draftnote">⚠ AI가 만든 문장은 <b>초안</b>입니다. 체크한 내용에 없는 활동·사실이 섞일 수 있으니, 실제와 맞는지 확인하고 고친 뒤 사용하세요.</p>
     <div class="card" id="neisBody"></div>
   </section>
@@ -598,6 +599,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
     </div>
     <p class="draftnote">⚠ AI가 만든 문장은 <b>초안</b>입니다. 체크한 내용에 없는 활동·사실이 섞일 수 있으니, 실제와 맞는지 확인하고 고친 뒤 사용하세요.</p>
     <div class="card" id="resBody"></div>
+    <p class="row"><button id="btnReviewedToNeis" class="btn" type="button">검토 후 NEIS 입력으로</button><span class="muted">수정한 문장을 저장한 뒤 이동하세요. 나이스 최종 저장은 나이스에서 직접 합니다.</span></p>
   </section>
 </main>
 
@@ -636,7 +638,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 
 /* ───────── 1. 앱 설정 ───────── */
 const CONFIG = {
-  VERSION: 'web 0.7 · 베타',
+  VERSION: 'web 0.7.1 · 베타',
   CLIENT_ID: '522445423766-m3cop5vh489598e0hkefumd0r202tncp.apps.googleusercontent.com',
   PICKER_KEY: 'AIzaSyDuMaSWfi7yfybCUJnUvghOcirBA5JzXoE',
   APP_ID: '522445423766',                                   // Cloud 프로젝트 번호 (Picker가 고른 파일에 drive.file 권한을 붙이는 데 필요)
@@ -3470,7 +3472,7 @@ async function generateWithLengthControl(prompt, minByte, maxByte, targetChars, 
     if (fixed && !_detectStyleIssues(fixed).length && findLevelWords(fixed, guard).length < levelWords.length) cleaned = fixed;
     levelWords = findLevelWords(cleaned, guard);
   }
-  const done = (text, adjusted) => ({ success: true, text, adjusted, levelWords });
+  const done = (text, adjusted) => ({ success: true, text, adjusted, levelWords: findLevelWords(text, guard) });
   const size = _getByteSize(cleaned);
   if (size >= minByte && size <= maxByte) return done(cleaned, false);
   if (size < minByte && guard && guard.key === 'low' && size >= minByte * 0.7) return done(cleaned, false);   // 기초 수준은 억지로 늘리면 부풀려지므로 조금 짧아도 그대로 둠
@@ -3485,7 +3487,8 @@ async function generateWithLengthControl(prompt, minByte, maxByte, targetChars, 
   const second = await geminiRetry(adjustPrompt, 5, 0.3);
   if (second.success) {
     const cleaned2 = _cleanOutput(second.text), size2 = _getByteSize(cleaned2), target = (minByte + maxByte) / 2;
-    if (Math.abs(size2 - target) < Math.abs(size - target) && (!guard || findLevelWords(cleaned2, guard).length <= levelWords.length)) return done(cleaned2, true);
+    // 분량을 맞추면서 문체가 다시 무너지거나 수준 표현이 늘어난 결과는 채택하지 않음.
+    if (Math.abs(size2 - target) < Math.abs(size - target) && !_detectStyleIssues(cleaned2).length && (!guard || findLevelWords(cleaned2, guard).length <= levelWords.length)) return done(cleaned2, true);
   }
   return done(cleaned, false);
 }
@@ -3805,6 +3808,8 @@ function resultNotes(kind, r, job) {
   if (!job) notes.push('체크가 지워짐');
   else if (kind !== 'subject' && jobInfo(job).trim() !== r.info.trim()) notes.push('생성 후 체크가 바뀜');
   _detectStyleIssues(r.text).forEach(x => notes.push(x));
+  const levelWords = findLevelWords(r.text, levelGuardOf(job));
+  if (levelWords.length) notes.push('수준 확인: ' + levelWords.join('·'));
   const tone = byteTone(kind, _getByteSize(r.text)); if (TONE_LABEL[tone]) notes.push(TONE_LABEL[tone]);
   return notes;
 }
@@ -4226,7 +4231,7 @@ function homeSteps() {
   let nDone = 0; if (d && R) KINDS.forEach(k => { const dk = doneKeys(k); nDone += jobs[k].filter(j => dk.has(resKey(k, j))).length; });
   steps.push({ t: 'AI 생성', v: 'gen', ok: d && R ? nJobs > 0 && nDone >= nJobs : null, s: d && R ? (nJobs ? `${nDone} / ${nJobs}건 완료` + (nDone < nJobs ? ` · ${nJobs - nDone}건 남음` : '') : '체크를 마치면 만들 수 있습니다') : wait });
   let nItems = 0, nCopied = 0; if (R) { try { const m = neisMarks(), it = neisItems(); nItems = it.length; nCopied = it.filter(x => m[x.key] === strHash(x.text)).length; } catch (e) { /* 표시 없음 */ } }
-  steps.push({ t: '결과 확인 → NEIS 입력', v: nItems && nCopied < nItems && nDone >= nJobs ? 'neis' : 'result', ok: R ? nItems > 0 && nCopied >= nItems : null,
+  steps.push({ t: '결과 확인 → NEIS 입력', v: 'result', ok: R ? nItems > 0 && nCopied >= nItems : null,
     s: R ? (nItems ? `완성된 문장 ${nItems}건 · NEIS에 복사함 ${nCopied}건` : '생성된 문장을 읽고 고친 뒤 NEIS에 옮깁니다') : wait });
   const next = steps.findIndex(x => x.ok === false);
   steps.forEach((x, i) => box.append(el('button', { type: 'button', class: 'step' + (x.ok ? ' done' : i === next ? ' now' : ''), onclick: () => show(x.v) },
@@ -4659,7 +4664,7 @@ async function onSave() {
   const key = $('fKey').value.trim();
   const next = { classInfo: $('fClass').value.trim(), level: $('fLevel').value, model: resolveModel(model), tier: getRadio('tier') || '무료', length: getRadio('len') || '보통',
     closing: { subject: $('fCloseSubject').checked, activity: $('fCloseActivity').checked, behavior: $('fCloseBehavior').checked } };
-  $('btnSave').disabled = true;
+  $('btnSave').disabled = $('btnKeySave').disabled = true;
   try {
     busy('저장하는 중…');
     await saveSettingsToSheet(next);
@@ -4670,7 +4675,7 @@ async function onSave() {
     busy(''); renderSettings();
     toast(next.model !== model ? `저장했습니다. (${model} → ${next.model} 자동 교체)` : '설정을 저장했습니다.');
   } catch (e) { busy(''); if (e.status !== 401) toast('저장 실패 — ' + e.message, 6000); }
-  finally { $('btnSave').disabled = false; }
+  finally { $('btnSave').disabled = $('btnKeySave').disabled = false; }
 }
 async function onKeyTest() {
   const key = $('fKey').value.trim();
@@ -4757,6 +4762,11 @@ async function boot() {
   $('btnCreate').onclick = onCreate;
   $('btnReload').onclick = onReload;
   $('btnSave').onclick = onSave;
+  $('btnKeySave').onclick = onSave;
+  $('btnReviewedToNeis').onclick = () => {
+    if (Object.keys(RV.draft).length) { toast('저장하지 않은 문장이 있습니다. 각 문장의 [저장]을 누른 뒤 이동해 주세요.', 6000); return; }
+    show('neis');
+  };
   $('btnKeyTest').onclick = onKeyTest;
   $('btnDisconnect').onclick = onDisconnect;
   $('btnKeyShow').onclick = () => {
@@ -4805,6 +4815,6 @@ async function boot() {
 
 if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', boot);
 </script>
-<script src="neis-transfer.js?v=1"></script>
+<script src="neis-transfer.js?v=20261015-1"></script>
 </body>
 </html>

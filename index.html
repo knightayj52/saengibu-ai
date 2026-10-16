@@ -460,17 +460,17 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
           <input type="text" id="fClass" maxlength="30" placeholder="예) 4학년 2반">
         </div>
       </div>
-      <label class="f">생성 분량</label>
+      <label class="f">생성 분량 상한 <small>(넘지 않는 길이입니다. 체크한 근거가 적으면 이보다 짧게 나오며, 분량을 채우려고 내용을 지어내지 않습니다)</small></label>
       <div class="opts c3">
-        <label class="opt"><input type="radio" name="len" value="간략"><b>간략</b><span>교과 150~180자 · 창체/행특 300~350자</span></label>
-        <label class="opt"><input type="radio" name="len" value="보통"><b>보통</b><span>교과 220~250자 · 창체/행특 430~480자</span></label>
-        <label class="opt"><input type="radio" name="len" value="상세"><b>상세</b><span>교과 280~320자 · 창체/행특 550~600자</span></label>
+        <label class="opt"><input type="radio" name="len" value="간략"><b>간략</b><span>교과 최대 180자 · 창체/행특 최대 350자</span></label>
+        <label class="opt"><input type="radio" name="len" value="보통"><b>보통</b><span>교과 최대 250자 · 창체/행특 최대 480자</span></label>
+        <label class="opt"><input type="radio" name="len" value="상세"><b>상세</b><span>교과 최대 320자 · 창체/행특 최대 600자</span></label>
       </div>
-      <label class="f">마무리(종합 평가) 문장 <small>("~성장이 기대됨"처럼 글 끝에 덧붙이는 맺음 문장)</small></label>
+      <label class="f">마무리 문장 <small>(글 끝에 한 문장을 덧붙일지. 개인 특성 메모가 있을 때 그 관찰에 근거해 씁니다. 앞 내용을 되풀이하거나 새 칭찬을 지어내지는 않습니다)</small></label>
       <div class="opts c3">
         <label class="opt"><input type="checkbox" id="fCloseSubject"><b>교과에 붙이기</b><span>끄면 활동 서술로 끝남 (기본: 끔)</span></label>
-        <label class="opt"><input type="checkbox" id="fCloseActivity"><b>창체에 붙이기</b><span>종합 평가 1~2문장 (기본: 켬)</span></label>
-        <label class="opt"><input type="checkbox" id="fCloseBehavior"><b>행동특성에 붙이기</b><span>종합 평가 2~3문장 (기본: 켬)</span></label>
+        <label class="opt"><input type="checkbox" id="fCloseActivity"><b>창체에 붙이기</b><span>특이사항 메모가 있을 때 한 문장 (기본: 켬)</span></label>
+        <label class="opt"><input type="checkbox" id="fCloseBehavior"><b>행동특성에 붙이기</b><span>특성 메모가 있을 때 한 문장 (기본: 켬)</span></label>
       </div>
       <p style="margin:22px 0 0" class="row">
         <button id="btnSave" class="btn" type="button">설정 저장</button>
@@ -642,7 +642,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 
 /* ───────── 1. 앱 설정 ───────── */
 const CONFIG = {
-  VERSION: 'web 0.9 · 베타',
+  VERSION: 'web 0.9.1 · 베타',
   CLIENT_ID: '522445423766-m3cop5vh489598e0hkefumd0r202tncp.apps.googleusercontent.com',
   PICKER_KEY: 'AIzaSyDuMaSWfi7yfybCUJnUvghOcirBA5JzXoE',
   APP_ID: '522445423766',                                   // Cloud 프로젝트 번호 (Picker가 고른 파일에 drive.file 권한을 붙이는 데 필요)
@@ -3114,7 +3114,11 @@ function _getCallInterval(ss) {
   return 7000;
 }
 function _getSelectionGuide(itemCount) {
-  return '[서술 전략] 선택한 ' + itemCount + '개 항목의 서로 다른 사실을 모두 반영하세요. 겹치는 사실은 한 번만 통합하고, 관찰되지 않은 인과관계·태도·성장을 연결 문장으로 만들지 마세요. 근거가 적으면 짧게 끝내세요.';
+  return '[서술 전략] 선택한 ' + itemCount + '개 항목의 서로 다른 사실을 모두 반영하되, 체크 목록을 읽어 주는 글이 되지 않게 쓸 것.\n' +
+    '- 성격이 비슷한 항목(예: 규칙·안전·환경 같은 생활 실천, 친구와의 관계)은 한 문장으로 묶어 써도 됨. 묶는 것은 지어내기가 아님.\n' +
+    '- "○○에서는 …, △△에서는 …"처럼 활동명을 문장마다 앞세우는 나열은 금지. 활동명은 필요한 곳에만 자연스럽게 넣을 것.\n' +
+    '- 한 사실은 한 번만. 같은 내용을 표현만 바꿔 다시 쓰지 말 것. 겹치는 항목은 하나로 합칠 것.\n' +
+    '- 관찰되지 않은 인과관계·태도·성장을 연결 문장으로 만들지 말 것. 근거가 적으면 짧게 끝낼 것.';
 }
 function _getStyleExamples() {
   return '[문체] 교사가 관찰한 행동을 쉽고 구체적인 표현과 명사형 종결로 서술하세요. 문체를 위해 새로운 활동이나 칭찬을 덧붙이지 마세요.';
@@ -3194,6 +3198,8 @@ function _cleanOutput(text) {
 
   // 3. 마크다운 기호 제거 (**, ##, > 등)
   t = t.replace(/\*\*/g, '').replace(/^#+\s*/gm, '').replace(/^>\s*/gm, '');
+  // 3-1. 줄바꿈으로 나뉜 문단은 한 문단으로 (생기부는 한 문단, NEIS도 줄바꿈을 받지 않음)
+  t = t.replace(/\s*\n+\s*/g, ' ').replace(/ {2,}/g, ' ').trim();
 
   // 4. 경어체·서술형 종결어미 → 명사형(~함/~음) 변환
   //    NEIS 생기부는 명사형 종결이 원칙. AI가 정성평가에서 "~합니다"로
@@ -3211,6 +3217,7 @@ function _cleanOutput(text) {
     [/됩니다/g, '됨'],
     [/입니다/g, '임'],
     [/습니다/g, '음'],
+    [/합니다/g, '함'],   // 웹앱 추가: '~합니다'가 남으면 명사형으로 (v9는 분량 조정 단계에서 다시 써서 가려졌음)
     [/하였습니다/g, '하였음'],
     [/하고 있습니다/g, '하고 있음'],
     [/있습니다/g, '있음'],
@@ -3427,10 +3434,12 @@ async function requestStyleFix(text, issues, retry = geminiRetry, evidence = '')
     '- 성취수준·등급·도달도 등 평가 등급을 뜻하는 말은 완전히 삭제하고, 그 자리를 활동 모습 서술로 자연스럽게 채울 것\n' +
     '- "학생은", "이 학생은" 같은 주어는 삭제\n' +
     '- 교정된 전체 글만 출력 (설명·따옴표 금지)\n\n' +
-    '[원문]\n' + text + '\n\n' + evidence;
+    evidenceNote(evidence) + '[원문]\n' + text;
   const res = await retry(prompt, 3, 0.2);
   return res.success ? _cleanOutput(res.text) : null;
 }
+// 교정·압축 요청에 붙이는 작성 근거 — 원문 앞에 두고, 고칠 글이 아님을 분명히 함 (원문 뒤에 두면 AI가 근거까지 원문으로 보고 되돌려 쓰는 일이 있음)
+const evidenceNote = ev => ev ? '[참고: 작성 근거 — 고칠 글이 아니므로 결과에 옮겨 쓰지 말 것. 근거에 없는 사실은 결과에도 없어야 함]\n' + ev + '\n\n' : '';
 // 1차 생성 → 문체·수준 교정 → 상한 초과 시에만 근거를 유지하며 압축 (확장 없음)
 async function generateWithLengthControl(prompt, minByte, maxByte, targetChars, guard, runtime = {}) {
   const retry = runtime.retry || geminiRetry;
@@ -3441,7 +3450,7 @@ async function generateWithLengthControl(prompt, minByte, maxByte, targetChars, 
   const issues = _detectStyleIssues(cleaned);
   if (issues.length > 0) {
     report('문체 교정 중 (' + issues.join(', ') + ')');
-    const fixed = await requestStyleFix(cleaned, issues, retry, runtime.evidence || prompt);
+    const fixed = await requestStyleFix(cleaned, issues, retry, runtime.evidence || '');
     if (fixed) cleaned = fixed;
     if (_detectStyleIssues(cleaned).indexOf('성취수준 언급') !== -1) cleaned = _stripLevelMentions(cleaned);
   }
@@ -3449,7 +3458,7 @@ async function generateWithLengthControl(prompt, minByte, maxByte, targetChars, 
   let levelWords = findLevelWords(cleaned, guard);
   if (levelWords.length) {
     report('수준에 맞게 다듬는 중 (' + levelWords.join(', ') + ')');
-    const fixed = await requestLevelFix(cleaned, levelWords, guard, retry, runtime.evidence || prompt);
+    const fixed = await requestLevelFix(cleaned, levelWords, guard, retry, runtime.evidence || '');
     if (fixed && !_detectStyleIssues(fixed).length && findLevelWords(fixed, guard).length < levelWords.length) cleaned = fixed;
     levelWords = findLevelWords(cleaned, guard);
   }
@@ -3461,7 +3470,7 @@ async function generateWithLengthControl(prompt, minByte, maxByte, targetChars, 
   report('반복 표현을 줄이는 중');
   const second = await retry(`[분량 압축] 아래 원문의 반복·수식만 줄여 공백 포함 ${targetChars}자 내외, 최대 ${maxChars === Infinity ? targetChars : maxChars}자 및 ${maxByte}byte 이내로 작성하세요.
 도움·일부·시도 중 등 각 사실의 조건과 서로 다른 선택 항목을 보존하세요. 새 사실은 추가하지 마세요. 명사형 종결의 본문만 출력하세요.
-[원문]\n${cleaned}\n${runtime.evidence || prompt}`, 5, 0.2);
+${evidenceNote(runtime.evidence)}[원문]\n${cleaned}`, 5, 0.2);
   if (second.success) {
     const next = _cleanOutput(second.text), bytes = _getByteSize(next);
     if (next && bytes < size && next.length <= maxChars && bytes <= maxByte && !_detectStyleIssues(next).length && findLevelWords(next, guard).length <= levelWords.length) return done(next, true);
@@ -3496,9 +3505,10 @@ function collectJobs(kind, targets, targetSubject) {
 }
 // 마무리(종합 평가) 문장을 끈 영역은 v9 프롬프트 끝의 "종합 평가 n문장을 추가" 지시를 "덧붙이지 말 것"으로 바꿈
 function applyClosing(prompt, kind, closing = State.settings.closing) {
-  if (closing[kind]) return prompt;                       // 켬 = v9 프롬프트 그대로
   const re = /마지막에 (?:한 줄 띄우고|빈 줄 하나를 두고) 종합 평가[^,\n]*추가하되(?:\(글자 수에 포함\))?, 모든 문장은/;
   if (!re.test(prompt)) throw new Error('프롬프트에서 마무리 문장 지시를 찾지 못했습니다.');
+  // 켬: 사실만 쓰는 설계에서는 종합 평가가 본문을 되풀이하게 되므로, 개인 관찰이 있을 때만 그에 근거한 한 문장으로 제한 (줄바꿈 없이)
+  if (closing[kind]) return prompt.replace(re, '마지막에 마무리 문장을 한 문장만 덧붙이되, 앞 문장들을 요약해 되풀이하지 말 것. 개인 특성·개인 특이사항 메모가 있으면 그 관찰에 근거해 태도나 성장 방향을 한 문장으로 적고, 없으면 마무리 문장 없이 활동 서술로 끝낼 것. 줄바꿈 없이 한 문단으로 쓰고, 모든 문장은');
   return prompt.replace(re, '종합 평가·기대·당부 같은 마무리 문장은 따로 덧붙이지 말고, 활동 모습 서술로 글을 끝내세요(맨 끝을 "~기대됨", "~바람"으로 맺지 말 것). 줄바꿈 없이 한 문단으로 쓰고, 모든 문장은');
 }
 // 같은 성취기준에서 이 수준보다 높은 수준의 설명들 (상/중/하 3줄이 한 묶음)
@@ -3531,7 +3541,7 @@ async function requestLevelFix(text, found, guard, retry = geminiRetry, evidence
     '- 참여·노력하는 과정과 성장 가능성 중심으로 쓰되, 분량이 줄어도 괜찮음\n' +
     '- 문체(관찰자 시점·명사형 종결)는 그대로. 등급·수준을 뜻하는 말은 쓰지 말 것\n' +
     '- 교정된 전체 글만 출력 (설명·따옴표 금지)\n\n' +
-    '[원문]\n' + text + '\n\n' + evidence;
+    evidenceNote(evidence) + '[원문]\n' + text;
   const res = await retry(prompt, 3, 0.2);
   return res.success ? _cleanOutput(res.text) : null;
 }
@@ -3560,7 +3570,7 @@ function evidencePolicy(job) {
 - 노력하거나 습관을 기르는 중인 모습을 이미 독립적으로 수행하거나 습관이 형성된 상태로 바꾸지 마세요.
 - 낮은 교과 성취와 성실성은 별개입니다. 태도는 개인 관찰에 명시된 경우에만 반영하세요.
 - 선택한 서로 다른 사실은 모두 반영하고 중복만 통합하세요. 분량이 부족해도 추가 사실이나 반복으로 채우지 마세요.
-- 종합 평가를 켰더라도 위 사실의 짧은 요약만 허용합니다. 새로운 칭찬·성장·미래 예측은 덧붙이지 마세요.
+- 마무리 문장을 쓰더라도 앞 문장의 요약·되풀이는 금지입니다. 개인 관찰에 근거한 한 문장만 허용하며, 새로운 칭찬·성장·미래 예측은 덧붙이지 마세요.\n- 같은 사실을 표현만 바꿔 두 번 쓰지 마세요. 분량이 모자라도 반복으로 채우지 마세요.
 [선택된 사실 원본]
 ${JSON.stringify(facts)}
 [개인 관찰 원본]
@@ -4597,7 +4607,7 @@ function renderHome() {
   const dl = $('homeSummary'); dl.textContent = '';
   const hasKey = !!LS.get('geminiKey');
   [['학생', State.studentCount + '명'], ['학교급', s.level + (s.classInfo ? ' · ' + s.classInfo : '')],
-   ['AI 모델', s.model + ' (' + s.tier + ')'], ['생성 분량', s.length], ['Gemini 키', hasKey ? '✅ 이 브라우저에 저장됨' : '❌ 아직 없음']
+   ['AI 모델', s.model + ' (' + s.tier + ')'], ['분량 상한', s.length], ['Gemini 키', hasKey ? '✅ 이 브라우저에 저장됨' : '❌ 아직 없음']
   ].forEach(([k, v]) => { const dt = document.createElement('dt'), dd = document.createElement('dd'); dt.textContent = k; dd.textContent = v; const item = document.createElement('div'); item.className = 'summary-item'; item.append(dt, dd); dl.append(item); });
   showMsg('homeWarn', !State.studentCount ? '👥 학생명단에서 학생을 먼저 추가해 주세요.' : hasKey ? '' : 'AI 생성을 쓰려면 ⚙️ 설정에서 Gemini API 키를 입력해 주세요.', 'info');
   const chips = $('homeChips'); chips.textContent = '';

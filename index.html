@@ -95,6 +95,7 @@ button.step.done{background:#f2fbf6}
 button.step.now{border:2px solid var(--brand,#2f3d99);background:#eef0fb;color:var(--ink)}
 button.step:hover{filter:brightness(.98)}
 .step .st{float:right;font-size:12.5px;font-weight:700;margin-left:8px}
+.rsrc.evid{margin-top:8px}.rsrc.evid p{margin:4px 0;line-height:1.7}.rsrc.evid mark{background:#fff0b3;color:inherit;padding:0 2px;border-radius:3px}
 .draftnote{background:#fff7e0;border:1px solid #f0d58a;border-radius:10px;padding:9px 14px;margin:0 0 12px;font-size:14px;color:#6b4e00}
 .keyguide{background:#f7f8fc;border:1px solid #e1e4ef;border-radius:10px;padding:10px 14px;margin:8px 0 12px;font-size:14.5px}
 .keyguide summary{cursor:pointer;font-weight:700}
@@ -462,9 +463,9 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
       </div>
       <label class="f">생성 분량 상한 <small>(넘지 않는 길이입니다. 체크한 근거가 적으면 이보다 짧게 나오며, 분량을 채우려고 내용을 지어내지 않습니다)</small></label>
       <div class="opts c3">
-        <label class="opt"><input type="radio" name="len" value="간략"><b>간략</b><span>교과 최대 180자 · 창체/행특 최대 350자</span></label>
-        <label class="opt"><input type="radio" name="len" value="보통"><b>보통</b><span>교과 최대 250자 · 창체/행특 최대 480자</span></label>
-        <label class="opt"><input type="radio" name="len" value="상세"><b>상세</b><span>교과 최대 320자 · 창체/행특 최대 600자</span></label>
+        <label class="opt"><input type="radio" name="len" value="간략"><b>간략</b><span>교과 최대 200자 · 창체/행특 최대 380자</span></label>
+        <label class="opt"><input type="radio" name="len" value="보통"><b>보통</b><span>교과 최대 270자 · 창체/행특 최대 520자</span></label>
+        <label class="opt"><input type="radio" name="len" value="상세"><b>상세</b><span>교과 최대 350자 · 창체/행특 최대 650자</span></label>
       </div>
       <label class="f">마무리 문장 <small>(글 끝에 한 문장을 덧붙일지. 개인 특성 메모가 있을 때 그 관찰에 근거해 씁니다. 앞 내용을 되풀이하거나 새 칭찬을 지어내지는 않습니다)</small></label>
       <div class="opts c3">
@@ -642,7 +643,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
 
 /* ───────── 1. 앱 설정 ───────── */
 const CONFIG = {
-  VERSION: 'web 0.9.1 · 베타',
+  VERSION: 'web 0.9.2 · 베타',
   CLIENT_ID: '522445423766-m3cop5vh489598e0hkefumd0r202tncp.apps.googleusercontent.com',
   PICKER_KEY: 'AIzaSyDuMaSWfi7yfybCUJnUvghOcirBA5JzXoE',
   APP_ID: '522445423766',                                   // Cloud 프로젝트 번호 (Picker가 고른 파일에 drive.file 권한을 붙이는 데 필요)
@@ -3508,7 +3509,7 @@ function applyClosing(prompt, kind, closing = State.settings.closing) {
   const re = /마지막에 (?:한 줄 띄우고|빈 줄 하나를 두고) 종합 평가[^,\n]*추가하되(?:\(글자 수에 포함\))?, 모든 문장은/;
   if (!re.test(prompt)) throw new Error('프롬프트에서 마무리 문장 지시를 찾지 못했습니다.');
   // 켬: 사실만 쓰는 설계에서는 종합 평가가 본문을 되풀이하게 되므로, 개인 관찰이 있을 때만 그에 근거한 한 문장으로 제한 (줄바꿈 없이)
-  if (closing[kind]) return prompt.replace(re, '마지막에 마무리 문장을 한 문장만 덧붙이되, 앞 문장들을 요약해 되풀이하지 말 것. 개인 특성·개인 특이사항 메모가 있으면 그 관찰에 근거해 태도나 성장 방향을 한 문장으로 적고, 없으면 마무리 문장 없이 활동 서술로 끝낼 것. 줄바꿈 없이 한 문단으로 쓰고, 모든 문장은');
+  if (closing[kind]) return prompt.replace(re, '마무리 문장은 원칙적으로 쓰지 말고 활동 서술로 끝낼 것. 예외는 하나뿐임: 개인 특성·개인 특이사항 메모에 적힌 관찰 가운데 본문에 아직 쓰지 않은 것이 남아 있을 때, 그 관찰을 한 문장으로 적어 끝낼 것. 앞 문장의 요약·되풀이, 성장 전망, "~기대됨"·"~바람" 같은 예측은 금지. 줄바꿈 없이 한 문단으로 쓰고, 모든 문장은');
   return prompt.replace(re, '종합 평가·기대·당부 같은 마무리 문장은 따로 덧붙이지 말고, 활동 모습 서술로 글을 끝내세요(맨 끝을 "~기대됨", "~바람"으로 맺지 말 것). 줄바꿈 없이 한 문단으로 쓰고, 모든 문장은');
 }
 // 같은 성취기준에서 이 수준보다 높은 수준의 설명들 (상/중/하 3줄이 한 묶음)
@@ -3568,9 +3569,17 @@ function evidencePolicy(job) {
 - 입력에 없는 도구, 행동, 발언, 태도, 동기, 빈도, 성과, 성장, 인과관계를 만들지 마세요. 상 수준이어도 과장하지 마세요.
 - 각 항목의 도움·일부·시도 중이라는 조건을 해당 활동에 유지하세요. 다른 항목의 높은 수행을 옮기지 마세요.
 - 노력하거나 습관을 기르는 중인 모습을 이미 독립적으로 수행하거나 습관이 형성된 상태로 바꾸지 마세요.
+- 행동의 범위를 넓히지 마세요. 아래는 서로 다른 사실이며, 입력에 있는 쪽만 씁니다.
+  · "확인함" ≠ "챙김·준비함"(확인했다는 사실만. 챙겼다는 말을 덧붙이지 말 것)
+  · "계산함" ≠ "원리를 이해함·설명함"(계산했다는 사실만. 이해·설명은 입력에 있을 때만)
+  · "들음·듣고 말함" ≠ "수용함·받아들임"
+  · "노력함·시도함" ≠ "해냄·달성함·습관이 됨"
+  · "낱말을 찾아 고침" ≠ "글 전체를 점검·다듬음"(고친 범위를 넓히지 말 것)
+  · "분류함·구분함" ≠ "배출함·실천함"
+- 입력에 없는 시점·빈도·범위를 덧붙이지 마세요("수업 전에", "미리", "지속적으로", "항상", "하나씩", "전반에서" 등).
 - 낮은 교과 성취와 성실성은 별개입니다. 태도는 개인 관찰에 명시된 경우에만 반영하세요.
 - 선택한 서로 다른 사실은 모두 반영하고 중복만 통합하세요. 분량이 부족해도 추가 사실이나 반복으로 채우지 마세요.
-- 마무리 문장을 쓰더라도 앞 문장의 요약·되풀이는 금지입니다. 개인 관찰에 근거한 한 문장만 허용하며, 새로운 칭찬·성장·미래 예측은 덧붙이지 마세요.\n- 같은 사실을 표현만 바꿔 두 번 쓰지 마세요. 분량이 모자라도 반복으로 채우지 마세요.
+- 마무리 문장은 쓰지 않는 것이 기본입니다. 개인 관찰 가운데 본문에 쓰지 않은 것이 남았을 때만 그 관찰을 한 문장으로 적고, 요약·되풀이·성장 전망·미래 예측은 쓰지 마세요.\n- 같은 사실을 표현만 바꿔 두 번 쓰지 마세요. 분량이 모자라도 반복으로 채우지 마세요.
 [선택된 사실 원본]
 ${JSON.stringify(facts)}
 [개인 관찰 원본]
@@ -3810,9 +3819,32 @@ function jobInfo(job) {       // 결과 시트에 함께 적히는 "선택된 �
   return job.kind === 'activity' ? job.acts.map(a => `${a.actName}${a.memo ? ' (메모: ' + a.memo + ')' : ''}`).join('\n')
     : job.kind === 'behavior' ? job.phrases.map(p => p.replace(/^\[.*?\]\s*/, '')).join(' / ') : '';
 }
+// [웹앱 추가] 근거 대조 — 체크한 내용(성취기준·활동·메모·특성)에 없는 "의미를 넓히는 낱말"이 든 문장을 찾음.
+//   보증이 아니라 교사의 눈이 가게 하는 표시. 낱말 목록은 실제 생성 결과에서 사실이 번진 유형(확인→챙김, 계산→원리 이해, 시점·빈도 추가, 예측, 강조)에서 뽑음.
+const WATCH_WORDS = ['원리', '이해', '설명', '챙기', '챙겨', '챙김', '준비함', '수용', '받아들', '달성', '해냄', '습관이', '몸에 배', '정착', '수업 전', '미리', '지속', '항상', '매번', '하나씩', '전반', '꾸준', '점차', '기대됨', '기대', '바람', '것으로',
+  '주도', '이끌', '기여', '리더', '탁월', '뛰어', '우수', '돋보', '매우', '깊이', '다각도', '능숙', '완성', '성실', '꼼꼼', '세심', '배려', '책임감', '적극', '논리', '체계', '창의', '정확', '명확', '효과적', '구체적', '다양한', '풍부', '폭넓', '소통', '배출', '실천', '관계', '공동체', '구성원'];
+function evidenceTextOf(job) {
+  if (!job) return '';
+  const t = job.kind === 'subject' ? job.items.flatMap(it => [it.domain, it.criteria]) : job.kind === 'activity' ? job.acts.flatMap(a => [a.actName, a.actContent, a.memo]) : job.phrases.slice();
+  t.push(job.trait); return t.map(x => S(x)).join(' ');
+}
+function evidenceFlags(text, job) {
+  if (!job || !text) return [];
+  const ev = evidenceTextOf(job), out = [];
+  S(text).split(/(?<=[.!?])\s+/).forEach(sent => { const words = WATCH_WORDS.filter(w => sent.indexOf(w) !== -1 && ev.indexOf(w) === -1); if (words.length) out.push({ sent, words }); });
+  return out;
+}
+function evidenceBox(text, job) {
+  const flags = evidenceFlags(text, job);
+  if (!flags.length) return null;
+  const mark = sent => { let parts = [sent]; flags.find(f => f.sent === sent).words.forEach(w => { parts = parts.flatMap(pc => typeof pc !== 'string' ? [pc] : pc.split(w).flatMap((x, i, a) => i < a.length - 1 ? [x, el('mark', { text: w })] : [x])); }); return parts; };
+  return el('details', { class: 'rsrc evid', open: true }, [el('summary', { text: `근거 대조 — 체크한 내용에 없는 낱말이 든 문장 ${flags.length}개` }),
+    el('p', { class: 'muted', style: 'margin:4px 0 6px', text: '노란 낱말은 체크한 성취기준·활동·메모·특성에 나오지 않는 말입니다. 틀렸다는 뜻이 아니라 사실인지 확인해 달라는 표시이며, 표시가 없어도 확인은 필요합니다.' })].concat(flags.map(f => el('p', null, mark(f.sent)))));
+}
 function resultNotes(kind, r, job) {
   const notes = [];
   if (r.status !== DONE) return notes;
+  const nf = evidenceFlags(r.text, job).length; if (nf) notes.push('근거 확인 ' + nf);
   if (!job) notes.push('체크가 지워짐');
   else if (kind !== 'subject' && jobInfo(job).trim() !== r.info.trim()) notes.push('생성 후 체크가 바뀜');
   _detectStyleIssues(r.text).forEach(x => notes.push(x));
@@ -3919,6 +3951,7 @@ function resultCard(kind, r, job, notes) {
     return card;
   }
   const ta = el('textarea', { value: key in RV.draft ? RV.draft[key] : r.text, 'aria-label': r.name + ' 결과 문장', disabled: busyNow });
+  const evWrap = el('div');
   const btnSave = el('button', { class: 'btn sm', type: 'button', text: '저장', hidden: true }), btnUndo = el('button', { class: 'btn line sm', type: 'button', text: '되돌리기', hidden: true });
   const paint = () => {
     const t = ta.value, byte = _getByteSize(t), tone = byteTone(kind, byte), dirty = t.replace(/\r/g, '').trim() !== r.text;
@@ -3928,6 +3961,7 @@ function resultCard(kind, r, job, notes) {
     btnSave.hidden = btnUndo.hidden = !dirty; card.classList.toggle('dirty', dirty);
     if (dirty) RV.draft[key] = t; else delete RV.draft[key];
     ta.style.height = 'auto'; ta.style.height = (ta.scrollHeight + 2) + 'px';
+    evWrap.textContent = ''; const eb = evidenceBox(t, job); if (eb) evWrap.append(eb);
   };
   ta.addEventListener('input', paint);
   btnUndo.onclick = () => { ta.value = r.text; paint(); };
@@ -3941,6 +3975,7 @@ function resultCard(kind, r, job, notes) {
     el('button', { class: 'btn line sm', type: 'button', text: '복사', onclick: () => copyText(ta.value) }),
     el('button', { class: 'btn line sm', type: 'button', text: busyNow ? '생성 중…' : '재생성', disabled: !job || RV.running || !!RV.busyKey, title: job ? '지금의 체크로 새 문장을 만들어 이 문장을 바꿉니다' : '체크가 없어 재생성할 수 없음',
       onclick: () => { if (ta.value.trim() !== r.text && !confirm('저장하지 않은 수정이 있습니다. 재생성하면 사라집니다. 계속할까요?')) return; delete RV.draft[key]; if (confirm(`${r.name}${r.group ? ' · ' + r.group : ''} 문장을 새로 만들어 지금 문장과 바꿀까요?`)) regenMany([{ r, job }]); } })])]));
+  card.append(evWrap);
   if (job) card.append(el('details', { class: 'rsrc' }, [el('summary', { text: '체크한 내용 보기' }), el('div', null, (
     kind === 'subject' ? job.items.map(it => `[${it.level}] ${it.domain ? it.domain + ' — ' : ''}${it.criteria}`)
     : kind === 'activity' ? job.acts.map(a => a.actName + (a.memo ? ` (메모: ${a.memo})` : ''))

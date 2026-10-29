@@ -1,17 +1,24 @@
 'use strict';
-importScripts('core.js');
+importScripts('core.js','session.js');
+const sessions=createNeisSession(chrome);
 function allowedSender(sender) {
-  try { const u=new URL(sender.url); return sender.id===chrome.runtime.id && sender.frameId===0 && u.origin==='https://knightayj52.github.io' && u.pathname.startsWith('/saengibu-ai/'); } catch { return false; }
+  try {const u=new URL(sender.url);return sender.id===chrome.runtime.id&&sender.frameId===0&&u.origin==='https://knightayj52.github.io'&&u.pathname.startsWith('/saengibu-ai/');}catch{return false;}
 }
-chrome.runtime.onMessage.addListener((message,sender,reply)=>{
-  if(!allowedSender(sender))return;
-  if(message?.type==='YS_NEIS_PING'){reply({ok:true,version:chrome.runtime.getManifest().version});return;}
-  if(message?.type!=='YS_NEIS_SEND')return;
-  try {
-    if(JSON.stringify(message.package).length>2000000)throw Error('기록이 너무 큽니다.');
-    const p=validatePackage(message.package);
-    // Keep a running popup's current package intact. Consume pending data on next open.
-    chrome.storage.session.set({pendingPackage:p}).then(()=>reply({ok:true,count:p.records.length}),()=>reply({ok:false,error:'기록을 보관하지 못했습니다. 다시 보내 주세요.'}));
-    return true;
-  } catch(e) { reply({ok:false,error:e.message}); }
+function popupSender(sender){return sender.id===chrome.runtime.id&&sender.url===chrome.runtime.getURL('popup.html');}
+const init=Promise.all([
+  chrome.storage.session.setAccessLevel({accessLevel:'TRUSTED_CONTEXTS'}),
+  chrome.storage.session.remove(['package','pendingPackage'])
+]);
+chrome.runtime.onMessage.addListener((m,sender,reply)=>{
+  const app=allowedSender(sender), popup=popupSender(sender);
+  if(!app&&!popup)return;
+  if(app&&m?.type==='YS_NEIS_PING'){reply({ok:true,version:chrome.runtime.getManifest().version});return;}
+  let type;
+  if(app&&m?.type==='YS_NEIS_SEND')type='receive';
+  else if(popup&&m?.type==='YS_NEIS_SESSION'&&['open','import','touch','track','cancel','clear'].includes(m.action))type=m.action;
+  else return;
+  init.then(()=>sessions.act(type,m)).then(result=>reply({ok:true,...result}),e=>reply({ok:false,error:e.message||'기록 처리에 실패했습니다.'}));
+  return true;
 });
+chrome.alarms.onAlarm.addListener(a=>{if(a.name===sessions.alarmName)init.then(()=>sessions.act('purge')).catch(()=>{});});
+init.then(()=>sessions.act('purge')).catch(()=>{});

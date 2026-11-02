@@ -8,7 +8,7 @@ function neisExtensionRequest(type, data) {
       cleanup(); const result=e.data.result;
       if(result?.ok)resolve(result);else reject(Error(result?.error||'확장프로그램 응답을 확인하지 못했습니다.'));
     };
-    const timer=setTimeout(()=>{cleanup();reject(Error('연결을 확인하지 못했습니다. 0.3.0 이상을 설치한 뒤 생기부 앱을 새로고침해 주세요. JSON 파일 방식도 사용할 수 있습니다.'));},2500);
+    const timer=setTimeout(()=>{cleanup();reject(Error('연결을 확인하지 못했습니다. Chrome 웹 스토어에서 입력 도우미를 설치하고 같은 크롬 프로필에서 생기부 앱을 새로고침해 주세요. JSON 파일 방식도 사용할 수 있습니다.'));},2500);
     window.addEventListener('message',receive);
     window.postMessage({source:'ys-neis-app',requestId,type,package:data},location.origin);
   });
@@ -28,9 +28,19 @@ function neisTransferDefaults(now = new Date()) {
 function makeNeisTransferPanel(items, cats) {
   const defaults = neisTransferDefaults();
   const box = el('details', {open:true,style:'margin:16px 0;padding:16px;border:1px solid var(--line,#ddd);border-radius:16px'});
-  box.append(el('summary', {text:'나이스 자동 입력 준비 · 시험 버전',style:'cursor:pointer;font-weight:700'}));
+  box.append(el('summary', {text:'나이스 자동 입력 준비 · BETA',style:'cursor:pointer;font-weight:700'}));
   box.append(el('p',{text:'한 과목·영역씩 검토한 결과를 확장프로그램으로 바로 보낼 수 있습니다. JSON 파일 없이 같은 크롬에서 이어서 입력하세요. 확장 프로그램이 번호·이름을 대조한 뒤 빈 입력란을 채웁니다. 나이스 최종 저장은 직접 해 주세요. 실제 나이스 호환성 확인이 필요한 시험 버전입니다.'}));
-  box.append(el('p',{text:'현재는 시험용 수동 설치입니다. 간편 설치와 자동 업데이트는 Chrome 웹 스토어 등록 후 제공할 예정입니다.'}));
+  box.append(el('div',{class:'row',style:'display:flex;gap:10px;flex-wrap:wrap'},[
+    el('a',{class:'btn',href:'https://chromewebstore.google.com/detail/mgfgocnidkjbinbeplgodgiofidlalfc?hl=ko',target:'_blank',rel:'noopener noreferrer',text:'나이스 입력 도우미 설치 ↗'}),
+    el('a',{class:'btn line',href:'neis-guide.html',target:'_blank',rel:'noopener',text:'처음 사용하는 선생님 안내'})
+  ]));
+  box.append(el('p',{text:'처음 한 번: 설치 페이지에서 Chrome에 추가 → 확장 프로그램 추가 → 이 앱 새로고침 → 연결 확인. PC용 크롬에서 사용하며, 설치는 사용자가 직접 승인합니다.'}));
+  const connection=el('p',{'aria-live':'polite',text:'확장프로그램 연결을 확인해 주세요.'});
+  const check=el('button',{type:'button',class:'btn',text:'연결 확인'});
+  check.onclick=async()=>{check.disabled=true;try{const r=await neisExtensionRequest('YS_NEIS_PING');connection.textContent='연결됨 · 버전 '+r.version;}catch(e){connection.textContent=e.message;}finally{check.disabled=false;}};
+  box.append(connection,check);
+  if(!items.length){box.append(el('p',{text:'설치는 먼저 해 두셔도 됩니다. 문장 생성과 검토를 마친 뒤 이 화면에서 과목·영역을 선택하여 보내세요.'}));return box;}
+  box.append(el('p',{text:'사용 순서: 문장 검토 → 나이스로 보내기 → 나이스에서 학생 한 명의 입력칸 클릭 → 확장프로그램에서 대조·입력 → 나이스에서 직접 저장.'}));
   const form = el('form',{style:'display:flex;gap:12px;flex-wrap:wrap;align-items:end'});
   function field(label, input) { form.append(el('label',{},[el('span',{text:label,style:'display:block;margin-bottom:6px'}),input])); return input; }
   const year = field('학년도',el('input',{type:'number',min:2000,max:2100,required:true,value:defaults.year,style:'width:100px'}));
@@ -57,10 +67,6 @@ function makeNeisTransferPanel(items, cats) {
   const download=el('button',{type:'submit',class:'btn',text:'JSON 파일 받기 (외부 접속용)'});
   form.append(send,download);
   const status=el('p',{'aria-live':'polite'});
-  const connection=el('p',{'aria-live':'polite',text:'확장프로그램 연결을 확인해 주세요.'});
-  const check=el('button',{type:'button',class:'btn',text:'연결 확인'});
-  check.onclick=async()=>{check.disabled=true;try{const r=await neisExtensionRequest('YS_NEIS_PING');connection.textContent='연결됨 · 버전 '+r.version;}catch(e){connection.textContent=e.message;}finally{check.disabled=false;}};
-  box.append(connection,check);
   form.onsubmit = async e => {
     e.preventDefault();
     if(!form.reportValidity())return;
@@ -81,7 +87,7 @@ function makeNeisTransferPanel(items, cats) {
       const data={format:'saengibu-neis',version:1,context:{year:Number(year.value),grade:Number(grade.value),classNumber:Number(cls.value),semester:Number(semester.value),kind:selected[0].kind,group:selected[0].group||'행동특성 및 종합의견',label:cat.value},records};
       if(e.submitter!==download){
         const result=await neisExtensionRequest('YS_NEIS_SEND',data);
-        status.textContent=result.count+'명 기록을 이 크롬의 입력 도우미에 전달했습니다. 아직 나이스에 입력되지 않았습니다. 나이스에서 입력칸을 클릭한 뒤 확장프로그램을 열어 화면 대조 → 확인 → 입력을 진행해 주세요. 브라우저를 종료하면 전달한 기록은 지워집니다.';
+        status.textContent=result.count+'명 기록을 이 크롬의 입력 도우미에 전달했습니다. 아직 나이스에 입력되지 않았습니다. 나이스에서 입력칸을 클릭한 뒤 확장프로그램을 열어 화면 대조 → 확인 → 입력을 진행해 주세요. 15분 안에 대조·입력을 시작해 주세요. 대조·입력 시 보관 기한이 15분 연장되며, 만료되면 다시 보내야 합니다. 작업 후에는 확장프로그램에서 기록을 지워 주세요.';
         return;
       }
       const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
@@ -89,7 +95,7 @@ function makeNeisTransferPanel(items, cats) {
       status.textContent=records.length+'명 파일을 만들었습니다. 학생 기록이 포함되므로 사용 후 파일을 정리해 주세요. 나이스 입력·저장 완료 표시는 변경하지 않았습니다.';
     } catch(err) { status.textContent=err.message; } finally {send.disabled=false;download.disabled=false;}
   };
-  box.append(form,status,el('a',{href:'neis-privacy.html',target:'_blank',rel:'noopener',text:'개인정보 처리 안내',style:'margin-right:16px'}),el('a',{href:'neis-guide.html',target:'_blank',rel:'noopener',text:'설치 및 사용 안내',style:'margin-right:16px'}),el('a',{href:'neis-extension.zip',download:'neis-extension.zip',text:'시험 버전 설치 파일 받기'}));
+  box.append(form,status,el('a',{href:'neis-privacy.html',target:'_blank',rel:'noopener',text:'개인정보 처리 안내',style:'margin-right:16px'}),el('a',{href:'neis-guide.html',target:'_blank',rel:'noopener',text:'설치 및 사용 안내',style:'margin-right:16px'}));
   return box;
 }
 

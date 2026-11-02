@@ -316,6 +316,7 @@ textarea:focus{outline:3px solid #c9d2ff;border-color:var(--navy2)}
           Google 계정으로 로그인
         </button>
         <p class="login-hint">처음이어도 괜찮아요. 로그인하면 내 드라이브에 새 시트를 만들어 바로 시작합니다.</p>
+        <p class="login-hint"><a href="https://chromewebstore.google.com/detail/mgfgocnidkjbinbeplgodgiofidlalfc?hl=ko" target="_blank" rel="noopener noreferrer">나이스 입력 도우미 설치 ↗</a> · <a href="neis-guide.html" target="_blank" rel="noopener">설치·사용 안내</a></p>
       </div>
       <div class="record-scene" aria-label="관찰 체크가 문장 초안으로 정리되는 예시">
         <div class="sample-record">
@@ -4036,8 +4037,8 @@ function renderNeis() {
   bar.append(el('div', { class: 'seg', role: 'group', 'aria-label': '보기 방식' }, [
     el('button', { type: 'button', class: NV.mode === 'student' ? 'on' : '', text: '👤 학생별', onclick: () => { NV.mode = 'student'; renderNeis(); } }),
     el('button', { type: 'button', class: NV.mode === 'cat' ? 'on' : '', onclick: () => { NV.mode = 'cat'; renderNeis(); } }, ['📚 과목·영역별 ', el('small', { text: 'NEIS 입력 화면 순서' })])]));
+  if (typeof makeNeisTransferPanel === 'function') bar.append(makeNeisTransferPanel(items, cats));   // 결과 생성 전에도 설치 안내 표시
   if (!items.length) { body.append(notice('아직 완료된 결과가 없습니다.', '✨ 생성 화면으로', () => show('gen'))); return; }
-  if (typeof makeNeisTransferPanel === 'function') bar.append(makeNeisTransferPanel(items, cats));   // NEIS 전송 패널 (neis-transfer.js, 영쌤 추가)
   const names = d.list.map(s => s.name).filter(nm => items.some(x => x.name === nm)).concat(uniq(items.map(x => x.name)).filter(nm => !d.list.some(s => s.name === nm)));
   let shown;
   if (NV.mode === 'student') {
@@ -4863,7 +4864,7 @@ async function boot() {
 
 if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', boot);
 </script>
-<script src="neis-transfer.js?v=20261015-1"></script>
+<script src="neis-transfer.js?v=20261102-store-1"></script>
 <script src="quality-test.js?v=20261016-1"></script>
 </body>
 </html>
